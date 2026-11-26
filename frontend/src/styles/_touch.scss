@@ -1,0 +1,38 @@
+$narrow: 600px;
+$target: 44px;
+
+@mixin rules() {
+  @media (max-width: $narrow) {
+    .mat-mdc-button-base:not(.mat-mdc-icon-button):not(.mat-mdc-fab):not(.mat-mdc-mini-fab) {
+      min-height: $target;
+    }
+
+    .mat-mdc-icon-button.mat-mdc-button-base,
+    .mat-mdc-paginator .mat-mdc-icon-button.mat-mdc-button-base {
+      min-width: $target;
+      min-height: $target;
+    }
+
+    .mat-mdc-paginator-container {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .mat-mdc-input-element,
+    .mat-mdc-select,
+    .mat-mdc-select-value,
+    textarea.mat-mdc-input-element {
+      font-size: 16px;
+    }
+  }
+
+  .mat-mdc-table,
+  table.mat-mdc-table {
+    min-width: 100%;
+  }
+
+  .table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}

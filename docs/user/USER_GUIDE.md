@@ -14,9 +14,16 @@
 2. [Submitting Awards](#submitting-awards)
 3. [Document Management](#document-management)
 4. [Tracking Award Status](#tracking-award-status)
-5. [Managing Your Profile](#managing-your-profile)
-6. [Notifications](#notifications)
-7. [FAQ](#faq)
+5. [Reviewing Awards](#reviewing-awards)
+6. [Achievements and Visibility](#achievements-and-visibility)
+7. [My dashboard](#my-dashboard)
+8. [Unit analytics](#unit-analytics)
+9. [University analytics](#university-analytics)
+10. [Managing Your Profile](#managing-your-profile)
+11. [Notifications](#notifications)
+12. [Using the app on a phone](#using-the-app-on-a-phone)
+13. [Accessibility](#accessibility)
+14. [FAQ](#faq)
 
 ---
 
@@ -32,14 +39,8 @@
 
 ### Dashboard Overview
 
-After login, you'll see your personal dashboard:
-
-| Section | Description |
-|---------|-------------|
-| **My Awards** | Awards you've submitted |
-| **Pending Actions** | Items requiring your attention |
-| **Recent Activity** | Latest updates on your awards |
-| **Quick Stats** | Summary of your award statistics |
+After login, the navigation leads to your awards (**Мої нагороди**), your statistics (**Мій дашборд**, see
+[My dashboard](#my-dashboard)) and the achievements shared with colleagues (**Досягнення**).
 
 ---
 
@@ -76,7 +77,7 @@ After login, you'll see your personal dashboard:
 - Additional supporting materials
 
 **File Requirements:**
-- Formats: PDF, JPEG, PNG
+- Formats: PDF, JPEG, PNG, WEBP
 - Maximum size: 10MB per file
 - Recommended: PDF at 300 DPI
 
@@ -133,9 +134,9 @@ Supported Formats:
 ### Status Flow
 
 ```
-Draft → Submitted → Under Review → Approved/Rejected → Published
-                         ↓
-                    Returned for Revision
+Draft → Submitted → Under Review → Approved/Rejected
+  ↑                    ↓
+  └── Returned for Revision (or Withdrawn by you while nobody has claimed it)
 ```
 
 ### Status Meanings
@@ -146,15 +147,22 @@ Draft → Submitted → Under Review → Approved/Rejected → Published
 | **Submitted** | Awaiting review | Wait for reviewer |
 | **Under Review** | Being evaluated | Wait for decision |
 | **Returned** | Needs revision | Make requested changes |
-| **Approved** | Accepted | None - will be published |
-| **Rejected** | Not accepted | Review reason, may resubmit |
-| **Published** | Visible publicly | None - complete |
+| **Approved** | Accepted | None; you decide who else sees it (see Achievements and Visibility) |
+| **Rejected** | Not accepted | Review the reason; a rejection is final, enter a corrected award as a new one |
 
 ### Checking Status
 
 1. Navigate to **"My Awards"**
 2. View status column or filter by status
 3. Click award for detailed status history
+
+### Withdrawing and Resubmitting
+
+- **Withdraw**: while nobody has claimed your submitted award, the award page offers **Withdraw**. After the
+  confirmation the award is a draft again and the form opens. Once a reviewer has claimed it, the button is gone.
+- **Returned award**: the form shows the reviewer's comment above the fields. Change the award or its documents and
+  submit it again; it goes back to the level that returned it.
+- A withdrawn award, submitted again, starts from the first review level. Earlier decisions stay in its timeline.
 
 ### Review History
 
@@ -163,6 +171,234 @@ Each award shows complete history:
 - Who reviewed it at each level
 - Comments from reviewers
 - Decision timestamps
+- Corrections by a reviewer, with the changed fields and the reason (you also get an e-mail)
+
+---
+
+## Reviewing Awards
+
+For faculty secretaries, deans, the rector's secretary and the rector, and for colleagues acting for them by
+delegation.
+
+### The review queue
+
+1. Open **"Reviews"** in the side menu.
+2. The tabs show **Mine** (awards you have claimed), **Unassigned** (nobody works on them yet) and **All**.
+3. Filter by review level or by faculty or department. Overdue awards come first and carry an **Overdue** chip.
+4. Click a row to open the award.
+
+### The faculty review period
+
+Above the tabs, faculty secretaries and deans see how many working days each faculty level has for a request,
+for example **"Review period: 3 working days (default)"**.
+
+1. As the dean (or by the dean's delegation), click **"Change"**.
+2. Enter 1 to 20 working days and click **"Save"**, or click **"Default period"** to return to the university
+   default.
+3. The new period applies to deadlines set from now on (a new submission, a resubmission or a move to the dean);
+   deadlines already set stay. The rector's levels always keep the default.
+
+### Overdue requests
+
+Once an hour the system checks for open requests whose deadline has passed. Each such request is marked once per
+level, and the reviewers of the next level with a reviewer get one e-mail per check listing them («Прострочені
+заявки: N / Overdue requests: N»). Nothing moves or decides a request on its own.
+
+1. A marked request carries **Overdue** and **"Manager notified <date>"** in the queue.
+2. Tick **"Manager notified"** to list only marked requests; a dean's **"Overdue at the level below"** lists the
+   faculty secretaries' marked requests, which the dean may take over.
+3. The owner's status page reads **"The review period ended <date>; the manager was notified <date>"**.
+4. A move to another level, a return, a resubmission or a withdrawal clears the mark with the new deadline. The
+   queue counts in the monitoring metrics are refreshed by the same hourly check.
+
+### Working on an award
+
+The **Review** panel of the award page shows who reviews it and the deadline.
+
+- **Claim**: you become the reviewer; colleagues see your name in the queue.
+- **Release**: the award goes back to the queue of its level.
+- **Hand over…**: choose a colleague of the same level (colleagues acting by delegation are marked).
+- **Take over**: a dean or a higher level takes an award from the reviewer below, after a confirmation naming them;
+  a colleague of the same level may do so once the review is overdue. The previous reviewer gets an e-mail.
+- **Escalate** is not shown when you already review at the next level (a dean on a secretary-level award decides
+  it directly).
+
+If a colleague claimed the award a moment earlier, the panel names them and shows the current state; if the data
+was out of date, the page refreshes itself.
+
+### Deciding
+
+You decide on an award you have claimed, or on an unclaimed one (the decision claims it for you). Each button opens
+a dialog with a comment field:
+
+- **Approve**: the award is approved when your level is high enough for its category; otherwise it goes to the next
+  level and the page says where («Passed to the dean.»). Tick **Documents checked** when the award has documents and
+  you checked them: the award gets the verification badge.
+- **Return for corrections** (comment required): the award goes back to its owner as a draft with your comment; you
+  return to the queue, because the draft is visible only to its owner.
+- **Reject** (comment required): the review ends; the owner sees the comment as the reason.
+- **Pass to the …**: the award goes to the next level without your approval (not offered to the rector).
+
+The owner gets an e-mail about every decision. The status timeline names the reviewer of each decision, adds
+"(on behalf of …)" when the reviewer acted by delegation, and marks a level that was passed over as "skipped".
+
+The **Response template** list in the dialog fills the comment with a prepared text, which you can edit; picking
+another template after editing asks before replacing your text.
+
+### Correcting an award
+
+A small mistake (a typo in the title, a wrong date or category) can be fixed without returning the award.
+
+1. On an award you have claimed, or an unclaimed one, click **Correct** in the Review panel (not offered when a
+   colleague holds the award).
+2. The form shows the current values; the recipient and the documents stay as the owner entered them. Change the
+   fields and enter the **Reason for the correction** (up to 1000 characters).
+3. **Save** becomes active once a field differs; the confirmation lists every change as old → new before sending.
+
+The correction claims an unclaimed award for you. The award keeps its level and deadline; a new category counts from
+the next decision on (a national category needs the rector's secretary). The owner gets an e-mail with the changes,
+the reason and your name, and the award history shows **"Corrected by reviewer: <name>"**. The duplicate check is not
+run again on a correction.
+
+### Deciding on several awards
+
+1. In the queue, tick the awards (the header box selects the page; Space toggles a row).
+2. The action bar offers **Approve (n)**, **Return**, **Reject** and **Pass to the dean** (or **Pass to the next
+   level** when the selected awards are at different levels). Up to 50 awards at a time.
+3. The dialog takes one comment for all of them, with the same templates.
+4. Each award is decided on its own: decided awards leave the list, and the summary **Processed: n of m** lists the
+   ones that could not be decided with the reason (for example, claimed by another reviewer) and a link. Only those
+   stay selected.
+
+---
+
+## Achievements and Visibility
+
+### Who sees your approved award
+
+An approved award is seen by you and the reviewers whose scope covers it. On its page, the **Visibility** section
+offers three choices:
+
+| Choice | Who sees the award |
+|--------|--------------------|
+| «Лише мені та рецензентам» (default) | You and the reviewers |
+| «Показувати колегам» | Every signed-in user, on the achievements page |
+| «Показувати публічно» | Anyone, also without an account, on the public achievements page |
+
+Before an award goes public, a dialog lists what is published (your name, department, title, description, category,
+awarding organisation, date, link and the verification mark) and what never is (your e-mail, documents, reviewers,
+comments). You can switch back at any time; the award leaves the pages at once. Your awards list marks shared
+awards with «Колегам» or «Публічно». A unit award is visible to everyone once approved, with no choice.
+
+### The achievements pages
+
+- **Досягнення** in the navigation lists the awards shared with colleagues, newest first, with filters for unit,
+  year, level and recipient. The filters stay in the address, so a filtered page can be bookmarked or sent.
+- A unit name on a card opens that unit's page (`/units/<id>/achievements`): a department page links to its
+  faculty, a faculty page to its departments, and the faculty page includes its departments' awards.
+- **Публічна сторінка** opens the same list as the public sees it (`/public/achievements`); on a public page,
+  **Переглянути як співробітник** leads back. Public pages need no sign-in and offer **Увійти** and the language
+  switch.
+
+---
+
+## My dashboard
+
+**Мій дашборд** in the navigation (`/dashboard`) summarises your approved personal awards. Drafts, pending and
+rejected awards and unit awards are not counted.
+
+- **Period**: «З» and «По» choose the first and last year; «Усі роки» clears both. The period stays in the address
+  (`/dashboard?from=2022&to=2025`), so a view can be bookmarked.
+- **Widgets**, in this order: the summary (approved, with documents verified, highest level, first and latest
+  award), the timeline of your awards by date and level, awards by year stacked by level (the levels below the
+  university share one colour), by category, by level, and your place in the department.
+- **Show as table** («Показати таблицею») above each chart shows the same figures as a table. In the timeline
+  table each title opens the award; a point of the timeline chart does the same.
+- **Place in the department** is shown only with the consent «Рейтинги й порівняння» in the privacy centre, and
+  only in a department with at least five active members. It counts every active member of the department, with
+  or without the consent; colleagues are never named. Without the consent the card links to the privacy centre.
+- **Customise** («Налаштувати») chooses which widgets to show. The choice is stored for your account, so it follows
+  you to another browser, and it is part of your data export.
+- **Without approved awards** the dashboard lists the steps to a first award, with **Внести нагороду** and the
+  number of awards in review or drafts. When only the chosen period is empty, **Усі роки** goes back to all years.
+- **Summary** («Підсумок») opens a printable page of the chosen period (`/dashboard/summary?from=2022&to=2025`):
+  your name and department, the totals, the counts by level, every counted award with its verification mark and
+  the date the page was produced. **Друкувати** or the browser print leaves out the navigation and the buttons
+  (A4 portrait).
+- **Copy link to my public achievements** («Копіювати посилання на мої публічні досягнення») on the summary copies
+  the address of the public page with only your public awards (`/public/achievements?person=<id>`). The button
+  appears once at least one of your approved awards is public; until then a hint explains why it is missing.
+
+---
+
+## Unit analytics
+
+**Аналітика підрозділів** in the navigation (`/analytics`) is open to faculty secretaries, deans and the
+rector's office. It opens the first faculty or department of your scope; the selector at the top
+lists the faculties with their departments indented, and the address keeps the unit and the period
+(`/analytics/units/9?from=2022&to=2026`).
+
+- **What counts**: approved awards submitted in the unit or one of its departments (the department of the
+  submission, not the owner's current one), by the year of the award date. Personal awards and unit awards both
+  count and are shown apart; drafts, pending and rejected awards never count.
+- **Period and previous period**: «З» and «По» as on «Мій дашборд»; without a start the period is the five years
+  ending at the last year. The figures are compared with the previous period of the same length, which ends the
+  year before the start; the line under the selectors names it. While the last year is the current one, the page
+  says the year is not over yet.
+- **Tiles**: approved awards and awarded people with their change (arrow, signed count and percent, «нове» when the
+  previous period had none), unit awards, verified awards and awards per 100 members.
+- **Per 100 members**: counted awards per 100 active accounts of the unit. Members are counted where they work now,
+  awards where they were submitted, so a person who moved still adds to the old department's awards.
+- **Department comparison** (faculties only): members, approved awards with their change, awarded people, per 100
+  members and verified for each department and for the faculty level itself; every column sorts, and a department
+  name opens its page for the same period. The table scrolls sideways on a narrow screen.
+- **Charts**: the trend by year (one line per department for a faculty, personal and unit awards for a
+  department), by category and by level (this period beside the previous one), and by awarding organisation. More
+  than 12 categories or organisations form an «Інші» bar; **Show as table** lists them all.
+- **Highlights**: a department with no award in the period; a decline (at least 4 awards before and at most half as
+  many now); growth (at least 4 before and at least one and a half times as many now); below average (at least
+  five members and fewer than half of the faculty's awards per member). Growth is listed under strengths, the
+  others under gaps.
+- **Top performers**: up to ten people with the most counted personal awards, without positions. Only people who
+  gave the consent «Рейтинги й порівняння» in the privacy centre are named; a withdrawal removes the name at the
+  next visit. A unit with fewer than five members names nobody.
+
+---
+
+## University analytics
+
+**Аналітика університету** in the navigation (`/analytics/university`) is open to the rector and the rector's
+secretary; both keep **Аналітика підрозділів** as well. The address keeps the period
+(`/analytics/university?from=2022&to=2026`).
+
+- **Compliance**: the panel on top is read live, at each visit and with **Оновити**, and does not follow the
+  period. It says «Усе гаразд» or «Потребує уваги» with one sentence per reason: the retention job has never run;
+  its last run ended partly or was interrupted; its last run started more than two days ago (the job runs every
+  night, so one missed night is tolerated); erasure requests are overdue (not postponed and more than a day past
+  their date); reviews are overdue. The tiles show the accounts that acknowledged the current privacy notice and
+  those that gave the analytics consent (count and percent), pending, postponed and overdue erasure requests,
+  active legal holds, the last retention run and open and overdue reviews. Only counts appear, never names.
+- **What counts**: approved awards submitted anywhere in the university, by the year of the award date, as in unit
+  analytics. The period, the previous period, the tiles and the per-100-members figure work as there.
+- **Trend and projection**: approved awards per year, with a dashed segment to the next year. The projection is a
+  least-squares line through the complete years of the period (the current year is left out); with fewer than three
+  complete years the page says so instead. It extends the past and knows nothing of plans, rules or new
+  categories, so it is an indication only; **Show as table** marks the projected year.
+- **Faculty and college comparison**: every faculty and college with its figures and the university level (awards
+  submitted directly at the university); every column sorts, a faculty opens its unit analytics for the same
+  period, a college is not linked.
+- **Trends**: up to five categories and five awarding organisations that rose and fell the most against the
+  previous period, each with both counts and the change; an entry needs at least three awards over the two periods.
+- **Highlights**: for each faculty and college with members, no award in the period; a decline (at least 4 awards
+  before and at most half as many now); growth (at least 4 before and at least one and a half times as many now);
+  below average (at least five members and under half of the university's awards per member); above average (at
+  least five members and at least one and a half times the university's awards per member). Growth and above
+  average are strengths, the others improvement opportunities.
+- **Board report**: **Звіт для ради** in the page header downloads the figures of the shown period as a PDF (A4
+  landscape, one topic per page) in the interface language: title page, key figures, trend and projection, faculty
+  comparison with bars per 100 members, categories and levels, trends, strengths and improvement opportunities, and
+  the compliance snapshot. It names nobody; each download is recorded in the audit trail. The button is disabled
+  while the page loads, after a failed load and for an invalid period.
 
 ---
 
@@ -177,27 +413,50 @@ Each award shows complete history:
    - Contact information
    - Notification preferences
 
-### Privacy Settings
+### Privacy centre
 
-Control what information is visible:
+Your name → **Privacy and my data** opens the privacy centre (`/privacy`). Its cards show:
 
-| Setting | Options |
-|---------|---------|
-| Email visibility | Public / Organization only / Private |
-| Award display | Show all / Show approved only |
-| Profile visibility | Public / Organization only |
+- **Privacy notice**: the version you confirmed and a link to read it again
+- **Consents**: whether you may be named in rankings and unit report comparisons, with the history of every change
+- **Your choices**: how many approved awards are private, shown to colleagues or public, how many documents colleagues see and how many notification e-mails you switched off, with links to change them
+- **Your data**: the download of your data (see below)
+- **Your activity**: what you did in the system and what others did with your account, newest first
+- **Delete my account**: the erasure request (see below)
+
+### Deleting your account
+
+**Delete my account** lists what is erased (profile, sign-in data, drafts and pending awards, documents, notifications, settings) and what is kept: approved awards under a pseudonym, audit records with your name, address and IP addresses removed, and consent records for seven years after the last change. Enter your password, tick the confirmation box and choose **Request erasure**.
+
+The account is erased 30 days later. Until then you can sign in as usual; a banner on every page names the date, and you receive an e-mail at once and another one a week before the date. **Cancel the erasure** in the privacy centre stops it.
+
+The request is refused when the password is wrong (it counts as a failed sign-in), when the account is locked, when a legal obligation requires the university to keep your data (contact the data protection officer), or when you are the only system administrator (another administrator must be appointed first).
+
+On the date, the erasure runs during the night. You are signed out everywhere and can no longer sign in; a last e-mail confirms the erasure. Your approved awards stay visible only to the reviewers and units that keep them, under the name "Erased #" followed by a number, without their documents. Awards you submitted on behalf of a unit that were still pending are deleted with your account, so the unit's secretary no longer sees them in the queue. Reviews you had claimed go back to the queue of their level, and decisions you made on other people's awards stay under the same pseudonym. The address becomes free and can be used to register a new account.
+
+If a legal obligation arises during the 30 days, the erasure waits until it ends and you receive an e-mail saying so; it then runs at the next night without a new waiting period.
 
 ### Notification Preferences
 
-Customize how you receive updates:
+On your profile, the **Notifications** card lists every notification type with two switches, e-mail and in the application. Both are on until you change them. Security and privacy e-mails (sign-in, password, data export, account deletion) are always sent.
 
-- **Email notifications**: Award status changes, review requests
-- **Browser notifications**: Real-time alerts
-- **Digest emails**: Daily/weekly summaries
+### Exporting Your Data
+
+In the privacy centre, **Your data** → **Download my data** saves a JSON file with everything the system holds about you (GDPR Article 20): profile, roles, delegations, awards and their versions, documents, review decisions, consents, devices and your activity. Since format version 1.4 the file also contains:
+
+- `notifications`: your notifications in the application and the log of the notification e-mails sent to you, with when each was sent, read or delivered, and its delivery status
+- `notification_preferences`: the notification types you changed from the default
+- `legal_holds` (since 1.5): the dates of legal holds on your account, without their reasons
+- `erasure_requests` (since 1.6): your erasure requests with their dates and status
+- `dashboard_preferences` (since 1.7; since 1.8 with the colour scheme and the layout of each dashboard): your colour scheme, the order and the hidden widgets of your dashboards, and when you saved that choice
+
+You can download the file once a minute; each download is announced to you by e-mail.
 
 ---
 
 ## Notifications
+
+Decisions, corrections, overdue notices, take-overs, roles and delegations reach you by e-mail and in the application (the bell in the toolbar), as set in your notification preferences. Browser notifications, digests and quiet hours below are not available yet.
 
 ### Types of Notifications
 
@@ -217,12 +476,56 @@ Customize how you receive updates:
 
 ---
 
+## Using the app on a phone
+
+### Installing the app
+
+- **Android (Chrome):** open the site, then the menu ⋮ → **Install app** (on some phones **Add to Home screen**). The icon opens the app in its own window, without the browser bar.
+- **iPhone and iPad (Safari):** open the site, then **Share** → **Add to Home Screen**.
+- **Updates:** when a new version is deployed, the app shows "A new version of the app is available." with **Update**; the page reloads only when you choose it.
+
+### Without a connection
+
+- The installed app opens without a connection. Pages that need data show "No connection to the server. Pages that need data will open once the connection returns." and load once you are back online.
+- The award form keeps working offline: what you enter is kept on this device. **Save draft** sends nothing until the connection returns; the draft is then saved automatically and the form says "The connection is back and the draft is saved."
+- **Submit** and adding documents need a connection; the form says so and both return when you are online.
+- If you close the tab before the connection returns, open **Add award** again and choose **Restore** in "Restore unsaved changes?".
+- If the draft was changed on another device meanwhile, the form says "The award was changed in another window. Your changes are kept in this browser." and keeps your values.
+- In a private window, or with site data blocked, the device cannot keep what you enter; the form warns "This device does not keep what you enter. Do not close the page."
+
+### Photographing a certificate
+
+- In **Documents**, **Take a photo** opens the rear camera; on a computer it opens the file picker for images.
+- Accepted are PDF, JPG, PNG and WEBP up to 10 MB. A larger photo shows "The file is larger than 10 MB". HEIC photos (the default format of some phones) are refused; switch the camera to JPEG ("Most compatible" on an iPhone) or pick a JPEG copy.
+- For a readable photo, lay the certificate flat in good light and let it fill the frame.
+
+### Continuing on a computer
+
+A draft saved on the phone is an ordinary draft: sign in on a computer, open **My awards**, and the draft is there with its values, documents and photos. Complete it and submit it there. If you edit the same draft on both devices, the one saved second shows the "changed in another window" message instead of overwriting.
+
+---
+
+## Accessibility
+
+Every page is checked automatically against WCAG 2.1 level AA in both languages, both colour schemes and at phone and desktop width.
+
+- **Skip link:** press Tab once on any page; **Skip to main content** appears at the top. Enter moves you past the menu to the page itself.
+- **Focus after navigation:** when a new page opens, the focus is on its heading, so a screen reader reads where you are and the next Tab reaches the first control of the page.
+- **Page titles and language:** the browser tab names the page ("My awards — …"), and the page language follows the language switch, so screen readers pronounce the text correctly.
+- **Keys:** Tab and Shift+Tab move between controls; Enter or Space activates buttons and links; in lists, menus and the category list the arrow keys move and Enter chooses; Escape closes menus and dialogs; in the date field type the date (day.month.year) or open the calendar with its button and move with the arrow keys.
+- **Focus indicator:** the control with the focus always has a visible ring, in light and dark mode.
+- **Reduced motion:** when your system asks for reduced motion (Windows: Settings → Accessibility → Visual effects → Animation effects off; macOS and iOS: Reduce motion), menus, dialogs and the side menu open without animation.
+- **Charts:** every chart has a text description and a **Show as table** switch.
+
+---
+
 ## FAQ
 
 ### General
 
 **Q: Who can see my submitted awards?**  
-A: Awards in "Published" status are visible publicly. Draft and pending awards are visible only to you and reviewers.
+A: You and the reviewers whose scope covers the award. Once it is approved, you decide whether colleagues or the
+public see it too (see [Achievements and Visibility](#achievements-and-visibility)).
 
 **Q: Can I edit an award after submission?**  
 A: No, submitted awards cannot be edited. If changes are needed, a reviewer will return it for revision.
@@ -230,11 +533,15 @@ A: No, submitted awards cannot be edited. If changes are needed, a reviewer will
 **Q: How long does the review process take?**  
 A: Typically 3-5 business days for each review level (Department → Faculty → University).
 
+**Q: I received the same email twice. Is something wrong?**  
+A: No. When the mail server is unavailable, the system sends the email again later, and in rare cases one
+arrives twice. Emails with a confirmation or reset link are not resent; if one does not arrive, request a new link.
+
 ### Submission Issues
 
 **Q: My file won't upload. What should I do?**  
 A: Check that:
-1. File is PDF, JPEG, or PNG
+1. File is PDF, JPEG, PNG or WEBP
 2. File size is under 10MB
 3. Filename doesn't contain special characters
 4. Browser is up to date
@@ -254,7 +561,7 @@ A: Click "Forgot Password" on the login page and follow the email instructions.
 A: After 5 failed login attempts, accounts are locked for 30 minutes. Contact IT support if you need immediate access.
 
 **Q: I'm leaving the university. What happens to my awards?**  
-A: Published awards remain in the system. Contact administration about data export if needed.
+A: Approved awards remain in the system. Contact administration about data export if needed.
 
 ### Data & Privacy
 

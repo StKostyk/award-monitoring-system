@@ -352,39 +352,33 @@ CREATE TABLE назва_сутності (
 
 ### 3.2 Шаблон Аудиторського Сліду
 
-Для відповідності GDPR та відстеження походження даних критичні сутності мають виділені таблиці аудиту:
+Зміни фіксують дві таблиці, кожна зі своїм призначенням (функція 2.2, D-2):
+
+1. **`audit_logs` — запис для відповідності вимогам.** Один загальний тригер рядків `fn_audit_trigger()` підключено до кожної таблиці під аудитом; він записує кожен `INSERT`, `UPDATE` і `DELETE` зі старим і новим рядком, зміненими стовпцями та ключем самого запису як `entity_id`. Застосунок пише свої події (вхід, зміни ролей, подання) у ту саму таблицю. Виконавця та ідентифікатор кореляції запиту беруть із параметрів транзакції `app.current_user_id` і `app.correlation_id`, які менеджер транзакцій встановлює через `set_config(…, true)` для кожної транзакції запису запиту автентифікованого користувача. Записи незмінні, поділені на щомісячні партиції й зберігаються сім років; новій таблиці під аудитом потрібні лише її тригер і її ключ у функції.
 
 ```sql
--- Шаблон таблиці аудиту
-CREATE TABLE awards_audit (
-    audit_id BIGSERIAL PRIMARY KEY,
-    
-    -- Посилання на оригінальний запис
-    award_id BIGINT NOT NULL,
-    
-    -- Метадані аудиту
-    operation VARCHAR(10) NOT NULL,  -- INSERT, UPDATE, DELETE
-    operation_timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    operation_user_id BIGINT,
-    
-    -- Відстеження змін
-    old_values JSONB,
-    new_values JSONB,
-    changed_fields TEXT[],
-    
-    -- Контекст
-    ip_address INET,
-    user_agent VARCHAR(500),
-    correlation_id UUID,
-    
-    CONSTRAINT ck_awards_audit_operation CHECK (operation IN ('INSERT', 'UPDATE', 'DELETE'))
-);
-
--- Індекс для запитів історії аудиту
-CREATE INDEX idx_awards_audit_award ON awards_audit(award_id);
-CREATE INDEX idx_awards_audit_timestamp ON awards_audit(operation_timestamp);
-CREATE INDEX idx_awards_audit_user ON awards_audit(operation_user_id);
+CREATE TRIGGER trg_awards_audit
+    AFTER INSERT OR UPDATE OR DELETE ON awards
+    FOR EACH ROW EXECUTE FUNCTION fn_audit_trigger();
 ```
+
+2. **Бізнесові таблиці версій — для історії, яку бачать користувачі.** Там, де користувачам потрібна історія запису в бізнесових термінах, застосунок пише один рядок на кожен збережений стан із бізнесовою дією, виконавцем і знімком бізнесових полів, у транзакції зміни. Таблиця слідує життєвому циклу запису (видаляється й стирається разом із ним) і відхиляє оновлення. Перша така таблиця — `award_versions`:
+
+```sql
+CREATE TABLE award_versions (
+    version_id BIGSERIAL PRIMARY KEY,
+    award_id BIGINT NOT NULL REFERENCES awards(award_id) ON DELETE CASCADE,
+    version_number BIGINT NOT NULL,              -- awards.version після зміни
+    action VARCHAR(20) NOT NULL,                 -- BASELINE, CREATED, UPDATED, SUBMITTED
+    actor_id BIGINT REFERENCES users(user_id) ON DELETE SET NULL,
+    snapshot JSONB NOT NULL,
+    changed_fields TEXT[],
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT uk_award_versions_number UNIQUE (award_id, version_number)
+);
+```
+
+Окремі таблиці `*_audit` для кожної сутності з операціями `INSERT`/`UPDATE`/`DELETE` не використовуються: загальний тригер уже виконує цю роль для кожної таблиці.
 
 ### 3.3 Шаблон Ієрархічних Даних (Організації)
 

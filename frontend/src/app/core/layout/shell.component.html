@@ -1,0 +1,225 @@
+<a class="shell__skip" href="#main" (click)="skipToContent($event)" data-testid="skip-link">
+  {{ 'app.skipLink' | transloco }}
+</a>
+<mat-sidenav-container class="shell" [class.shell--anonymous]="!auth.isAuthenticated()">
+  <mat-sidenav
+    #drawer
+    class="shell__drawer"
+    [mode]="wide() ? 'side' : 'over'"
+    [opened]="wide() && auth.isAuthenticated()"
+    [disableClose]="wide()"
+    data-testid="side-nav"
+  >
+    <div
+      class="shell__side"
+      [attr.role]="wide() && auth.isAuthenticated() ? 'banner' : 'region'"
+      [attr.aria-label]="wide() && auth.isAuthenticated() ? null : ('app.menu' | transloco)"
+      data-testid="side"
+    >
+      <a
+        class="shell__brand shell__brand--drawer"
+        routerLink="/"
+        (click)="closeDrawer()"
+        data-testid="home-logo"
+      >
+        <img class="shell__logo" [src]="brand().logo" alt="" />
+        <span class="shell__brand-text">
+          <span class="shell__product">{{ brands.text(brand().name) }}</span>
+          <span class="shell__organization">{{ brands.text(brand().organization) }}</span>
+        </span>
+      </a>
+      @if (auth.isAuthenticated()) {
+        <button
+          type="button"
+          class="shell__search"
+          (click)="openPalette()"
+          aria-haspopup="dialog"
+          [attr.aria-keyshortcuts]="shortcut === '⌘K' ? 'Meta+K' : 'Control+K'"
+          data-testid="palette-open"
+        >
+          <app-icon name="search" />
+          <span class="shell__search-text">{{ 'app.palette.open' | transloco }}</span>
+          <kbd class="shell__kbd">{{ shortcut }}</kbd>
+        </button>
+      }
+      <nav [attr.aria-label]="'app.navigation' | transloco">
+        <mat-nav-list class="shell__nav">
+          @for (item of entries(); track item.id) {
+            <a
+              mat-list-item
+              (click)="closeDrawer()"
+              [routerLink]="item.path"
+              routerLinkActive
+              #link="routerLinkActive"
+              ariaCurrentWhenActive="page"
+              [routerLinkActiveOptions]="{ exact: item.exact }"
+              [activated]="link.isActive"
+              [attr.data-testid]="'nav-' + item.id"
+            >
+              <app-icon matListItemIcon [name]="item.icon" />
+              <span matListItemTitle>{{ item.label | transloco }}</span>
+            </a>
+          }
+        </mat-nav-list>
+      </nav>
+      @if (auth.isAuthenticated()) {
+        <div class="shell__foot">
+          <button
+            type="button"
+            class="shell__me"
+            [matMenuTriggerFor]="userMenu"
+            [attr.aria-label]="auth.fullName()"
+            data-testid="user-menu"
+          >
+            <span class="shell__avatar" aria-hidden="true">{{ initials() }}</span>
+            <span class="shell__me-text">
+              <span class="shell__user-name" data-testid="user-name">{{ auth.fullName() }}</span>
+              @if (role(); as role) {
+                <span class="shell__role" data-testid="user-role">{{
+                  'roles.' + role | transloco
+                }}</span>
+              }
+            </span>
+          </button>
+          @if (actingFor(); as delegator) {
+            <span class="shell__acting" data-testid="acting-for">
+              {{ 'delegations.actingFor' | transloco: { name: delegator } }}
+            </span>
+          }
+          <mat-menu #userMenu="matMenu">
+            <a
+              mat-menu-item
+              routerLink="/profile"
+              (click)="closeDrawer()"
+              data-testid="nav-profile"
+            >
+              <app-icon matMenuItemIcon name="user" />
+              <span>{{ 'profile.menu' | transloco }}</span>
+            </a>
+            <a
+              mat-menu-item
+              routerLink="/privacy"
+              (click)="closeDrawer()"
+              data-testid="nav-privacy"
+            >
+              <app-icon matMenuItemIcon name="shield" />
+              <span>{{ 'privacy.centre.menu' | transloco }}</span>
+            </a>
+          </mat-menu>
+          <div class="shell__tools">
+            <ng-container [ngTemplateOutlet]="languageTool" />
+            <ng-container [ngTemplateOutlet]="schemeTool" />
+            <app-notification-bell />
+            <button
+              type="button"
+              class="shell__tool"
+              (click)="logout()"
+              [attr.aria-label]="'app.logout' | transloco"
+              data-testid="logout"
+            >
+              <app-icon name="log-out" />
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="shell__main">
+    <div class="shell__aurora" aria-hidden="true" data-testid="aurora">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    @if (!auth.isAuthenticated() || !wide()) {
+      <mat-toolbar class="shell__toolbar" role="banner">
+        @if (auth.isAuthenticated()) {
+          <button
+            mat-icon-button
+            type="button"
+            (click)="drawer.toggle()"
+            [attr.aria-label]="'app.menu' | transloco"
+            [attr.aria-expanded]="drawer.opened"
+            data-testid="nav-toggle"
+          >
+            <app-icon name="menu" />
+          </button>
+          <span class="shell__title" data-testid="page-title">{{ brands.text(brand().name) }}</span>
+        } @else {
+          <a
+            class="shell__brand shell__brand--bar"
+            routerLink="/"
+            [attr.aria-label]="brands.text(brand().name)"
+            data-testid="brand"
+          >
+            <img class="shell__logo shell__logo--small" [src]="brand().logo" alt="" />
+            <span class="shell__product">{{ brands.text(brand().name) }}</span>
+          </a>
+          <span class="shell__spacer"></span>
+          <ng-container [ngTemplateOutlet]="languageTool" />
+          <ng-container [ngTemplateOutlet]="schemeTool" />
+          <button mat-button type="button" (click)="login()" data-testid="login">
+            <app-icon matButtonIcon name="log-in" />
+            {{ 'app.login' | transloco }}
+          </button>
+        }
+      </mat-toolbar>
+    }
+    <main id="main" class="shell__content" tabindex="-1" #main>
+      <app-offline-notice />
+      @if (erasureDate(); as date) {
+        <div class="shell__erasure" role="status" data-testid="erasure-banner">
+          <app-icon name="trash-2" />
+          <span>{{ 'privacy.erasure.banner' | transloco: { date } }}</span>
+          <a routerLink="/privacy" data-testid="erasure-banner-link">
+            {{ 'privacy.erasure.bannerLink' | transloco }}
+          </a>
+        </div>
+      }
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>
+
+<ng-template #languageTool>
+  <button
+    type="button"
+    class="shell__tool shell__lang"
+    (click)="language.toggle()"
+    [attr.aria-label]="'app.languageLabel' | transloco"
+    data-testid="language-toggle"
+  >
+    {{ 'app.language' | transloco }}
+  </button>
+</ng-template>
+
+<ng-template #schemeTool>
+  <button
+    type="button"
+    class="shell__tool"
+    [matMenuTriggerFor]="schemeMenu"
+    [attr.aria-label]="'app.scheme.title' | transloco"
+    data-testid="color-scheme-menu"
+  >
+    <app-icon [name]="schemeIcons[colorScheme.scheme()]" />
+  </button>
+</ng-template>
+
+<mat-menu #schemeMenu="matMenu">
+  @for (scheme of schemes; track scheme) {
+    <button
+      mat-menu-item
+      type="button"
+      role="menuitemradio"
+      [attr.aria-checked]="colorScheme.scheme() === scheme"
+      (click)="pickScheme(scheme)"
+      [attr.data-testid]="'color-scheme-' + scheme"
+    >
+      <app-icon
+        matMenuItemIcon
+        [name]="colorScheme.scheme() === scheme ? 'check' : schemeIcons[scheme]"
+      />
+      <span>{{ 'app.scheme.' + scheme | transloco }}</span>
+    </button>
+  }
+</mat-menu>

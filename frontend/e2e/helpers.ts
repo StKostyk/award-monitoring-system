@@ -1,0 +1,407 @@
+import { execFileSync } from 'node:child_process';
+
+import AxeBuilder from '@axe-core/playwright';
+import type { Browser, Locator, Page } from '@playwright/test';
+import { expect } from '@playwright/test';
+
+const mailpit = 'http://localhost:8025';
+
+/** The password of every seed account (`db/seed/local`). */
+export const DEMO_PASSWORD = 'Passw0rd-demo';
+
+/**
+ * Seed accounts of the Faculty of Mathematics and Informatics and the university roles; `employee` is the account
+ * the specs enter awards with, so the demo accounts stay as seeded.
+ */
+export const SEED = {
+  employee: 'e2e.employee@chnu.edu.ua',
+  admin: 'admin@chnu.edu.ua',
+  secretary: 'secretary.fmi@chnu.edu.ua',
+  dean: 'dean.fmi@chnu.edu.ua',
+  gdpr: 'gdpr@chnu.edu.ua',
+  lecturer: 'lecturer.fmi@chnu.edu.ua',
+  rector: 'rector@chnu.edu.ua',
+  rectorSecretary: 'rector.secretary@chnu.edu.ua',
+} as const;
+
+/** Password of the accounts the tests register themselves. */
+export const FRESH_PASSWORD = 'correct-horse-battery';
+
+/** The privacy notice version the backend serves as current (`app.privacy.notice-version`). */
+export const NOTICE_VERSION = '1.1';
+
+/** The app-wide notice shown while the server cannot be reached. */
+export const OFFLINE_NOTICE =
+  "Немає з'єднання з сервером. Сторінки, яким потрібні дані, відкриються, щойно з'єднання відновиться.";
+
+/** How long the app may take to notice a restored connection and finish what waited for it. */
+export const RECONNECT_MS = 5000;
+
+interface MessageSummary {
+  ID: string;
+  Subject: string;
+  To: { Address: string }[];
+}
+
+async function messagesTo(email: string, subject = ''): Promise<MessageSummary[]> {
+  const query = encodeURIComponent(`to:${email}`);
+  const list = await (await fetch(`${mailpit}/api/v1/search?query=${query}&limit=100`)).json();
+  return ((list.messages ?? []) as MessageSummary[]).filter(
+    (m) =>
+      m.To?.some((to) => to.Address.toLowerCase() === email.toLowerCase()) &&
+      m.Subject.includes(subject),
+  );
+}
+
+/** The newest link `http://localhost:4200/<path>?token=...` sent to the address, waiting up to 20 seconds. */
+export async function linkFor(email: string, path: string, minimumMessages = 1): Promise<string> {
+  const pattern = new RegExp(`http://localhost:4200/${path}\\?token=[A-Za-z0-9_-]+`);
+  const deadline = Date.now() + 45_000;
+  while (Date.now() < deadline) {
+    const candidates: string[] = [];
+    for (const message of await messagesTo(email)) {
+      const full = await (await fetch(`${mailpit}/api/v1/message/${message.ID}`)).json();
+      const match = pattern.exec(full.Text ?? '');
+      if (match) {
+        candidates.push(match[0]);
+      }
+    }
+    if (candidates.length >= minimumMessages) {
+      return candidates[0];
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  throw new Error(`No ${path} email for ${email}`);
+}
+
+/** Number of messages to the address whose subject contains the text. */
+export async function countMessages(email: string, subject: string): Promise<number> {
+  return (await messagesTo(email, subject)).length;
+}
+
+/**
+ * Registers a fresh account through {@link register} and verifies it through the verification page.
+ */
+export async function registerAndVerify(
+  page: Page,
+  email: string,
+  password: string,
+): Promise<void> {
+  await register(email, password);
+  await page.goto(await linkFor(email, 'verify-email'));
+  await page.getByTestId('verify-password').fill(password);
+  await page.getByTestId('verify-submit').click();
+  await expect(page.getByTestId('verify-success')).toContainText(email);
+}
+
+/**
+ * Registers a fresh account through the API and leaves it unverified (`PENDING`); a rate-limited registration
+ * waits for `Retry-After` and is sent again.
+ */
+export async function register(email: string, password: string): Promise<void> {
+  const request = {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email,
+      password,
+      firstName: 'Ірина',
+      lastName: 'Нова',
+      organizationId: 64,
+      privacyNoticeVersion: NOTICE_VERSION,
+    }),
+  };
+  let response = await fetch('http://localhost:8080/api/v1/auth/register', request);
+  for (let attempt = 0; response.status === 429 && attempt < 3; attempt++) {
+    const seconds = Number(response.headers.get('Retry-After') ?? '5');
+    await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
+    response = await fetch('http://localhost:8080/api/v1/auth/register', request);
+  }
+  if (response.status !== 201) {
+    throw new Error(`Registration of ${email} answered ${response.status}`);
+  }
+}
+
+/** Submits the award form and accepts the notice that the award has no documents. */
+export async function submitWithoutDocuments(page: Page): Promise<void> {
+  await page.getByTestId('award-submit').click();
+  await expect(page.getByRole('dialog')).toContainText('Ви не додали жодного документа');
+  await page.getByTestId('confirm-accept').click();
+}
+
+/** Submits the login form of the authorization server starting from the app root. */
+export async function signIn(page: Page, email: string, password: string): Promise<void> {
+  await page.goto('/');
+  await expect(page).toHaveURL(/localhost:8080\/login/);
+  await page.fill('#username', email);
+  await page.fill('#password', password);
+  await page.click('button[type="submit"]');
+}
+
+/** Opens the new-award form past its document step, as «Заповнити без документа» does. */
+export async function openNewAward(page: Page): Promise<void> {
+  await page.goto('/awards/new');
+  await page.getByTestId('upload-skip').click();
+  await expect(page.getByTestId('award-title-uk')).toBeVisible();
+}
+
+/** The width from which the sidebar stays open beside the page. */
+const WIDE_LAYOUT_PX = 960;
+
+/** The part of the shell a signed-in page always shows: the user in the sidebar, or the menu button on a phone. */
+export function signedInShell(page: Page): Locator {
+  return page
+    .locator('[data-testid="user-menu"]:visible, [data-testid="nav-toggle"]:visible')
+    .first();
+}
+
+/** Closes the drawer opened on a phone, from inside it as a keyboard user would. */
+export async function closeDrawer(page: Page): Promise<void> {
+  await page.getByTestId('side-nav').press('Escape');
+  await expect(page.locator('.mat-drawer-backdrop.mat-drawer-shown')).toHaveCount(0);
+}
+
+/**
+ * A tool at the foot of the sidebar (search, language, theme, bell, user, sign-out); on a phone the drawer that
+ * holds it is opened first.
+ */
+export async function shellTool(page: Page, testId: string): Promise<Locator> {
+  const tool = page.getByTestId(testId);
+  if ((page.viewportSize()?.width ?? WIDE_LAYOUT_PX) < WIDE_LAYOUT_PX) {
+    await expect(page.locator('mat-sidenav.mat-drawer-over')).toBeAttached();
+    const bar = page
+      .locator('[data-testid="nav-toggle"]:visible, [data-testid="login"]:visible')
+      .first();
+    await expect(bar).toBeVisible();
+    const menu = page.getByTestId('nav-toggle');
+    const open = page.locator('.mat-drawer-backdrop.mat-drawer-shown');
+    if ((await menu.isVisible()) && (await open.count()) === 0) {
+      await menu.click();
+      await expect(open).toHaveCount(1);
+    }
+    await expect(tool).toBeVisible();
+  }
+  return tool;
+}
+
+/** Switches the language from the sidebar or the signed-out bar; a drawer opened for it is closed again. */
+export async function toggleLanguage(page: Page): Promise<void> {
+  await (await shellTool(page, 'language-toggle')).click();
+  if ((await page.locator('.mat-drawer-backdrop.mat-drawer-shown').count()) > 0) {
+    await closeDrawer(page);
+  }
+}
+
+/** Signs out from the foot of the sidebar, opening the drawer first on a phone. */
+export async function signOut(page: Page): Promise<void> {
+  await (await shellTool(page, 'logout')).click();
+}
+
+/** Signs a seed account in with the demo password and waits for the navigation. */
+export async function signInAsSeed(page: Page, email: string): Promise<void> {
+  await signIn(page, email, DEMO_PASSWORD);
+  await expect(signedInShell(page)).toBeVisible();
+}
+
+/**
+ * Registers a fresh account in the department of the seed employee and confirms it as an employee, for tests
+ * that leave drafts or documents behind; seed accounts keep their quota and history. Answers the address.
+ */
+export async function freshEmployee(browser: Browser, name: string): Promise<string> {
+  const email = `e2e.${name}.${uniqueToken()}@chnu.edu.ua`;
+  const context = await browser.newContext();
+  await registerAndVerify(await context.newPage(), email, FRESH_PASSWORD);
+  await context.close();
+  sql(
+    `insert into user_roles (user_id, organization_id, role_type) select user_id, 64, 'EMPLOYEE' from users where email_address = '${email}'`,
+  );
+  return email;
+}
+
+/** A page in a new browser context, with no session or storage shared; closing the page closes the context. */
+export async function freshContextPage(browser: Browser): Promise<Page> {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  page.on('close', () => void context.close());
+  return page;
+}
+
+/** A page in a new browser context with the account signed in; native dialogs are accepted. */
+export async function signedInAs(browser: Browser, email: string, password: string): Promise<Page> {
+  const page = await freshContextPage(browser);
+  page.on('dialog', (dialog) => void dialog.accept());
+  await signIn(page, email, password);
+  await expect(signedInShell(page)).toBeVisible();
+  return page;
+}
+
+/** A page in a new browser context with a seed account signed in; native dialogs are accepted. */
+export function signedIn(browser: Browser, email: string): Promise<Page> {
+  return signedInAs(browser, email, DEMO_PASSWORD);
+}
+
+/** The computed background colour of the first element matching the selector. */
+export function background(page: Page, selector: string): Promise<string> {
+  return page
+    .locator(selector)
+    .first()
+    .evaluate((element) => getComputedStyle(element).backgroundColor);
+}
+
+/** Waits until every finite animation and transition of the page has finished, such as Material fade-ins. */
+export async function settled(page: Page): Promise<void> {
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity)
+        .map((animation) => animation.finished.catch(() => undefined)),
+    ),
+  );
+}
+
+/** The axe rule tags of WCAG 2.1 levels A and AA. */
+export const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
+
+/** Whether an axe finding fails a spec: serious and critical do, moderate and minor are reported only. */
+export function isSerious(violation: { impact?: string | null }): boolean {
+  return violation.impact === 'serious' || violation.impact === 'critical';
+}
+
+/**
+ * The serious and critical WCAG 2.1 AA violations of the page, with the elements they concern; runs once the page
+ * has settled, so that half-faded text is not reported as low contrast.
+ */
+export async function seriousViolations(page: Page): Promise<string[]> {
+  await settled(page);
+  const result = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
+  return result.violations
+    .filter(isSerious)
+    .map(
+      (violation) =>
+        `${violation.id}: ${violation.nodes.map((node) => `${node.target}${contrastOf(node)}`).join(' | ')}`,
+    );
+}
+
+/** The colours and ratio of a contrast finding, so a failed scan names what to change. */
+function contrastOf(node: { any: { id: string; data?: unknown }[] }): string {
+  const data = node.any.find((check) => check.id === 'color-contrast')?.data as
+    | { fgColor: string; bgColor: string; contrastRatio: number; expectedContrastRatio: string }
+    | undefined;
+  return data
+    ? ` (${data.fgColor} on ${data.bgColor}: ${data.contrastRatio}, needs ${data.expectedContrastRatio})`
+    : '';
+}
+
+/**
+ * Closes the open review requests of the awards matching the condition on `awards a` and `users u` (the owner),
+ * as `EXPIRED`, a status the application never sets, so that they leave the review queues.
+ */
+export function expireOpenRequests(condition: string): void {
+  sql(
+    `update award_requests r set status = 'EXPIRED', completed_at = now() from awards a join users u
+     on u.user_id = a.user_id where a.award_id = r.award_id
+     and r.status in ('SUBMITTED', 'IN_REVIEW', 'ESCALATED') and (${condition})`,
+  );
+}
+
+/**
+ * Answers the page's preference requests in the browser, starting from the system scheme and no layouts and keeping
+ * the last save for the next read, so that a test on a shared seed account can switch the scheme without storing it
+ * for the other tests.
+ */
+export async function keepPreferencesLocal(page: Page): Promise<void> {
+  let stored: unknown = { colorScheme: 'SYSTEM', layouts: {} };
+  await page.route('**/users/me/dashboard-preferences', (route) => {
+    if (route.request().method() === 'PUT') {
+      stored = route.request().postDataJSON();
+    }
+    return route.fulfill({ json: stored });
+  });
+}
+
+/**
+ * Runs one statement on the development database inside the `award-postgres` container and answers its output
+ * without headers; for fixtures the user interface cannot create, such as reviewer decisions before Epic 4.
+ */
+export function sql(statement: string): string {
+  return execFileSync(
+    'docker',
+    [
+      'exec',
+      '-i',
+      'award-postgres',
+      'psql',
+      '-U',
+      'postgres',
+      '-d',
+      'award_monitoring',
+      '-tAc',
+      statement,
+    ],
+    { encoding: 'utf-8' },
+  ).trim();
+}
+
+/** How many award form copies this browser keeps. */
+export function storedCopies(page: Page): Promise<number> {
+  return page.evaluate(
+    () => Object.keys(localStorage).filter((key) => key.startsWith('awards.form-copy.')).length,
+  );
+}
+
+/** Twelve random lower-case letters, to tell the records of one test run apart. */
+export function uniqueToken(): string {
+  return Array.from(
+    { length: 12 },
+    () => 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)],
+  ).join('');
+}
+
+/** The Kyiv calendar day the given number of days from today, as `YYYY-MM-DD`. */
+export function kyivDay(offset = 0): string {
+  const [year, month, day] = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Kyiv' })
+    .format(new Date())
+    .split('-')
+    .map(Number);
+  return new Date(Date.UTC(year, month - 1, day + offset)).toISOString().substring(0, 10);
+}
+
+/** The Kyiv date a review period of the given working days starting now ends on (weekends skipped). */
+export function workingDaysAhead(days: number): string {
+  let offset = 0;
+  const weekday = (shift: number): number => new Date(`${kyivDay(shift)}T00:00:00Z`).getUTCDay();
+  while (weekday(offset) === 0 || weekday(offset) === 6) {
+    offset++;
+  }
+  for (let left = days; left > 0;) {
+    offset++;
+    if (weekday(offset) !== 0 && weekday(offset) !== 6) {
+      left--;
+    }
+  }
+  return kyivDay(offset);
+}
+
+/** A random award date more than a year back, so that duplicate checks of parallel tests do not meet. */
+export function pastDay(): string {
+  return kyivDay(-400 - Math.floor(Math.random() * 10000));
+}
+
+/** A `YYYY-MM-DD` day as the Ukrainian interface shows it. */
+export function shownDay(isoDay: string): string {
+  const [year, month, day] = isoDay.split('-');
+  return `${day}.${month}.${year}`;
+}
+
+/** The table row of the full users table (960 px and wider, nobody selected) that holds the person's link. */
+export function userTableRow(page: Page, text: string): Locator {
+  return page.getByTestId('user-row').filter({ has: userRow(page, text) });
+}
+
+/** A row of the users page, by the e-mail address of the account or by a part of the name. */
+export function userRow(page: Page, text: string): Locator {
+  return text.includes('@')
+    ? page.locator(`[data-testid="user-link"][data-email="${text}"]`)
+    : page.getByTestId('user-link').filter({ hasText: text });
+}

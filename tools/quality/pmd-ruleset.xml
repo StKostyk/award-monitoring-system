@@ -25,8 +25,8 @@
     <rule ref="category/java/bestpractices.xml">
         <!-- Exclusions with justifications -->
         <exclude name="GuardLogStatement"/>  <!-- Using SLF4J with lazy evaluation -->
-        <exclude name="JUnitTestContainsTooManyAsserts"/>  <!-- Allow multiple assertions in tests -->
-        <exclude name="JUnitAssertionsShouldIncludeMessage"/>  <!-- AssertJ provides clear messages -->
+        <exclude name="UnitTestContainsTooManyAsserts"/>  <!-- Allow multiple assertions in tests -->
+        <exclude name="UnitTestAssertionsShouldIncludeMessage"/>  <!-- AssertJ provides clear messages -->
     </rule>
 
     <!-- Customize specific rules -->
@@ -74,6 +74,10 @@
         <exclude name="LawOfDemeter"/>  <!-- Too strict for fluent APIs and builders -->
         <exclude name="LoosePackageCoupling"/>  <!-- Managed by architecture -->
         <exclude name="UseObjectForClearerAPI"/>  <!-- DTOs are acceptable -->
+        <!-- Re-declared below with project thresholds -->
+        <exclude name="CyclomaticComplexity"/>
+        <exclude name="NPathComplexity"/>
+        <exclude name="TooManyFields"/>
     </rule>
 
     <!-- Cyclomatic complexity limit -->
@@ -112,10 +116,11 @@
         </properties>
     </rule>
 
-    <!-- Excessive class length -->
-    <rule ref="category/java/design.xml/ExcessiveClassLength">
+    <!-- Class size (non-commenting source statements) -->
+    <rule ref="category/java/design.xml/NcssCount">
         <properties>
-            <property name="minimum" value="500"/>
+            <property name="methodReportLevel" value="60"/>
+            <property name="classReportLevel" value="500"/>
         </properties>
     </rule>
 
@@ -141,8 +146,7 @@
         <exclude name="AvoidDuplicateLiterals"/>  <!-- Handled differently -->
         <exclude name="AvoidFieldNameMatchingMethodName"/>  <!-- Common in getters -->
         <exclude name="AvoidLiteralsInIfCondition"/>  <!-- Too strict -->
-        <exclude name="BeanMembersShouldSerialize"/>  <!-- Not needed for DTOs -->
-        <exclude name="DataflowAnomalyAnalysis"/>  <!-- Too many false positives -->
+        <exclude name="NonSerializableClass"/>  <!-- Not using Java serialization -->
         <exclude name="MissingSerialVersionUID"/>  <!-- Not using Java serialization -->
         <exclude name="NullAssignment"/>  <!-- Sometimes needed -->
         <exclude name="UseLocaleWithCaseConversions"/>  <!-- Handle case-by-case -->
@@ -184,16 +188,6 @@
     <!-- Security -->
     <!-- ===================================================================== -->
     <rule ref="category/java/security.xml"/>
-
-    <!-- ===================================================================== -->
-    <!-- Custom Rules for Spring Boot -->
-    <!-- ===================================================================== -->
-
-    <!-- Avoid System.out and System.err - use logging -->
-    <rule ref="category/java/bestpractices.xml/SystemPrintln"/>
-
-    <!-- Avoid printStackTrace - use proper logging -->
-    <rule ref="category/java/bestpractices.xml/AvoidPrintStackTrace"/>
 
 </ruleset>
 

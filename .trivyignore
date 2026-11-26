@@ -1,0 +1,9 @@
+# Accepted CRITICAL findings with no fix on the Spring Framework 6.2 line (Spring Boot 3.5).
+# Each entry names the affected feature and why the application is not exposed; the expiry date forces a review.
+
+# spring-webmvc: remote code execution through an improper path limitation in XsltView. The application renders no XSLT views (JSON API and Thymeleaf mail only).
+CVE-2026-47884 exp:2027-01-31
+
+# spring-webmvc: stream corruption in Server-Sent Events with view fragments. The application has no SSE endpoints
+# and no fragment rendering.
+CVE-2026-47890 exp:2027-01-31

@@ -1,0 +1,50 @@
+@if (table()) {
+  <app-table-scroll [label]="caption()">
+    <table class="analytics-table" [attr.data-testid]="tableId()">
+      <caption>
+        {{
+          caption()
+        }}
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">{{ labelHeader() }}</th>
+          <th scope="col">{{ 'unitAnalytics.bars.current' | transloco }}</th>
+          <th scope="col">{{ 'unitAnalytics.bars.previous' | transloco }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.key) {
+          <tr>
+            <th scope="row">{{ row.label }}</th>
+            <td>{{ row.current }}</td>
+            <td>{{ row.previous }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </app-table-scroll>
+} @else {
+  <p class="pairs__key">{{ 'unitAnalytics.bars.key' | transloco }}</p>
+  <ul class="pairs" [attr.aria-label]="caption()" data-testid="pair-bars">
+    @for (row of bars(); track row.key) {
+      <li class="pairs__row" data-testid="pair-row">
+        <span class="pairs__label">{{ row.label }}</span>
+        <span class="pairs__track pairs__track--previous" aria-hidden="true">
+          <i [style.width.%]="row.previousWidth"></i>
+        </span>
+        <b class="pairs__count pairs__count--previous">
+          <span class="cdk-visually-hidden">{{ 'unitAnalytics.bars.previous' | transloco }}:</span>
+          {{ row.previous }}
+        </b>
+        <span class="pairs__track" aria-hidden="true">
+          <i [style.width.%]="row.currentWidth"></i>
+        </span>
+        <b class="pairs__count">
+          <span class="cdk-visually-hidden">{{ 'unitAnalytics.bars.current' | transloco }}:</span>
+          {{ row.current }}
+        </b>
+      </li>
+    }
+  </ul>
+}

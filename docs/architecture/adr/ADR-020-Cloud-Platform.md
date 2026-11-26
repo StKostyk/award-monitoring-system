@@ -1,6 +1,6 @@
 # ADR-020: Cloud Platform Selection
 
-**Status**: Accepted  
+**Status**: Superseded for the thesis defense by ADR-021; kept as the production reference  
 **Date**: 2025-08-21  
 **Author**: Stefan Kostyk  
 **Stakeholders**: Project Architect, DevOps Team, Operations Team
@@ -215,11 +215,39 @@ resource "aws_rds_instance" "award_system_db" {
 
 ---
 
+## Addendum 2026-10: Implementation deferred
+
+No cloud resources are provisioned in Epics 1 and 2; everything runs locally on Docker Compose, with MinIO
+standing in for S3-compatible storage. The deployment target for the thesis defense is chosen after Epic 2 is
+demoable (see ADR-018 addendum).
+
+---
+
+## Addendum 2026-10-02: Superseded for the defense
+
+The defense deployment uses one virtual server at an EU hosting provider (ADR-021) instead of AWS managed
+services: the managed stack (EKS, RDS, ElastiCache, OpenSearch, NAT) would cost an order of magnitude more for a
+system with no production users yet. Data stays in the EU, which keeps the GDPR position unchanged. AWS or Azure
+stays the reference option for a production rollout.
+
+---
+
+## Addendum 2026-10-05: Production direction
+
+University servers come first for production (ADR-021 addendum): they keep personal data on the controller's own
+infrastructure. Where a university has none, a single EU virtual server as in ADR-021 is the default; managed
+AWS or Azure services apply only to a deployment that outgrows one host (ADR-022).
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-21 | Stefan Kostyk | Initial version | Document creation |
+| 2026-10-01 | Stefan Kostyk | Addendum: implementation deferred | Documentation sync after Epic 2 |
+| 2026-10-02 | Stefan Kostyk | Addendum: superseded for the defense by ADR-021 | Deployment target decision |
+| 2026-10-05 | Stefan Kostyk | Addendum: production direction (university servers, then one EU server) | Design review of 2026-10-04 |
 
 ---
 

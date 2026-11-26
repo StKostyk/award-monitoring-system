@@ -1,7 +1,9 @@
 @startuml C4_Component_UA
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
 
-title Система Моніторингу та Відстеження Нагород - Діаграма Компонентів (C4 Рівень 3) - Основний API Сервіс
+title Система Моніторингу та Відстеження Нагород - Діаграма Компонентів (C4 Рівень 3) - Основний API Сервіс (цільова архітектура)
+
+' Цільова архітектура (проєкт 2025 року). Реалізація після епіку 2: uml/package-diagram.puml і c4-container-as-built.puml; відкладені частини перелічено в доповненнях до ADR від 2026-10.
 
 LAYOUT_WITH_LEGEND()
 

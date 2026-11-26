@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head th:replace="~{fragments/brand :: head(#{error.generic.title})}">
+    <title>Something went wrong</title>
+</head>
+<body th:replace="~{fragments/signin :: page(~{::main}, false)}">
+<main class="signin-form">
+    <h1 th:text="#{error.generic.title}">Something went wrong</h1>
+    <p class="alert" role="alert" th:text="#{error.generic.text(${status})}">The request could not be completed.</p>
+    <p class="signin-form__back"><a th:href="@{/}" th:text="#{error.generic.link}">Go to the application</a></p>
+</main>
+</body>
+</html>

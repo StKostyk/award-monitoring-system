@@ -1,0 +1,11 @@
+<app-status-page
+  icon="shield"
+  [title]="'admin.forbidden.title' | transloco"
+  [text]="'admin.forbidden.text' | transloco"
+  data-testid="forbidden-card"
+>
+  <a mat-flat-button routerLink="/" data-testid="forbidden-home">
+    <app-icon name="house" matButtonIcon />
+    {{ 'admin.forbidden.home' | transloco }}
+  </a>
+</app-status-page>

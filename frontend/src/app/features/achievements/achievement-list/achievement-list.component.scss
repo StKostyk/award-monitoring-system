@@ -1,0 +1,89 @@
+:host {
+  display: block;
+}
+
+.achievements__counterpart {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: var(--mat-sys-primary);
+}
+
+.achievements__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.achievements__chip {
+  min-height: 36px;
+  padding: 8px 14px;
+  border: 1px solid var(--app-pane-border);
+  border-radius: 999px;
+  background: var(--app-pane);
+  color: var(--mat-sys-on-surface);
+  font: 500 0.8125rem / 1.2 var(--app-font-body);
+  cursor: pointer;
+
+  &[aria-pressed='true'] {
+    border-color: var(--app-chip-on);
+    background: var(--app-chip-on);
+    color: var(--app-on-chip-on);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary);
+    outline-offset: 2px;
+  }
+}
+
+.achievements__highlight {
+  display: block;
+  margin-bottom: 16px;
+}
+
+.achievements__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.achievements__filter {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.achievements__filter--search {
+  flex: 2 1 320px;
+}
+
+::ng-deep .achievements__child {
+  padding-left: 32px;
+}
+
+.achievements__list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.achievements__empty {
+  grid-column: 1 / -1;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--app-card-radius);
+  background: var(--mat-sys-surface-container-low);
+}
+
+.achievements__problem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  color: var(--mat-sys-error);
+}
+
+.achievements__problem p {
+  margin: 0;
+}

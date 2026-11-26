@@ -1,0 +1,186 @@
+:host {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
+.delegations__sides {
+  justify-self: start;
+  max-width: 100%;
+}
+
+.delegations__board {
+  display: grid;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (min-width: 960px) {
+  .delegations__board {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.delegations__column {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--app-pane-border);
+  border-radius: var(--app-card-radius);
+  background: var(--app-pane-head);
+}
+
+.delegations__column-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font: 700 0.875rem / 1.3 var(--app-font-heading);
+}
+
+.delegations__dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--app-muted);
+}
+
+.delegations__dot--active {
+  background: var(--app-ok);
+}
+
+.delegations__dot--upcoming {
+  background: var(--app-gold);
+}
+
+.delegations__count {
+  margin-left: auto;
+  color: var(--app-muted);
+  font-weight: 600;
+}
+
+.delegations__card {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--app-pane-border);
+  border-radius: var(--app-radius-md);
+  background: var(--app-pane);
+}
+
+.delegations__card--ended {
+  background: transparent;
+}
+
+.delegations__card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.delegations__initials {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--app-avatar);
+  color: var(--app-on-avatar);
+  font: 700 0.8125rem / 1 var(--app-font-heading);
+}
+
+.delegations__who {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.delegations__person {
+  font: 700 0.9375rem / 1.3 var(--app-font-heading);
+  overflow-wrap: anywhere;
+}
+
+.delegations__role,
+.delegations__secondary {
+  color: var(--app-muted);
+  font: var(--mat-sys-body-small);
+  overflow-wrap: anywhere;
+}
+
+.delegations__dates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 0;
+}
+
+.delegations__note {
+  margin: 0;
+  padding-left: 10px;
+  border-left: 3px solid var(--app-gold);
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+
+.delegations__limits summary {
+  cursor: pointer;
+  color: var(--app-gold-text);
+  font-weight: 600;
+}
+
+.delegations__lines {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.delegations__lines li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.delegations__can {
+  color: var(--app-ok);
+}
+
+.delegations__cannot {
+  color: var(--app-bad);
+}
+
+.delegations__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.delegations__message {
+  margin: 0;
+  color: var(--mat-sys-primary);
+}
+
+.delegations__problem {
+  margin: 0;
+  color: var(--mat-sys-error);
+}
+
+.delegations__empty {
+  margin: 0;
+  padding: 12px;
+  color: var(--app-muted);
+  text-align: center;
+}
+
+.delegations__more {
+  justify-self: center;
+}

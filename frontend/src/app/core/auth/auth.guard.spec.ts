@@ -1,0 +1,372 @@
+import { signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import {
+  ActivatedRouteSnapshot,
+  Router,
+  RouterStateSnapshot,
+  convertToParamMap,
+  provideRouter,
+} from '@angular/router';
+import { vi } from 'vitest';
+
+import {
+  analyticsGuard,
+  approverGuard,
+  authGuard,
+  commandCentreGuard,
+  complianceGuard,
+  delegationGuard,
+  hallOfFameGuard,
+  roleHomeGuard,
+  unitAnalyticsGuard,
+  universityAnalyticsGuard,
+  userDirectoryGuard,
+} from './auth.guard';
+import { ConnectivityService } from '../connectivity/connectivity.service';
+import { AuthService } from './auth.service';
+import { NO_PERMISSIONS, readPermissions } from './permissions';
+
+function withQuery(params: Record<string, string>): ActivatedRouteSnapshot {
+  return { queryParamMap: convertToParamMap(params) } as ActivatedRouteSnapshot;
+}
+
+function tokenWith(claims: Record<string, unknown>): string {
+  return `header.${btoa(JSON.stringify(claims))}.signature`;
+}
+
+describe('authGuard', () => {
+  const auth = {
+    isAuthenticated: signal(false),
+    permissions: signal(NO_PERMISSIONS),
+    login: vi.fn(),
+    offlinePage: vi.fn(),
+  };
+  const state = { url: '/awards' } as RouterStateSnapshot;
+
+  beforeEach(() => {
+    auth.login.mockClear();
+    auth.permissions.set(NO_PERMISSIONS);
+    TestBed.configureTestingModule({
+      providers: [provideRouter([]), { provide: AuthService, useValue: auth }],
+    });
+  });
+
+  it('ac11 sends an anonymous user to the authorization server with the requested url', () => {
+    auth.isAuthenticated.set(false);
+
+    const result = TestBed.runInInjectionContext(() =>
+      authGuard({} as ActivatedRouteSnapshot, state),
+    );
+
+    expect(result).toBe(false);
+    expect(auth.login).toHaveBeenCalledWith('/awards');
+  });
+
+  it('ac1_8_sends_an_anonymous_user_without_a_connection_to_the_offline_page', () => {
+    auth.isAuthenticated.set(false);
+    TestBed.inject(ConnectivityService).unreachable();
+    const offline = TestBed.inject(Router).createUrlTree(['/offline'], {
+      queryParams: { next: '/awards' },
+    });
+    auth.offlinePage.mockReturnValue(offline);
+
+    const result = TestBed.runInInjectionContext(() =>
+      authGuard({} as ActivatedRouteSnapshot, state),
+    );
+
+    expect(result).toBe(offline);
+    expect(auth.offlinePage).toHaveBeenCalledWith('/awards');
+    expect(auth.login).not.toHaveBeenCalled();
+  });
+
+  it('lets an authenticated user through', () => {
+    auth.isAuthenticated.set(true);
+
+    const result = TestBed.runInInjectionContext(() =>
+      authGuard({} as ActivatedRouteSnapshot, state),
+    );
+
+    expect(result).toBe(true);
+    expect(auth.login).not.toHaveBeenCalled();
+  });
+
+  it('ac2_10_opens_the_user_directory_only_with_a_read_permission', () => {
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['user:read:all'] })));
+
+    const allowed = TestBed.runInInjectionContext(() =>
+      userDirectoryGuard({} as ActivatedRouteSnapshot, state),
+    );
+
+    expect(allowed).toBe(true);
+  });
+
+  it('ac2_10_sends_a_caller_without_the_permission_to_the_forbidden_page', () => {
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['award:read:own'] })));
+
+    const refused = TestBed.runInInjectionContext(() =>
+      userDirectoryGuard({} as ActivatedRouteSnapshot, state),
+    );
+
+    expect(String(refused)).toBe(TestBed.inject(Router).createUrlTree(['/forbidden']).toString());
+  });
+
+  it('ac1_10_opens_the_queue_for_an_own_or_delegated_approval_role_only', () => {
+    for (const claims of [
+      { role_scopes: ['FACULTY_SECRETARY:9'] },
+      { role_scopes: ['EMPLOYEE:64', 'DEAN:9'], delegations: ['DEAN:9:2'] },
+    ]) {
+      auth.permissions.set(readPermissions(tokenWith(claims)));
+
+      expect(
+        TestBed.runInInjectionContext(() => approverGuard({} as ActivatedRouteSnapshot, state)),
+      ).toBe(true);
+    }
+    auth.permissions.set(readPermissions(tokenWith({ role_scopes: ['EMPLOYEE:64'] })));
+
+    const refused = TestBed.runInInjectionContext(() =>
+      approverGuard({} as ActivatedRouteSnapshot, state),
+    );
+
+    expect(String(refused)).toBe(TestBed.inject(Router).createUrlTree(['/forbidden']).toString());
+  });
+
+  it('ac3_6_opens_the_delegations_page_for_an_approval_role_of_the_callers_own', () => {
+    auth.permissions.set(readPermissions(tokenWith({ role_scopes: ['DEAN:9'] })));
+
+    const allowed = TestBed.runInInjectionContext(() => delegationGuard(withQuery({}), state));
+
+    expect(allowed).toBe(true);
+  });
+
+  it('ac5_3_opens_another_persons_delegations_page_for_a_people_manager_only', () => {
+    auth.permissions.set(
+      readPermissions(tokenWith({ permissions: ['user:read:all', 'user:manage'] })),
+    );
+    const forbidden = TestBed.inject(Router).createUrlTree(['/forbidden']).toString();
+
+    expect(
+      TestBed.runInInjectionContext(() => delegationGuard(withQuery({ delegatorId: '5' }), state)),
+    ).toBe(true);
+    expect(String(TestBed.runInInjectionContext(() => delegationGuard(withQuery({}), state)))).toBe(
+      forbidden,
+    );
+
+    auth.permissions.set(readPermissions(tokenWith({ role_scopes: ['EMPLOYEE:64'] })));
+    expect(
+      String(
+        TestBed.runInInjectionContext(() =>
+          delegationGuard(withQuery({ delegatorId: '5' }), state),
+        ),
+      ),
+    ).toBe(forbidden);
+  });
+
+  it('ac3_6_sends_an_employee_and_a_delegate_only_to_the_forbidden_page', () => {
+    for (const claims of [
+      { role_scopes: ['EMPLOYEE:64'] },
+      { role_scopes: ['EMPLOYEE:64', 'DEAN:9'], delegations: ['DEAN:9:2'] },
+    ]) {
+      auth.permissions.set(readPermissions(tokenWith(claims)));
+
+      const refused = TestBed.runInInjectionContext(() => delegationGuard(withQuery({}), state));
+
+      expect(String(refused)).toBe(TestBed.inject(Router).createUrlTree(['/forbidden']).toString());
+    }
+  });
+
+  it('ac2_5_lets_the_gdpr_officer_open_the_compliance_page', () => {
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['compliance:read'] })));
+
+    const allowed = TestBed.runInInjectionContext(() =>
+      complianceGuard({} as ActivatedRouteSnapshot, state),
+    );
+
+    expect(allowed).toBe(true);
+  });
+
+  it('ac2_5_sends_anybody_else_to_the_forbidden_page', () => {
+    for (const claims of [{ permissions: ['user:read:all', 'user:manage'] }, {}]) {
+      auth.permissions.set(readPermissions(tokenWith(claims)));
+
+      const refused = TestBed.runInInjectionContext(() =>
+        complianceGuard({} as ActivatedRouteSnapshot, state),
+      );
+
+      expect(String(refused)).toBe(TestBed.inject(Router).createUrlTree(['/forbidden']).toString());
+    }
+  });
+
+  it('ac2_4_opens_the_dashboard_with_analytics_read_own_and_refuses_anybody_else', () => {
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['analytics:read:own'] })));
+
+    const allowed = TestBed.runInInjectionContext(() =>
+      analyticsGuard({} as ActivatedRouteSnapshot, state),
+    );
+
+    expect(allowed).toBe(true);
+
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['award:read:own'] })));
+
+    const refused = TestBed.runInInjectionContext(() =>
+      analyticsGuard({} as ActivatedRouteSnapshot, state),
+    );
+
+    expect(String(refused)).toBe(TestBed.inject(Router).createUrlTree(['/forbidden']).toString());
+  });
+
+  it('ac2_1_opens_unit_analytics_with_analytics_read_department_and_refuses_anybody_else', () => {
+    auth.permissions.set(
+      readPermissions(tokenWith({ permissions: ['analytics:read:department'] })),
+    );
+
+    const allowed = TestBed.runInInjectionContext(() =>
+      unitAnalyticsGuard({} as ActivatedRouteSnapshot, state),
+    );
+
+    expect(allowed).toBe(true);
+
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['analytics:read:own'] })));
+
+    const refused = TestBed.runInInjectionContext(() =>
+      unitAnalyticsGuard({} as ActivatedRouteSnapshot, state),
+    );
+
+    expect(String(refused)).toBe(TestBed.inject(Router).createUrlTree(['/forbidden']).toString());
+  });
+
+  it('ac2_1_opens_university_analytics_with_analytics_read_university_and_refuses_anybody_else', () => {
+    auth.permissions.set(
+      readPermissions(tokenWith({ permissions: ['analytics:read:university'] })),
+    );
+
+    const allowed = TestBed.runInInjectionContext(() =>
+      universityAnalyticsGuard({} as ActivatedRouteSnapshot, state),
+    );
+
+    expect(allowed).toBe(true);
+
+    auth.permissions.set(
+      readPermissions(tokenWith({ permissions: ['analytics:read:department'] })),
+    );
+
+    const refused = TestBed.runInInjectionContext(() =>
+      universityAnalyticsGuard({} as ActivatedRouteSnapshot, state),
+    );
+
+    expect(String(refused)).toBe(TestBed.inject(Router).createUrlTree(['/forbidden']).toString());
+  });
+
+  it('ac3_4_opens_the_hall_of_fame_for_a_held_rector_or_dean_role_only', () => {
+    const open = (claims: Record<string, unknown>) => {
+      auth.permissions.set(readPermissions(tokenWith(claims)));
+      return TestBed.runInInjectionContext(() =>
+        hallOfFameGuard({} as ActivatedRouteSnapshot, state),
+      );
+    };
+    const forbidden = TestBed.inject(Router).createUrlTree(['/forbidden']).toString();
+
+    expect(open({ role_scopes: ['RECTOR:1'] })).toBe(true);
+    expect(open({ role_scopes: ['DEAN:9'] })).toBe(true);
+    expect(String(open({ role_scopes: ['EMPLOYEE:5', 'DEAN:9'], delegations: ['DEAN:9:4'] }))).toBe(
+      forbidden,
+    );
+    expect(String(open({ role_scopes: ['EMPLOYEE:5'] }))).toBe(forbidden);
+    expect(String(open({ role_scopes: ['FACULTY_SECRETARY:9'] }))).toBe(forbidden);
+    expect(String(open({ role_scopes: ['RECTOR_SECRETARY:1'] }))).toBe(forbidden);
+  });
+
+  it('ac3_3_sends_a_rector_or_dean_home_to_the_hall_of_fame_and_keeps_anybody_else', () => {
+    const home = (claims: Record<string, unknown>) => {
+      auth.permissions.set(readPermissions(tokenWith(claims)));
+      return TestBed.runInInjectionContext(() =>
+        roleHomeGuard({} as ActivatedRouteSnapshot, state),
+      );
+    };
+    const hallOfFame = TestBed.inject(Router).createUrlTree(['/hall-of-fame']).toString();
+
+    expect(String(home({ role_scopes: ['RECTOR:1'] }))).toBe(hallOfFame);
+    expect(String(home({ role_scopes: ['DEAN:9', 'RECTOR_SECRETARY:1'] }))).toBe(hallOfFame);
+    expect(home({ role_scopes: ['EMPLOYEE:5'] })).toBe(true);
+  });
+
+  it('ac4_1_sends_an_account_with_personal_analytics_home_to_its_dashboard', () => {
+    const home = (claims: Record<string, unknown>) => {
+      auth.permissions.set(readPermissions(tokenWith(claims)));
+      return TestBed.runInInjectionContext(() =>
+        roleHomeGuard({} as ActivatedRouteSnapshot, state),
+      );
+    };
+    const router = TestBed.inject(Router);
+
+    expect(String(home({ permissions: ['analytics:read:own'] }))).toBe(
+      router.createUrlTree(['/dashboard']).toString(),
+    );
+    expect(String(home({ role_scopes: ['DEAN:9'], permissions: ['analytics:read:own'] }))).toBe(
+      router.createUrlTree(['/hall-of-fame']).toString(),
+    );
+    expect(home({ permissions: [] })).toBe(true);
+  });
+  it('ac5_1_sends_a_faculty_or_rector_secretary_home_to_the_command_centre', () => {
+    const home = (claims: Record<string, unknown>) => {
+      auth.permissions.set(readPermissions(tokenWith(claims)));
+      return TestBed.runInInjectionContext(() =>
+        roleHomeGuard({} as ActivatedRouteSnapshot, state),
+      );
+    };
+    const router = TestBed.inject(Router);
+    const commandCentre = router.createUrlTree(['/command-centre']).toString();
+
+    expect(String(home({ role_scopes: ['FACULTY_SECRETARY:9'] }))).toBe(commandCentre);
+    expect(String(home({ role_scopes: ['RECTOR_SECRETARY:1'] }))).toBe(commandCentre);
+    expect(
+      String(home({ role_scopes: ['FACULTY_SECRETARY:9'], permissions: ['analytics:read:own'] })),
+    ).toBe(commandCentre);
+    expect(String(home({ role_scopes: ['DEAN:9', 'FACULTY_SECRETARY:9'] }))).toBe(
+      router.createUrlTree(['/hall-of-fame']).toString(),
+    );
+    expect(
+      home({
+        role_scopes: ['EMPLOYEE:5', 'FACULTY_SECRETARY:9'],
+        delegations: ['FACULTY_SECRETARY:9:4'],
+      }),
+    ).toBe(true);
+  });
+
+  it('ac1_sends_an_administrator_to_the_directory_and_a_gdpr_officer_to_compliance', () => {
+    const home = (claims: Record<string, unknown>) => {
+      auth.permissions.set(readPermissions(tokenWith(claims)));
+      return TestBed.runInInjectionContext(() =>
+        roleHomeGuard({} as ActivatedRouteSnapshot, state),
+      );
+    };
+    const router = TestBed.inject(Router);
+
+    expect(String(home({ role_scopes: ['SYSTEM_ADMIN:1'], permissions: ['user:read:all'] }))).toBe(
+      router.createUrlTree(['/admin/users']).toString(),
+    );
+    expect(
+      String(
+        home({
+          role_scopes: ['GDPR_OFFICER:1'],
+          permissions: ['compliance:read', 'user:read:all'],
+        }),
+      ),
+    ).toBe(router.createUrlTree(['/compliance']).toString());
+  });
+
+  it('ac3_4_opens_the_command_centre_for_a_held_secretary_or_dean_role_only', () => {
+    const open = (claims: Record<string, unknown>) => {
+      auth.permissions.set(readPermissions(tokenWith(claims)));
+      return TestBed.runInInjectionContext(() =>
+        commandCentreGuard({} as ActivatedRouteSnapshot, state),
+      );
+    };
+    const forbidden = TestBed.inject(Router).createUrlTree(['/forbidden']).toString();
+
+    expect(open({ role_scopes: ['FACULTY_SECRETARY:9'] })).toBe(true);
+    expect(open({ role_scopes: ['RECTOR_SECRETARY:1'] })).toBe(true);
+    expect(open({ role_scopes: ['DEAN:9'] })).toBe(true);
+    expect(String(open({ role_scopes: ['EMPLOYEE:5'] }))).toBe(forbidden);
+    expect(String(open({ role_scopes: ['RECTOR:1'] }))).toBe(forbidden);
+  });
+});

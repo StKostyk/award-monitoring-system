@@ -1,0 +1,18 @@
+import { createActionGroup, emptyProps, props } from '@ngrx/store';
+
+import { Delegation, DelegationList } from '../delegations.service';
+
+export const DelegationsActions = createActionGroup({
+  source: 'Delegations',
+  events: {
+    Opened: props<{ delegatorId: number | null }>(),
+    Reloaded: emptyProps(),
+    Refreshed: emptyProps(),
+    'Delegations Loaded': props<{ list: DelegationList }>(),
+    'Delegations Load Failed': props<{ problem: string }>(),
+    Created: props<{ delegation: Delegation }>(),
+    'Revoke Requested': props<{ id: number }>(),
+    Revoked: props<{ id: number }>(),
+    'Revoke Failed': props<{ id: number; problem: string }>(),
+  },
+});

@@ -1,0 +1,433 @@
+<#
+.SYNOPSIS
+    Runs the quality gates and writes build/gate-summary.txt.
+
+.DESCRIPTION
+    Static analysis first (about half a minute), then the full build with tests and coverage, so a style
+    violation never costs a five-minute run. -StaticOnly stops after the static checks (backend, then the
+    frontend ESLint, Stylelint and Prettier check, the lint and type check of the Playwright specs, nginx -t on the frontend
+    nginx configuration and actionlint on the workflows); a compiler error is printed as such. -SkipFrontend leaves
+    the Angular checks, unit tests and the production build (bundle budgets) out. The backend
+    verify runs only when the branch changes something under backend/ compared with develop (develop passed it
+    when it was merged); -Full runs it regardless. The frontend checks run in a background job while the backend
+    verify runs (-Sequential runs them afterwards); every phase prints its duration. When verify fails on one
+    integration or functional test class only (no unit failure), that class runs once more and, if it passes, the
+    coverage check follows; the summary names the class as flaky.
+    When infra/backup/ or docker-compose.prod.yml changed since develop, infra/backup/test.sh runs last (it needs
+    the development postgres and minio containers; output in build/gate-backup.log).
+    With less than -MinFreeGb of free memory after the static checks the run switches to -Sequential by itself;
+    with less than 6 GB free when the frontend tests start, vitest runs with 2 workers
+    (frontend/vitest.low-memory.config.ts), since a full worker pool crashes with a Node out-of-memory error;
+    when verify fails because a Testcontainers container did not start while the frontend checks ran alongside,
+    verify runs once more after them. A second gate, or a
+    running Playwright suite, is refused: two such runs together exhaust the memory of the development machine.
+    The backend verify is also refused while the award-backend container runs (docker stop award-backend);
+    with -StopBackend the gate stops the container itself and starts it again when the run ends, also on a
+    failure (a killed PowerShell process skips the restart). A run that skips the verify (frontend-only changes,
+    -FrontendOnly) goes ahead next to it.
+    -FrontendOnly reruns only the frontend checks and keeps the backend lines of the last summary, provided that
+    run was on this branch, passed the backend and nothing under backend/ or openapi.yml changed since. The
+    fingerprint hashes the content of every changed file, so committing files after the run keeps it valid.
+    A failed run during which the machine slept or the Docker engine stopped is reported as INVALID (exit 2):
+    run it again instead of chasing the failures.
+    For a full run started from an agent shell, use tools/detach.ps1 so the run survives the shell.
+
+.PARAMETER MinFreeGb
+    Free physical memory, in GB, below which the frontend checks run after the backend verify. Default 8.
+
+.EXAMPLE
+    .\tools\gate.ps1 -StaticOnly
+    .\tools\gate.ps1
+    .\tools\detach.ps1 gate tools\gate.ps1
+#>
+[CmdletBinding()]
+param(
+    [switch]$StaticOnly,
+    [switch]$SkipFrontend,
+    [switch]$Full,
+    [switch]$Sequential,
+    [switch]$FrontendOnly,
+    [switch]$StopBackend,
+    [double]$MinFreeGb = 8
+)
+
+$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'
+$gateStart = Get-Date
+
+$runningBackend = Get-CimInstance Win32_Process -Filter "Name = 'java.exe'" |
+    Where-Object { $_.CommandLine -like '*spring-boot:run*' }
+if ($runningBackend) {
+    Write-Host 'A backend started with spring-boot:run is running (e2e.ps1 or a manual run) and shares backend/target.'
+    Write-Host "Stop it first (PID $($runningBackend.ProcessId -join ', ')), then run the gate again."
+    exit 1
+}
+
+$playwright = Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
+    Where-Object { $_.CommandLine -like '*playwright*test*' }
+if ($playwright) {
+    Write-Host "A Playwright run is going (PID $($playwright.ProcessId -join ', ')); run the gate after it."
+    exit 1
+}
+
+$root = Split-Path -Parent $PSScriptRoot
+$backend = Join-Path $root 'backend'
+$logDir = Join-Path $root 'build'
+New-Item -ItemType Directory -Force $logDir | Out-Null
+
+$lock = Join-Path $logDir 'gate.lock'
+if (Test-Path $lock) {
+    $holder = Get-Process -Id ([int](Get-Content $lock -Raw)) -ErrorAction SilentlyContinue
+    if ($holder -and $holder.Id -ne $PID -and $holder.ProcessName -match '^(pwsh|powershell)$') {
+        Write-Host "Another gate is running (PID $($holder.Id)); wait for it to finish."
+        exit 1
+    }
+}
+Set-Content -Path $lock -Value $PID
+
+$log = Join-Path $logDir 'gate.log'
+$mvnw = Join-Path $backend 'mvnw.cmd'
+
+$script:restartBackend = $false
+
+function Exit-Gate([int]$code) {
+    if ($script:restartBackend) {
+        Write-Host 'Starting the award-backend container again.'
+        docker start award-backend | Out-Null
+        $script:restartBackend = $false
+    }
+    Remove-Item $lock -ErrorAction SilentlyContinue
+    exit $code
+}
+
+trap {
+    Write-Host "The gate stopped on an error: $_"
+    Exit-Gate 1
+}
+
+function Format-Elapsed([datetime]$start) {
+    $span = (Get-Date) - $start
+    return '{0}m{1:00}s' -f [int][math]::Floor($span.TotalMinutes), $span.Seconds
+}
+
+function Invoke-Maven([string[]]$Goals, [string]$Label) {
+    $start = Get-Date
+    Write-Host "$(Get-Date -Format 'HH:mm:ss') $Label..." -NoNewline
+    & $mvnw -f (Join-Path $backend 'pom.xml') @Goals *> $log
+    $ok = $LASTEXITCODE -eq 0
+    Write-Host " $(if ($ok) { 'PASS' } else { 'FAIL' }) ($(Format-Elapsed $start))"
+    return $ok
+}
+
+function Get-BackendFingerprint {
+    $paths = @('backend', 'docs/api/openapi.yml')
+    $changed = @(git -C $root diff --name-only develop -- $paths) +
+        @(git -C $root ls-files -o --exclude-standard -- $paths) |
+        Where-Object { $_ } | Sort-Object -Unique
+    $text = ($changed | ForEach-Object {
+            if (Test-Path -LiteralPath (Join-Path $root $_)) { "$_ $(git -C $root hash-object -- $_)" }
+            else { "$_ deleted" }
+        }) -join "`n"
+    $bytes = [Text.Encoding]::UTF8.GetBytes($text)
+    return [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).Substring(0, 16)
+}
+
+function Get-InterruptionReason {
+    $sleep = Get-WinEvent -ErrorAction SilentlyContinue -FilterHashtable @{
+        LogName = 'System'; ProviderName = 'Microsoft-Windows-Power-Troubleshooter'; Id = 1; StartTime = $gateStart
+    }
+    if ($sleep) { return 'the machine slept during the run' }
+    docker info --format '{{.ServerVersion}}' *> $null
+    if ($LASTEXITCODE -ne 0) { return 'the Docker engine stopped during the run' }
+    return $null
+}
+
+function Get-FailedClasses([string]$folder, [datetime]$since) {
+    Get-ChildItem (Join-Path $backend "target\$folder") -Filter 'TEST-*.xml' -ErrorAction SilentlyContinue |
+        Where-Object { $_.LastWriteTime -ge $since } |
+        Where-Object { ((Get-Content $_.FullName -TotalCount 2) -join " ") -match '<testsuite[^>]*\b(failures|errors)="[1-9]' } |
+        ForEach-Object { ($_.BaseName -replace '^TEST-', '') -replace '^.*\.', '' }
+}
+
+$previous = @{}
+if ($FrontendOnly) {
+    $previousFile = Join-Path $logDir 'gate-summary.txt'
+    if (Test-Path $previousFile) {
+        Get-Content $previousFile | Where-Object { $_ -match '^([\w/ ]+?):\s+(.*)$' } |
+            ForEach-Object { $previous[$Matches[1]] = $Matches[2] }
+    }
+    $branchNow = git -C $root rev-parse --abbrev-ref HEAD
+    if ($previous['Branch'] -ne $branchNow -or $previous['Backend'] -notmatch '^(PASS|SKIPPED)' -or
+            $previous['Fingerprint'] -ne (Get-BackendFingerprint)) {
+        Write-Host ('-FrontendOnly needs a last summary on this branch with a passed backend and no backend ' +
+            'or openapi.yml change since; run the full gate.')
+        Exit-Gate 1
+    }
+}
+
+if ($FrontendOnly) {
+    Write-Host 'Backend: kept from the last summary (-FrontendOnly)'
+} elseif (-not (Invoke-Maven @('-o', '-q', 'test-compile', 'checkstyle:check', 'pmd:check', 'spotbugs:check') 'static')) {
+    $seen = @{}
+    $compileErrors = @(Select-String -Path $log -Pattern '^\[ERROR\] .*\.java:\[\d+,\d+\]|^\s+(symbol|location):' |
+        ForEach-Object { $_.Line -replace '^\[ERROR\] .*[\\/]', '' } |
+        ForEach-Object -Begin { $repeat = $false } -Process {
+            if ($_ -notmatch '^\s') { $repeat = $seen.ContainsKey($_); $seen[$_] = $true }
+            if (-not $repeat) { $_ }
+        } | Select-Object -First 20)
+    if ($compileErrors) {
+        Write-Host 'Compilation failed:'
+        $compileErrors | ForEach-Object { Write-Host $_ }
+        Write-Host 'Fix the compiler errors above, then run the gate again (build/gate-summary.txt is unchanged).'
+        Exit-Gate 1
+    }
+    Select-String -Path $log -Pattern '^\[WARN\].*\.java|^\[ERROR\] (High|Medium|Low):|violation|BugInstance' | Select-Object -First 20 |
+        ForEach-Object { $_.Line }
+    $checkstyle = Join-Path $backend 'target\checkstyle-result.xml'
+    if (Test-Path $checkstyle) {
+        ([xml](Get-Content $checkstyle -Raw)).checkstyle.file | Where-Object { $_.error } | ForEach-Object {
+            $file = Split-Path -Leaf $_.name
+            $_.error | ForEach-Object { "checkstyle ${file}:$($_.line) $($_.message)" }
+        } | Select-Object -First 20
+    }
+    Write-Host 'Fix the violations above, then run the gate again.'
+    Exit-Gate 1
+}
+$frontendChecks = {
+    param([string]$root, [string]$logDir, [bool]$staticOnly)
+    $result = @{ Lines = @() }
+    $lintLog = Join-Path $logDir 'gate-frontend-lint.log'
+    Push-Location (Join-Path $root 'frontend')
+    try {
+        & npm run lint *> $lintLog
+        $result.LintOk = $LASTEXITCODE -eq 0
+        & npm run format:check *>> $lintLog
+        $result.LintOk = $result.LintOk -and $LASTEXITCODE -eq 0
+        & npm run lint:e2e *>> $lintLog
+        $result.LintOk = $result.LintOk -and $LASTEXITCODE -eq 0
+        & npm run lint:styles *>> $lintLog
+        $result.LintOk = $result.LintOk -and $LASTEXITCODE -eq 0
+        if (-not $result.LintOk) {
+            $result.Lines += Select-String -Path $lintLog -Pattern 'error|\[warn\]|Unexpected' | Select-Object -First 20 |
+                ForEach-Object { $_.Line }
+        }
+
+        docker info --format '{{.ServerVersion}}' *> $null
+        if ($LASTEXITCODE -eq 0) {
+            $nginxLog = Join-Path $logDir 'gate-nginx.log'
+            $mounts = @(
+                @('nginx.conf', '/etc/nginx/conf.d/default.conf'),
+                @('security-headers.conf', '/etc/nginx/snippets/security-headers.conf'),
+                @('backend-proxy.conf', '/etc/nginx/snippets/backend-proxy.conf')
+            ) | ForEach-Object { '-v'; "$(Join-Path (Get-Location) $_[0]):$($_[1]):ro" }
+            & docker run --rm --pull=never --add-host app:127.0.0.1 @mounts nginx:alpine nginx -t *> $nginxLog
+            if ($LASTEXITCODE -ne 0) {
+                $result.LintOk = $false
+                $result.Lines += Select-String -Path $nginxLog -Pattern 'emerg|error' | Select-Object -First 5 |
+                    ForEach-Object { "nginx -t: $($_.Line)" }
+            }
+            $actionlintLog = Join-Path $logDir 'gate-actionlint.log'
+            & docker run --rm -v "${root}:/repo" -w /repo rhysd/actionlint:1.7.7 -no-color -oneline *> $actionlintLog
+            if ($LASTEXITCODE -ne 0) {
+                $result.LintOk = $false
+                $result.Lines += Get-Content $actionlintLog | Select-Object -First 10 |
+                    ForEach-Object { "actionlint: $_" }
+            }
+        } else {
+            $result.Lines += 'nginx -t and actionlint skipped: Docker is not running.'
+        }
+        if ($staticOnly) { return $result }
+
+        $testLog = Join-Path $logDir 'gate-frontend.log'
+        $freeNowGb = (Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB
+        if ($freeNowGb -lt 6) {
+            '{0:N1} GB free: vitest runs with 2 workers.' -f $freeNowGb | Out-File $testLog -Encoding utf8
+            & npm run test:ci -- --runner-config vitest.low-memory.config.ts *>> $testLog
+        } else {
+            & npm run test:ci *> $testLog
+        }
+        $result.TestOk = $LASTEXITCODE -eq 0
+        $plain = (Get-Content $testLog -Raw) -replace '\x1b\[[0-9;]*m', ''
+        $result.Tests = if ($plain -match '(?s).*Tests\s+(\d+) passed') { $Matches[1] } else { '?' }
+
+        $buildLog = Join-Path $logDir 'gate-frontend-build.log'
+        & npm run build:prod *> $buildLog
+        $result.BuildOk = $LASTEXITCODE -eq 0
+        $plain = (Get-Content $buildLog -Raw) -replace '\x1b\[[0-9;]*m', ''
+        $result.Initial = if ($plain -match 'Initial total\s*\|\s*([\d.]+ [kM]B)') { $Matches[1] } else { '?' }
+        if (-not $result.BuildOk) {
+            $result.Lines += Select-String -Path $buildLog -Pattern 'ERROR|budget' | Select-Object -First 10 |
+                ForEach-Object { $_.Line }
+        }
+        return $result
+    } finally {
+        Pop-Location
+    }
+}
+
+if ($StaticOnly) {
+    if ($SkipFrontend) { Exit-Gate 0 }
+    $start = Get-Date
+    Write-Host "$(Get-Date -Format 'HH:mm:ss') frontend static..." -NoNewline
+    $static = & $frontendChecks $root $logDir $true
+    Write-Host " $(if ($static.LintOk) { 'PASS' } else { 'FAIL' }) ($(Format-Elapsed $start))"
+    $static.Lines | ForEach-Object { Write-Host $_ }
+    if ($static.LintOk) { Exit-Gate 0 } else { Exit-Gate 1 }
+}
+
+$backendPaths = @('backend', 'docs/api/openapi.yml')
+$backendChanged = @(git -C $root diff --name-only develop -- $backendPaths) +
+    @(git -C $root status --porcelain -- $backendPaths)
+$backendOk = $true
+$unit = $integration = $coverage = '-'
+$backendStatus = 'SKIPPED (no backend or openapi.yml changes since develop; -Full runs it)'
+if ($FrontendOnly) {
+    $unit = $previous['Unit']
+    $integration = $previous['IT/FT']
+    $coverage = $previous['Coverage']
+    $backendStatus = "$($previous['Backend']) (kept from $($previous['Gate run']), -FrontendOnly)"
+} elseif ($Full -or ($backendChanged | Where-Object { $_ })) {
+    if (@(docker ps --filter 'name=^award-backend$' --format '{{.Names}}' 2>$null)) {
+        if (-not $StopBackend) {
+            Write-Host 'The award-backend container is running and competes with the test JVMs for memory.'
+            Write-Host 'Stop it first (docker stop award-backend) or pass -StopBackend, then run the gate again.'
+            Exit-Gate 1
+        }
+        Write-Host 'Stopping the award-backend container for the run; it is started again afterwards.'
+        docker stop award-backend | Out-Null
+        $script:restartBackend = $true
+    }
+    docker info --format '{{.ServerVersion}}' *> $null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host 'Docker is not running: the integration and functional tests need it (TestContainers). Start Docker Desktop and run the gate again.'
+        Exit-Gate 1
+    }
+
+    $freeGb = (Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB
+    if (-not $Sequential -and $freeGb -lt $MinFreeGb) {
+        $Sequential = $true
+        Write-Host ('{0:N1} GB free (under {1} GB): the frontend checks run after the backend verify.' -f $freeGb,
+            $MinFreeGb)
+    }
+    if (-not ($SkipFrontend -or $Sequential)) {
+        $frontendStart = Get-Date
+        $frontendJob = Start-ThreadJob -ScriptBlock $frontendChecks -ArgumentList $root, $logDir, $false
+        Write-Host "$(Get-Date -Format 'HH:mm:ss') frontend checks started in the background"
+    }
+    $verifyStart = Get-Date
+    $backendOk = Invoke-Maven @('verify') 'verify'
+    $backendStatus = if ($backendOk) { 'PASS' } else { 'FAIL' }
+    $containerTimeout = 'ContainerLaunchException|Container startup failed|Timed out waiting for container'
+    if (-not $backendOk -and $frontendJob -and (Select-String -Path $log -Pattern $containerTimeout -Quiet)) {
+        Write-Host ("$(Get-Date -Format 'HH:mm:ss') a container did not start next to the frontend checks; " +
+            'verify runs again after them.')
+        $fe = Receive-Job -Job $frontendJob -Wait -AutoRemoveJob
+        $frontendJob = $null
+        $verifyStart = Get-Date
+        $backendOk = Invoke-Maven @('-o', 'verify') 'verify (sequential)'
+        $backendStatus = if ($backendOk) { 'PASS (verify rerun alone after a container start-up timeout)' } else { 'FAIL' }
+    }
+    if (-not $backendOk) {
+        Select-String -Path $log -Pattern '^\[ERROR\]\s{3}|Tests run:.*(Failures: [1-9]|Errors: [1-9])' |
+            Select-Object -First 20 | ForEach-Object { $_.Line }
+        $unitFailed = @(Get-FailedClasses 'surefire-reports' $verifyStart)
+        $itFailed = @(Get-FailedClasses 'failsafe-reports' $verifyStart)
+        if (-not $unitFailed -and $itFailed.Count -eq 1) {
+            $verifyLog = $log
+            $log = Join-Path $logDir 'gate-retry.log'
+            $retryOk = Invoke-Maven @('-o', 'verify', '-Dtest=NoUnit', '-Dsurefire.failIfNoSpecifiedTests=false',
+                "-Dit.test=$($itFailed[0])", '-Djacoco.skip=true') "retry $($itFailed[0])"
+            if ($retryOk) {
+                $backendOk = Invoke-Maven @('-o', 'jacoco:merge@merge', 'jacoco:report@report', 'jacoco:check@check') 'coverage'
+            }
+            $backendStatus = if ($backendOk) { "PASS (after one retry of the flaky $($itFailed[0]))" } else { 'FAIL' }
+            $log = $verifyLog
+        }
+    }
+
+    $counts = @(Select-String -Path $log -Pattern 'Tests run: (\d+), Failures: \d+, Errors: \d+, Skipped: \d+\s*$' |
+        ForEach-Object { $_.Matches[0].Groups[1].Value })
+    $unit = if ($counts.Count -ge 1) { "$($counts[0]) run" } else { '?' }
+    $integration = if ($counts.Count -ge 2) { "$($counts[-1]) run" } else { '0 run' }
+
+    $coverage = '?'
+    $report = Join-Path $backend 'target\site\jacoco\index.html'
+    if (Test-Path $report) {
+        $html = Get-Content $report -Raw
+        if ($html -match '<tfoot>.*?</tfoot>') {
+            $cells = [regex]::Matches($Matches[0], '<td[^>]*>(.*?)</td>')
+            if ($cells.Count -gt 8) {
+                $missed = [int]($cells[7].Groups[1].Value -replace '[^0-9]', '')
+                $total = [int]($cells[8].Groups[1].Value -replace '[^0-9]', '')
+                if ($total -gt 0) {
+                    $coverage = '{0:N1}% lines ({1}/{2})' -f (100.0 * ($total - $missed) / $total), ($total - $missed), $total
+                }
+            }
+        }
+    }
+}
+
+$frontend = 'skipped'
+$frontendOk = $true
+if (-not $SkipFrontend) {
+    if ($fe) {
+        Write-Host "$(Get-Date -Format 'HH:mm:ss') frontend checks (ran during the first verify)..." -NoNewline
+    } elseif ($frontendJob) {
+        Write-Host "$(Get-Date -Format 'HH:mm:ss') waiting for the frontend checks..." -NoNewline
+        $fe = Receive-Job -Job $frontendJob -Wait -AutoRemoveJob
+    } else {
+        $frontendStart = Get-Date
+        Write-Host "$(Get-Date -Format 'HH:mm:ss') frontend lint, tests, prod build..." -NoNewline
+        $fe = & $frontendChecks $root $logDir $false
+    }
+    $frontendOk = $fe.LintOk -and $fe.TestOk -and $fe.BuildOk
+    Write-Host " $(if ($frontendOk) { 'PASS' } else { 'FAIL' }) ($(Format-Elapsed $frontendStart))"
+    $fe.Lines | ForEach-Object { Write-Host $_ }
+    $frontend = "lint $(if ($fe.LintOk) { 'PASS' } else { 'FAIL' })" +
+        ", tests $(if ($fe.TestOk) { "PASS ($($fe.Tests))" } else { 'FAIL' })" +
+        ", prod build $(if ($fe.BuildOk) { "PASS ($($fe.Initial) initial)" } else { 'FAIL' })"
+}
+
+$backup = 'skipped (no infra/backup or docker-compose.prod.yml changes since develop)'
+$backupOk = $true
+$backupPaths = @('infra/backup', 'docker-compose.prod.yml')
+$backupChanged = @(git -C $root diff --name-only develop -- $backupPaths) +
+    @(git -C $root status --porcelain -- $backupPaths)
+if ($backupChanged | Where-Object { $_ }) {
+    $backupStart = Get-Date
+    Write-Host "$(Get-Date -Format 'HH:mm:ss') backup script test..." -NoNewline
+    $running = @(docker ps --format '{{.Names}}' 2>$null)
+    if (-not (($running -contains 'award-postgres') -and ($running -contains 'award-minio'))) {
+        $backupOk = $false
+        $backup = 'FAIL (start the containers: docker compose up -d postgres minio)'
+    } else {
+        $sh = Join-Path (Split-Path (Split-Path (Get-Command git).Source)) 'bin\sh.exe'
+        $backupLog = Join-Path $logDir 'gate-backup.log'
+        & $sh (Join-Path $root 'infra/backup/test.sh') *> $backupLog
+        $backupOk = $LASTEXITCODE -eq 0
+        $last = Get-Content $backupLog -Tail 1
+        $backup = if ($backupOk) { "PASS ($last)" } else { "FAIL ($last; build/gate-backup.log)" }
+    }
+    Write-Host " $(if ($backupOk) { 'PASS' } else { 'FAIL' }) ($(Format-Elapsed $backupStart))"
+}
+
+$passed = $backendOk -and $frontendOk -and $backupOk
+$interruption = if (-not $passed) { Get-InterruptionReason }
+if ($interruption) { $backendStatus = "INVALID ($interruption; run the gate again)" }
+
+$summary = @"
+Gate run: $(Get-Date -Format 'yyyy-MM-dd HH:mm')
+Branch:   $(git -C $root rev-parse --abbrev-ref HEAD)
+Fingerprint: $(Get-BackendFingerprint)
+Unit:     $unit
+IT/FT:    $integration
+Coverage: $coverage
+Static:   checkstyle=0, pmd=0, spotbugs=0
+Backend:  $backendStatus
+Frontend: $frontend
+Backup:   $backup
+"@
+Set-Content -Path (Join-Path $logDir 'gate-summary.txt') -Value $summary
+Write-Host $summary
+if ($interruption) { Exit-Gate 2 }
+if (-not $passed) { Exit-Gate 1 }
+Exit-Gate 0

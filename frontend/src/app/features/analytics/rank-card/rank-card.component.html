@@ -1,0 +1,31 @@
+@switch (rank().status) {
+  @case ('RANKED') {
+    <p class="rank__position" data-testid="rank-position">
+      {{
+        'analytics.rank.position'
+          | transloco
+            : { position: rank().position, groupSize: rank().groupSize, department: department() }
+      }}
+    </p>
+    @if ((rank().sharedWith ?? 0) > 0) {
+      <p data-testid="rank-shared">
+        {{ 'analytics.rank.sharedWith' | transloco: { count: rank().sharedWith } }}
+      </p>
+    }
+    <p class="rank__note">{{ 'analytics.rank.basis' | transloco }}</p>
+  }
+  @case ('CONSENT_REQUIRED') {
+    <p data-testid="rank-consent">{{ 'analytics.rank.consentRequired' | transloco }}</p>
+    <a routerLink="/privacy" data-testid="rank-privacy-link">
+      {{ 'analytics.rank.openPrivacy' | transloco }}
+    </a>
+  }
+  @case ('GROUP_TOO_SMALL') {
+    <p data-testid="rank-small">
+      {{ 'analytics.rank.groupTooSmall' | transloco: { department: department() } }}
+    </p>
+  }
+  @default {
+    <p data-testid="rank-no-department">{{ 'analytics.rank.noDepartment' | transloco }}</p>
+  }
+}

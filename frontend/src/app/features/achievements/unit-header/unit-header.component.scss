@@ -1,0 +1,27 @@
+:host {
+  display: block;
+  margin-bottom: 16px;
+}
+
+.unit-header__faculty {
+  font: var(--mat-sys-label-large);
+  color: var(--mat-sys-primary);
+}
+
+.unit-header__name {
+  margin: 4px 0 0;
+  font: var(--mat-sys-headline-small);
+}
+
+.unit-header__departments ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.unit-header__departments a {
+  color: var(--mat-sys-primary);
+}

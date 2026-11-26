@@ -1,0 +1,221 @@
+@mixin tokens() {
+  --app-font-heading: 'Manrope Variable', system-ui, sans-serif;
+  --app-font-body: 'Onest Variable', system-ui, sans-serif;
+  --app-gold: light-dark(#e0a526, #f2be4e);
+  --app-on-gold: #2a1c00;
+  --app-gold-text: light-dark(#7a5300, #f2be4e);
+  --app-cyan: light-dark(#00bbff, #4fd0ff);
+  --app-on-cyan: #00243a;
+  --app-ok: light-dark(#2f6b3a, #8fd5b0);
+  --app-bad: light-dark(#b3261e, #ffb4ab);
+  --app-level-mark-FACULTY: light-dark(#6a4a0e, #f5d58a);
+  --app-level-mark-UNIVERSITY: light-dark(#6b1a28, #ffb2b9);
+  --app-level-mark-REGIONAL: light-dark(#283c6b, #b9c6e4);
+  --app-level-mark-NATIONAL: light-dark(#7a1f2e, #7ddcff);
+  --app-level-mark-INTERNATIONAL: light-dark(#2b1b1e, #f5c451);
+  --app-accent-from: var(--mat-sys-primary);
+  --app-accent-to: var(--mat-sys-primary);
+  --app-accent-gradient: linear-gradient(135deg, var(--app-accent-from), var(--app-accent-to));
+  --app-aurora-1: transparent;
+  --app-aurora-2: transparent;
+  --app-aurora-3: transparent;
+  --app-card-radius: 12px;
+  --app-radius-sm: 8px;
+  --app-radius-md: 14px;
+  --app-radius-lg: 22px;
+  --app-icon-size: 1.5rem;
+  --app-nav-on-active: var(--app-nav-on-container);
+  --app-nav-hover: color-mix(in srgb, var(--app-nav-on-container) 10%, transparent);
+  --app-nav-divider: color-mix(in srgb, var(--app-nav-on-container) 22%, transparent);
+  --app-pane: var(--mat-sys-surface-container-low);
+  --app-pane-head: var(--mat-sys-surface-container);
+  --app-pane-border: var(--mat-sys-outline-variant);
+  --app-pane-divider: var(--mat-sys-outline-variant);
+  --app-row-divider: var(--mat-sys-outline-variant);
+  --app-muted: var(--mat-sys-on-surface-variant);
+  --app-ink: var(--mat-sys-inverse-surface);
+  --app-on-ink: var(--mat-sys-inverse-on-surface);
+  --app-on-ink-muted: var(--mat-sys-inverse-on-surface);
+  --app-ink-divider: color-mix(in srgb, var(--mat-sys-inverse-on-surface) 20%, transparent);
+  --app-brand-panel: var(--mat-sys-primary);
+  --app-on-brand-panel: var(--mat-sys-on-primary);
+  --app-brand-divider: color-mix(in srgb, var(--mat-sys-on-primary) 20%, transparent);
+  --app-gold-soft: var(--app-gold);
+  --app-bar: var(--mat-sys-primary);
+  --app-bar-gold: var(--app-gold);
+  --app-track: var(--mat-sys-surface-container-high);
+  --app-selected: var(--mat-sys-secondary-container);
+  --app-selected-edge: var(--mat-sys-primary);
+  --app-field: var(--mat-sys-surface-container-low);
+  --app-avatar: var(--mat-sys-primary-container);
+  --app-on-avatar: var(--mat-sys-on-primary-container);
+  --app-chip-on: var(--mat-sys-on-surface);
+  --app-on-chip-on: var(--mat-sys-surface);
+}
+
+@mixin rules() {
+  h1,
+  h2,
+  h3,
+  .mat-headline-small,
+  .mat-headline-medium,
+  .mat-headline-large,
+  .mat-title-large {
+    font-family: var(--app-font-heading);
+  }
+
+  :where(a:not([class*='mat-'])) {
+    color: var(--mat-sys-primary);
+  }
+
+  :root {
+    --mat-card-elevated-container-shape: var(--app-card-radius);
+    --mat-card-outlined-container-shape: var(--app-card-radius);
+    --mat-card-filled-container-shape: var(--app-card-radius);
+    --mat-card-elevated-container-color: var(--mat-sys-surface-container-low);
+    --mat-card-elevated-container-elevation: var(--mat-sys-level0);
+    --mat-card-elevated-container-color: var(--app-pane);
+    --mat-card-outlined-container-color: var(--app-pane);
+    --mat-card-outlined-outline-color: var(--app-pane-border);
+    --mat-button-filled-container-shape: 12px;
+    --mat-button-outlined-container-shape: 12px;
+    --mat-button-protected-container-shape: 12px;
+    --mat-button-tonal-container-shape: 12px;
+    --mat-button-text-container-shape: 12px;
+    --mat-button-filled-container-height: 44px;
+    --mat-button-outlined-container-height: 44px;
+    --mat-button-filled-label-text-font: var(--app-font-heading);
+    --mat-button-outlined-label-text-font: var(--app-font-heading);
+    --mat-button-text-label-text-font: var(--app-font-heading);
+    --mat-button-filled-label-text-weight: 700;
+    --mat-button-outlined-label-text-weight: 700;
+    --mat-button-text-label-text-weight: 700;
+    --mat-button-outlined-label-text-color: var(--mat-sys-primary);
+    --mat-button-outlined-outline-color: var(--mat-sys-primary);
+    --mat-form-field-outlined-container-shape: 12px;
+    --mat-form-field-outlined-outline-color: var(--app-pane-border);
+    --mat-form-field-outlined-hover-outline-color: var(--mat-sys-outline);
+    --mat-form-field-filled-container-color: var(--app-field);
+    --mat-form-field-container-height: 48px;
+    --mat-form-field-container-vertical-padding: 12px;
+    --mat-form-field-outlined-label-text-populated-size: 0.875rem;
+    --mat-select-panel-background-color: var(--app-pane);
+    --mat-chip-container-shape-radius: 999px;
+    --mat-chip-outline-color: var(--app-pane-border);
+    --mat-chip-selected-container-color: var(--app-chip-on);
+    --mat-chip-selected-label-text-color: var(--app-on-chip-on);
+    --mat-chip-with-icon-selected-icon-color: var(--app-on-chip-on);
+    --mat-chip-elevated-selected-container-color: var(--app-chip-on);
+    --mat-chip-flat-selected-selected-icon-color: var(--app-on-chip-on);
+  }
+
+  .mat-form-field-appearance-outline .mat-mdc-text-field-wrapper {
+    background: var(--app-field);
+    border-radius: 12px;
+  }
+
+  .mat-mdc-card {
+    border-radius: var(--app-card-radius);
+  }
+
+  .app-st {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 9px;
+    border-radius: 6px;
+    font: 600 0.6875rem / 1.3 var(--app-font-body);
+    white-space: nowrap;
+    background: light-dark(#e8e1d8, #1d2640);
+    color: light-dark(#4a3a3c, #c9d3ea);
+  }
+
+  .app-st--ok {
+    background: light-dark(#ddebdd, #0f4d2c);
+    color: light-dark(#1f4d25, #a6e8bf);
+  }
+
+  .app-st--wait {
+    background: light-dark(#f5e3c4, #5a4300);
+    color: light-dark(#6a4a0e, #ffe08f);
+  }
+
+  .app-st--bad {
+    background: light-dark(#f3d2d2, #6b1d16);
+    color: light-dark(#7a1a1a, #ffc9c2);
+  }
+
+  .app-lv {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 9px;
+    border-radius: 6px;
+    font: 600 0.6875rem / 1.3 var(--app-font-body);
+    white-space: nowrap;
+    background: light-dark(#efe6da, #1d2640);
+    color: light-dark(#4a3a3c, #c9d3ea);
+  }
+
+  .app-lv--FACULTY {
+    background: light-dark(#f5e3c4, #3a2f12);
+    color: light-dark(#6a4a0e, #f5d58a);
+  }
+
+  .app-lv--UNIVERSITY {
+    background: light-dark(#f1d6d9, #3b1a22);
+    color: light-dark(#6b1a28, #ffb2b9);
+  }
+
+  .app-lv--REGIONAL {
+    background: light-dark(#e1e6f2, #18284a);
+    color: light-dark(#283c6b, #b9c6e4);
+  }
+
+  .app-lv--NATIONAL {
+    background: light-dark(#7a1f2e, #7ddcff);
+    color: light-dark(#fff6ec, #00243a);
+  }
+
+  .app-lv--INTERNATIONAL {
+    background: light-dark(#2b1b1e, #f5c451);
+    color: light-dark(#f5d58a, #261a00);
+  }
+
+  .mat-mdc-card:not(.mat-mdc-card-outlined) {
+    border: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  .table-card {
+    --mat-table-background-color: transparent;
+
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--app-pane-border);
+    border-radius: var(--app-card-radius);
+    background: var(--app-pane);
+
+    &:focus-visible {
+      outline: 2px solid var(--mat-sys-primary);
+      outline-offset: 2px;
+    }
+
+    table {
+      width: 100%;
+    }
+
+    .mat-mdc-header-cell {
+      background: light-dark(#fbf6ef, #10172c);
+      font: 700 0.6875rem / 1.3 var(--app-font-heading);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--app-muted);
+    }
+
+    .mat-mdc-cell {
+      border-color: var(--app-row-divider);
+    }
+
+    tr:last-child > td {
+      border-bottom: 0;
+    }
+  }
+}

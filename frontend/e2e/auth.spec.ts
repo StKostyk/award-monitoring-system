@@ -1,0 +1,119 @@
+import { expect, test } from './fixtures';
+
+import {
+  DEMO_PASSWORD,
+  FRESH_PASSWORD,
+  register,
+  SEED,
+  signIn,
+  toggleLanguage,
+  uniqueToken,
+} from './helpers';
+
+const employee = {
+  email: SEED.employee,
+  password: DEMO_PASSWORD,
+  name: 'Тест Автоматичний',
+};
+
+test.describe('authentication', () => {
+  test('ac11 ac12 ac18 signs in through the authorization server and out again', async ({
+    page,
+  }) => {
+    await page.goto('/');
+
+    await expect(page).toHaveURL(/localhost:8080\/login/);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'uk');
+    await page.fill('#username', employee.email);
+    await page.fill('#password', employee.password);
+    await page.click('button[type="submit"]');
+
+    await expect(page).toHaveURL('http://localhost:4200/dashboard');
+    await expect(page.getByTestId('user-name')).toHaveText(employee.name);
+    await page.goto('/profile?section=roles');
+    await expect(page.getByTestId('profile-email')).toHaveText(employee.email);
+    await expect(page.getByTestId('profile-role').first()).toContainText('Працівник');
+
+    await page.getByTestId('logout').click();
+
+    await expect(page).toHaveURL(/localhost:8080\/login/, { timeout: 15_000 });
+  });
+
+  test('ac61 an expired session ends at the login page, not on a blank screen', async ({
+    page,
+    context,
+  }) => {
+    await signIn(page, employee.email, employee.password);
+    await expect(page.getByTestId('user-name')).toHaveText(employee.name);
+
+    await page.evaluate(() => {
+      sessionStorage.setItem('expires_at', String(Date.now() - 2 * 60_000));
+      sessionStorage.setItem('access_token', 'expired.access.token');
+      sessionStorage.setItem('refresh_token', 'revoked-refresh-token');
+    });
+    await context.clearCookies();
+    await page.reload();
+
+    await expect(page).toHaveURL(/localhost:8080\/login/);
+    await expect(page.getByTestId('login-form')).toBeVisible();
+  });
+
+  test('ac61 ac65 a refresh token revoked elsewhere sends the open tab to the login page', async ({
+    page,
+    context,
+  }) => {
+    await signIn(page, employee.email, employee.password);
+    await expect(page.getByTestId('user-name')).toHaveText(employee.name);
+
+    const refreshToken = await page.evaluate(() => sessionStorage.getItem('refresh_token'));
+    const revoked = await page.request.post('http://localhost:8080/oauth2/revoke', {
+      form: { token: refreshToken ?? '', token_type_hint: 'refresh_token', client_id: 'award-web' },
+    });
+    expect(revoked.ok()).toBeTruthy();
+    await context.clearCookies();
+    await page.evaluate(() => sessionStorage.setItem('expires_at', String(Date.now() + 4000)));
+    await page.reload();
+
+    await expect(page).toHaveURL(/localhost:8080\/login/, { timeout: 15_000 });
+    await expect(page.getByTestId('login-form')).toBeVisible();
+  });
+
+  test('ac63 signing in at the login page directly lands on the app', async ({ page }) => {
+    await page.goto('http://localhost:8080/login');
+    await page.fill('#username', employee.email);
+    await page.fill('#password', employee.password);
+    await page.click('button[type="submit"]');
+
+    await expect(page).toHaveURL('http://localhost:4200/dashboard');
+    await expect(page.getByTestId('user-name')).toHaveText(employee.name);
+
+    await page.goto('http://localhost:8080/login');
+    await expect(page).toHaveURL('http://localhost:4200/dashboard');
+  });
+
+  test('ac16 a pending account is refused with an explanation', async ({ page }) => {
+    const email = `e2e.pending.${uniqueToken()}@chnu.edu.ua`;
+    await register(email, FRESH_PASSWORD);
+    await signIn(page, email, FRESH_PASSWORD);
+
+    await expect(page).toHaveURL(/error=PENDING/);
+    await expect(page.locator('.alert')).toContainText('не підтверджено');
+  });
+
+  test('ac17 the login page switches to English and the app follows the toggle', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await page.getByRole('link', { name: 'EN', exact: true }).click();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(page.locator('h1')).toHaveText('Your card in this catalogue is already waiting.');
+
+    await page.fill('#username', employee.email);
+    await page.fill('#password', employee.password);
+    await page.click('button[type="submit"]');
+    await expect(page.getByTestId('user-name')).toHaveText(employee.name);
+
+    await toggleLanguage(page);
+    await expect(page.getByTestId('nav-dashboard')).toContainText('My dashboard');
+  });
+});

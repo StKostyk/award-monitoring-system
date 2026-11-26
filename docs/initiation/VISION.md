@@ -49,7 +49,7 @@
 
 ### **For Administrative Staff (Secretaries, HR)**
 - **Automation:** Intelligent document parsing and metadata extraction  
-- **Workflow:** Multi-level approval processes with automatic escalation
+- **Workflow:** Multi-level approval processes with an overdue notice to the next level
 - **Efficiency:** Bulk operations and automated notifications
 - **Accuracy:** Data validation and duplicate prevention
 

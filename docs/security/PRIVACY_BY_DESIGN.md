@@ -180,7 +180,7 @@ public record UserRegistrationRequest(
 |----------------|------------------|-----------------|---------------------|---------------|
 | P001 | Award Management | Creating, tracking, and displaying awards | User profile, Award data | 7 years |
 | P002 | Authentication | User login and session management | Credentials, Session data | Session + 30 days |
-| P003 | Notification | Email/SMS alerts about awards | Contact info, Preferences | Account lifetime |
+| P003 | Notification | E-mail and in-app notifications about awards, reviews, roles and delegations (no SMS) | E-mail address, notification payloads, delivery log, preferences | Notifications 1 year (`expires_at`), preferences for the account lifetime |
 | P004 | Analytics | System usage and performance | Anonymized usage data | 3 years |
 | P005 | Compliance | Audit trails and GDPR compliance | Audit logs, Consent records | 7 years |
 
@@ -325,149 +325,29 @@ public class NotificationService {
 
 ### 4.2 Consent Types
 
-| **Consent Type** | **Purpose** | **Required** | **Granularity** | **Withdrawal Impact** |
-|------------------|-------------|--------------|-----------------|----------------------|
-| `DATA_PROCESSING` | Basic system use | Yes | Binary | Account deletion |
-| `PUBLIC_VISIBILITY` | Award public display | Yes | Binary | Awards hidden |
-| `EMAIL_NOTIFICATIONS` | Email alerts | No | Per-type | No emails sent |
-| `SMS_NOTIFICATIONS` | SMS alerts | No | Binary | No SMS sent |
-| `DOCUMENT_AI_PROCESSING` | AI metadata extraction | No | Per-document | Manual entry only |
-| `ANALYTICS` | Usage analytics | No | Binary | Excluded from analytics |
+Processing of the data needed to run the system rests on legitimate interest (DATA_GOVERNANCE §2.1), so it is not asked as a consent: a consent that the system cannot be used without would not be freely given (Art. 7(4)). The person acknowledges the privacy notice instead, and the acknowledgement is recorded per notice version.
+
+| **Record** | **Purpose** | **Legal basis** | **Required** | **Granularity** | **Withdrawal Impact** |
+|------------|-------------|-----------------|--------------|-----------------|----------------------|
+| `DATA_PROCESSING` | Acknowledgement of a privacy notice version, at registration and after each new version | Legitimate interest (records that the notice was read) | Yes | Per notice version | Cannot be withdrawn; erasure (§5) ends the processing |
+| `ANALYTICS` | Naming the person in rankings and comparisons of unit reports (Epic 5) | Consent | No | Binary | Counted only in totals |
+| Award visibility (`awards.visibility`) | Showing an approved personal award beyond the person's unit (4.3.1) | Consent | No | Per award | Award back to `PRIVATE` at once |
+| Document shown to colleagues (`documents.shown_to_colleagues`) | A chosen document of a shared award opened by signed-in colleagues | Consent | No | Per document | Document hidden at once |
+| E-mail per notification type (`notification_preferences`) | E-mail and in-app chosen per notification type (1.3.2); security and privacy mails are always sent | Legitimate interest | No | Per notification type | No e-mail of that type |
+| Colour scheme and dashboard layouts (`dashboard_preferences`) | Colour scheme and, per dashboard, widget order and hidden widgets (5.1.2, 9.4.1); a display choice, not audited, exported and erased | Legitimate interest | No | Per dashboard and widget | System scheme, default layouts |
+
+The former consent types `PUBLIC_VISIBILITY`, `EMAIL_NOTIFICATIONS` and `SMS_NOTIFICATIONS` were removed (V040): the first two are chosen per award and per notification type, and there is no SMS channel. Metadata extraction from documents (`DOCUMENT_AI_PROCESSING`) is not built; it would need its own consent type before it is.
+
+Showing documents to colleagues (4.3.8) follows the award's visibility choice (4.3.1): every document starts hidden, including those uploaded before the choice existed, and only the owner of an approved personal award shared at `UNIVERSITY` or `PUBLIC` can show one. Colleagues see the shown documents on the read-only achievement view and download them while signed in; the public page and anonymous visitors never receive a document. Returning the award to `PRIVATE` clears every choice, so sharing it again does not reopen documents silently. Each effective change is a `DOCUMENT_SHARING_CHANGED` audit row (the record of consent), each colleague download a `DOCUMENT_DOWNLOAD` row marked `via: colleague`, and the export lists the choice per document.
 
 ### 4.3 Technical Implementation
 
-```java
-// Consent Management Service
-@Service
-@Transactional
-public class ConsentManagementService {
-    
-    private final ConsentRepository consentRepository;
-    private final ConsentEventPublisher eventPublisher;
-    private final AuditService auditService;
-    
-    /**
-     * Grant consent with full audit trail
-     */
-    public ConsentRecord grantConsent(ConsentRequest request) {
-        validateConsentRequest(request);
-        
-        ConsentRecord consent = ConsentRecord.builder()
-            .userId(request.getUserId())
-            .consentType(request.getConsentType())
-            .consentVersion(getCurrentPolicyVersion(request.getConsentType()))
-            .isGranted(true)
-            .grantedAt(Instant.now())
-            .ipAddress(request.getIpAddress())
-            .userAgent(request.getUserAgent())
-            .build();
-        
-        ConsentRecord saved = consentRepository.save(consent);
-        
-        // Publish event for downstream systems
-        eventPublisher.publish(new ConsentGrantedEvent(saved));
-        
-        // Audit log
-        auditService.logConsentChange(
-            AuditAction.CONSENT_GRANTED,
-            saved.getUserId(),
-            saved.getConsentType(),
-            request.getIpAddress()
-        );
-        
-        return saved;
-    }
-    
-    /**
-     * Withdraw consent with cascading effects
-     */
-    public ConsentRecord withdrawConsent(Long userId, ConsentType consentType, 
-                                          WithdrawalRequest request) {
-        ConsentRecord current = consentRepository
-            .findCurrentConsent(userId, consentType)
-            .orElseThrow(() -> new ConsentNotFoundException("No active consent found"));
-        
-        // Update consent record
-        current.setIsGranted(false);
-        current.setWithdrawnAt(Instant.now());
-        ConsentRecord saved = consentRepository.save(current);
-        
-        // Publish event for cascading effects
-        eventPublisher.publish(new ConsentWithdrawnEvent(saved));
-        
-        // Trigger immediate data handling based on consent type
-        handleConsentWithdrawal(userId, consentType);
-        
-        // Audit log
-        auditService.logConsentChange(
-            AuditAction.CONSENT_WITHDRAWN,
-            userId,
-            consentType,
-            request.getIpAddress()
-        );
-        
-        return saved;
-    }
-    
-    /**
-     * Check if user has valid consent for operation
-     */
-    public boolean hasValidConsent(Long userId, ConsentType consentType) {
-        return consentRepository.findCurrentConsent(userId, consentType)
-            .map(consent -> consent.getIsGranted() && 
-                           consent.getConsentVersion().equals(getCurrentPolicyVersion(consentType)))
-            .orElse(false);
-    }
-    
-    /**
-     * Handle cascading effects of consent withdrawal
-     */
-    private void handleConsentWithdrawal(Long userId, ConsentType consentType) {
-        switch (consentType) {
-            case PUBLIC_VISIBILITY -> awardService.hideUserAwards(userId);
-            case EMAIL_NOTIFICATIONS -> notificationService.disableEmail(userId);
-            case SMS_NOTIFICATIONS -> notificationService.disableSms(userId);
-            case DOCUMENT_AI_PROCESSING -> documentService.disableAiProcessing(userId);
-            case ANALYTICS -> analyticsService.excludeUser(userId);
-            case DATA_PROCESSING -> initiateAccountDeletion(userId);
-        }
-    }
-}
-
-// Consent Enforcement Annotation
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface RequiresConsent {
-    ConsentType value();
-    boolean failSilently() default false;
-}
-
-// Consent Enforcement Aspect
-@Aspect
-@Component
-public class ConsentEnforcementAspect {
-    
-    @Around("@annotation(requiresConsent)")
-    public Object enforceConsent(ProceedingJoinPoint joinPoint, 
-                                  RequiresConsent requiresConsent) throws Throwable {
-        Long userId = extractUserId(joinPoint);
-        ConsentType requiredConsent = requiresConsent.value();
-        
-        if (!consentService.hasValidConsent(userId, requiredConsent)) {
-            if (requiresConsent.failSilently()) {
-                return null; // Silent skip
-            }
-            throw new ConsentRequiredException(
-                "Valid consent for " + requiredConsent + " is required"
-            );
-        }
-        
-        return joinPoint.proceed();
-    }
-}
-```
-
----
+- `consent_records` is append-only (V040, `trg_consent_records_guard`): rows are never deleted or changed, except that erasure may clear `ip_address` and `user_agent`. The newest row per type is the current state; DATA_DICTIONARY §4.2 has the columns.
+- The notice texts are static pages of the web client per version and language (`/privacy/<version>/<lang>.html`); `app.privacy.notice-version` names the version in force and `GET /api/v1/public/privacy-notice` publishes it with the earlier versions.
+- Registration requires the current version (`privacyNoticeVersion`, otherwise 422 `outdated` and no account) and writes the `DATA_PROCESSING` row in the registration transaction. `PrivacyNoticeVersions` (shared `common` module) checks the version and publishes `PrivacyNoticeAcknowledged`; `ConsentService` (`gdpr`) appends the row, so `auth` does not depend on `gdpr`.
+- `GET /users/me/consents`, `POST /users/me/consents/notice-acknowledgement` and `PUT /users/me/consents/ANALYTICS` read and change the caller's own records. A change that does not alter the state appends nothing; concurrent changes of one person are serialised by a row lock on the account. The overview never shows IP addresses or user agents.
+- After a new notice version, the web client sends a signed-in person to the acknowledgement page before any other screen; the API does not refuse requests of a person who has not acknowledged (PRD 6.1, decision 2).
+- Each appended row is audited (`PRIVACY_NOTICE_ACKNOWLEDGED`, `CONSENT_GRANTED`, `CONSENT_WITHDRAWN`, entity type `GDPR`), and the personal data export lists every row under `consent_history`.
 
 ## 5. Right to Erasure Implementation
 
@@ -517,16 +397,29 @@ public class ConsentEnforcementAspect {
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
+**Request and grace period (Feature 6.1, 6.1.4)**
+
+1. In the privacy centre the person reads what is erased and what is kept (approved awards under a pseudonym, redacted audit records, consent records for seven years), ticks the confirmation and enters the current password (`POST /api/v1/users/me/erasure-request`). A wrong password counts as a failed sign-in; five lock the account.
+2. The request is refused, with nothing written, while another request is pending (`erasure-pending`), while a legal hold is active (`legal-hold`; the reason is not disclosed) and for the only active system administrator (`last-administrator`).
+3. An accepted request is stored as `PENDING` in `erasure_requests` with `scheduled_for` 30 days later (`app.erasure.grace-period`), audited as `ERASURE_REQUESTED` and confirmed by a privacy mail with the date and a link to cancel. The shell shows a banner with the date on every page.
+4. Until the date the person can cancel (`POST /api/v1/users/me/erasure-request/cancel`): `CANCELLED`, `ERASURE_CANCELLED`, a confirmation mail.
+5. The nightly job (02:30 Kyiv time) mails one reminder seven days before the date (`app.erasure.warning-before`).
+6. At the date the job erases the account unless a legal hold postpones it (6.1.5). The GDPR officer sees the pending date next to the account's legal holds.
+
 ### 5.2 Data Deletion Categories
 
 | **Category** | **Deletion Strategy** | **Timeline** | **Exceptions** |
 |--------------|----------------------|--------------|----------------|
-| **User Profile** | Full deletion | 30 days | Legal holds |
-| **Awards** | Anonymization | 30 days | Public record retention |
-| **Documents** | Full deletion | 30 days | None |
-| **Audit Logs** | Anonymization | 30 days | 7-year retention for compliance |
-| **Backups** | Marked for exclusion | Next backup cycle | Compliance requirements |
+| **User Profile** | Scrub: pseudonym `Erased #<id>`, address `erased-<id>@erased.invalid`, status `DELETED`; sign-in material deleted | 30 days | Legal holds postpone |
+| **Awards** | Approved: kept `PRIVATE` under the pseudonym; all others deleted with requests, decisions and versions | 30 days | Public record retention |
+| **Documents** | Full deletion, stored objects after the commit | 30 days | None |
+| **Notifications** | Own deleted; the person's names in related notifications of others replaced by the pseudonym | 30 days | None |
+| **Consent Records** | Kept without IP address and user agent; deleted seven years after the erasure (`fn_purge_consent_records`, 6.2.3) | 30 days | 7-year retention (proof of acknowledgement) |
+| **Audit Logs** | Guarded redaction of values (`fn_redact_audit_subject`, ADR-024): personal keys `"[erased]"`, snapshots of deleted records `{"erased": true}`, own IP address and user agent removed; rows, actions and times kept; `AUDIT_REDACTED` records the counts | 30 days | 7-year retention for compliance |
+| **Backups** | Encrypted, expire after 14 days; a restore runs the erasure and retention jobs before the next night | 14 days after the erasure | None (DEMO_DEPLOYMENT §4) |
 | **Analytics** | Anonymization | Immediate | Already anonymized |
+
+The same erasure runs without a request of the person when the retention job files one (`erasure_requests.origin` `RETENTION`, 6.2.3): an unverified registration 30 days after its last verification link, a retired or memorial account seven years after its status changed. Such a request is due at once and carried out at the next 02:30 run with the same holds, last-administrator check and audit redaction, but without any mail (an unverified address was never confirmed, a former employee's is usually gone); `ERASURE_COMPLETED` and `ERASURE_POSTPONED` carry `origin: retention`, and a request whose account was verified, renewed or returned to service meanwhile is cancelled under the row locks.
 
 ### 5.3 Technical Implementation
 
@@ -588,9 +481,7 @@ public class DataErasureService {
         // Delete user profile (last step)
         tasks.add(userService.deleteUser(userId));
         
-        // Request backup exclusion
-        backupService.markUserForExclusion(userId);
-        
+        // Backups are not edited: the erased record expires with them after 14 days
         // Aggregate results
         return ErasureResult.completed(tasks);
     }
@@ -678,64 +569,93 @@ public class AnonymizationService {
 
 ### 6.2 Export Data Structure
 
+Implemented for JSON by `GET /api/v1/users/me/export` (Feature 1.3, format version `1.1` since 2.1.8 (SCRUM-43): `award_versions` added; `1.2` since 4.3.4 (SCRUM-70): `review_decisions` and `decisions_made` added; `1.3` since 4.3.8 (SCRUM-74): `shown_to_colleagues` per document; `1.4` since 7.2.3 (SCRUM-68): `notifications` and `notification_preferences` added; `1.5`: `legal_holds`; `1.6`: `erasure_requests`; `1.7` since 5.1.2 (SCRUM-99): `dashboard_preferences`, the hidden dashboard widgets with the time of the choice; `1.8` since 9.4.1 (SCRUM-155): `dashboard_preferences` carries `color_scheme` and `layouts` instead of `hidden_widgets`). Property names are snake_case; every section is present, list sections possibly empty. IP addresses are the person's own identifiers (Art. 15 and 20) and are exported unredacted; the activity log keeps the address only for actions the person takes themselves (sign-in, sign-out, verification, password reset, "not me" revocation, profile and address changes, refused requests, exports); events anybody can cause against an account (failed sign-ins, reset requests, lockouts) and events another person caused (roles, delegations) carry `null`, so no stranger's or administrator's address reaches the file.
+
 ```json
 {
   "export_metadata": {
-    "export_date": "2025-12-16T10:30:00Z",
-    "user_id": "USR-12345",
-    "format_version": "1.0",
+    "export_date": "2026-09-30T09:00:00Z",
+    "user_id": 5,
+    "format_version": "1.4",
     "gdpr_article": "Article 20 - Right to Data Portability"
   },
   "personal_data": {
     "profile": {
-      "email": "user@example.com",
-      "first_name": "Ivan",
-      "last_name": "Petrenko",
-      "organization": "Faculty of Computer Science",
-      "registration_date": "2024-01-15"
-    },
-    "preferences": {
-      "notification_email": true,
-      "notification_sms": false,
-      "language": "uk"
+      "email": "employee.fmi@chnu.edu.ua",
+      "first_name": "Анастасія",
+      "last_name": "Петренко",
+      "department": { "id": 64, "name": "Department of Algebra and Informatics", "name_uk": "Кафедра алгебри та інформатики" },
+      "faculty": { "id": 9, "name": "Faculty of Mathematics and Informatics", "name_uk": "Факультет математики та інформатики" },
+      "account_status": "ACTIVE",
+      "created_at": "2026-09-01T08:00:00Z",
+      "last_login_at": "2026-09-30T08:55:00Z"
     }
   },
+  "roles": [
+    { "role": "EMPLOYEE", "organization": { "id": 64, "name": "…", "name_uk": "…" },
+      "valid_from": "2026-09-01", "valid_to": null, "current": true }
+  ],
+  "delegations": [
+    { "direction": "RECEIVED", "other_party": "Петро Мартинюк", "role": "DEAN", "organization": { "id": 9, "name": "…", "name_uk": "…" },
+      "valid_from": "2026-09-30", "valid_to": "2026-10-05", "state": "active", "reason": null,
+      "created_at": "2026-09-29T10:00:00Z", "revoked_at": null }
+  ],
   "awards": [
-    {
-      "award_id": "AWD-001",
-      "title": "Best Research Paper 2024",
-      "date": "2024-06-15",
-      "category": "Academic Achievement",
-      "status": "APPROVED",
-      "awarding_organization": "Ministry of Education"
-    }
+    { "award_id": 21, "title": "Letter of gratitude", "title_uk": "Подяка", "description": null, "description_uk": null,
+      "category": { "id": 13, "name": "Ministry", "name_uk": "Міністерство" }, "awarding_organization": "МОН України",
+      "award_date": "2025-05-01", "status": "DRAFT", "external_url": null, "organization": { "id": 64, "name": "…", "name_uk": "…" },
+      "recipient_unit": null, "created_at": "2026-09-20T09:00:00Z", "updated_at": "2026-09-20T09:00:00Z" }
+  ],
+  "award_versions": [
+    { "award_id": 21, "version": 1, "action": "CREATED", "changed_fields": [], "created_at": "2026-09-20T09:00:00Z",
+      "snapshot": { "title": "Letter of gratitude", "title_uk": "Подяка", "description": null, "description_uk": null,
+        "awarding_organization": "МОН України", "award_date": "2025-05-01", "category_id": 13, "status": "DRAFT",
+        "impact_score": null, "external_url": null, "organization_id": 64 } }
   ],
   "documents": [
-    {
-      "document_id": "DOC-001",
-      "filename": "certificate.pdf",
-      "upload_date": "2024-06-16",
-      "download_url": "/api/export/documents/DOC-001"
-    }
+    { "document_id": 7, "award_id": 21, "file_name": "certificate.pdf", "file_type": "PDF", "mime_type": "application/pdf",
+      "file_size": 184320, "uploaded_at": "2026-09-20T09:05:00Z", "api_path": "/api/v1/documents/7",
+      "shown_to_colleagues": false }
+  ],
+  "review_decisions": [
+    { "award_id": 21, "award_title": "Letter of gratitude", "award_title_uk": "Подяка", "decision": "RETURNED",
+      "level": "FACULTY_SECRETARY", "decided_at": "2026-10-01T09:00:00Z", "comments": "Додайте наказ",
+      "reviewer": "Оксана Коваль", "delegator": null }
+  ],
+  "decisions_made": [
+    { "award_id": 40, "award_title": "Diploma", "award_title_uk": "Диплом", "decision": "APPROVED", "level": "DEAN",
+      "decided_at": "2026-10-02T10:00:00Z", "comments": "Погоджено", "reviewer": "Анастасія Петренко",
+      "delegator": "Петро Мартинюк" }
   ],
   "consent_history": [
-    {
-      "consent_type": "DATA_PROCESSING",
-      "granted_at": "2024-01-15T09:00:00Z",
-      "version": "1.0"
-    }
+    { "consent_type": "DATA_PROCESSING", "consent_version": "1.0", "granted": true, "granted_at": "2026-09-01T08:00:00Z",
+      "withdrawn_at": null, "ip_address": "10.0.0.7", "created_at": "2026-09-01T08:00:00Z" }
+  ],
+  "devices": [
+    { "browser": "Firefox", "operating_system": "Windows", "last_ip_address": "10.0.0.7",
+      "first_seen_at": "2026-09-01T08:01:00Z", "last_used_at": "2026-09-30T08:55:00Z" }
   ],
   "activity_log": [
-    {
-      "action": "LOGIN",
-      "timestamp": "2024-12-15T08:30:00Z",
-      "ip_address": "[REDACTED]"
-    }
+    { "action": "LOGIN_SUCCESS", "timestamp": "2026-09-30T08:55:00Z", "ip_address": "10.0.0.7" },
+    { "action": "ROLE_ASSIGNED", "timestamp": "2026-09-02T12:00:00Z", "ip_address": null }
+  ],
+  "notifications": [
+    { "type": "AWARD_RETURNED", "channel": "EMAIL", "payload": { "title": "Certificate", "titleUk": "Грамота", "reviewer": "Ірина Бойко", "level": "FACULTY_SECRETARY" },
+      "read": false, "sent_at": "2026-09-30T08:40:00Z", "read_at": null, "delivered_at": "2026-09-30T08:40:02Z", "delivery_status": "SENT" },
+    { "type": "AWARD_RETURNED", "channel": "IN_APP", "payload": { "title": "Certificate", "titleUk": "Грамота", "reviewer": "Ірина Бойко", "level": "FACULTY_SECRETARY" },
+      "read": true, "sent_at": "2026-09-30T08:40:00Z", "read_at": "2026-09-30T08:50:00Z", "delivered_at": null, "delivery_status": null }
+  ],
+  "notification_preferences": [
+    { "type": "ROLE_ASSIGNED", "email": false, "in_app": true }
   ]
 }
 ```
 
+Award versions leave out who saved them, since a later reviewer is another person. Review decisions, oldest first, appear twice: `review_decisions` holds the decisions on the person's own awards with the reviewer's comment and full name (and the delegator's, when the reviewer acted under a delegation); `decisions_made` holds the decisions the person made as a reviewer, and those a delegate made under a role the person lent, with the comment, the award titles and the reviewer's and delegator's names; of the award only its titles are given (free text that may name its owner), nothing else of the award or its owner. `notifications` lists every in-app notification and the delivery log of the mails of the notification types, newest first, with the payload the sentence is built from (never a reviewer comment or corrected values); `notification_preferences` lists only the types the person changed, since a type without a row is on for both channels. The file never contains the password hash, one-time tokens or their hashes, authorization-server records, the audit triggers' row snapshots, device fingerprints, storage keys, or other people's data beyond the names of a delegation's other party, reviewers and delegators.
+
 ### 6.3 Technical Implementation
+
+As built (Feature 1.3): the file is assembled synchronously from named columns (`PersonalDataAssembler`), returned as an attachment with `Cache-Control: no-store` and downloaded by the browser as a Blob, so the bearer token never appears in a URL. The stored temporary file and 24-hour download link of the sketch below are not used: one person's data is tens of kilobytes, and a bearer-less link would be one more secret to protect. Exports are limited to one per minute, audited as `DATA_EXPORT` (`entity_type` `GDPR`, section counts) and announced by email with time, IP and browser. CSV and PDF follow with the reporting engine (Epic 6).
 
 ```java
 // Data Portability Service
@@ -1029,12 +949,13 @@ public class BreachNotificationService {
 
 | **Right** | **Article** | **Feature** | **Status** |
 |-----------|-------------|-------------|------------|
-| Access | Art. 15 | View My Data dashboard | ✅ Designed |
-| Rectification | Art. 16 | Edit profile, data correction request | ✅ Designed |
-| Erasure | Art. 17 | Account deletion, data anonymization | ✅ Designed |
-| Portability | Art. 20 | JSON/CSV/PDF export | ✅ Designed |
-| Restriction | Art. 18 | Privacy settings, visibility controls | ✅ Designed |
-| Object | Art. 21 | Consent withdrawal, opt-out | ✅ Designed |
+| Access | Art. 15 | Privacy centre with the log of one's own actions, JSON export | ✅ Implemented (Features 1.3, 6.1) |
+| Rectification | Art. 16 | Edit profile | ✅ Implemented (Feature 1.3); no separate correction-request flow |
+| Erasure | Art. 17 | Erasure request with a 30-day grace period, erasure across modules, legal hold | ✅ Implemented (Feature 6.1) |
+| Portability | Art. 20 | JSON export | ✅ Implemented (Feature 1.3); CSV and PDF not built, the JSON file meets Art. 20 (Epic 6 deviation 6) |
+| Restriction | Art. 18 | Award visibility, document sharing and notification choices in the privacy centre | ✅ Implemented as choices (Features 2.x, 6.1); no restriction-of-processing flow |
+| Object | Art. 21 | Consent withdrawal | ✅ Implemented for the optional `ANALYTICS` consent (Feature 6.1) |
+| Storage limitation | Art. 5(1)(e) | Nightly retention job with configurable policies | ✅ Implemented (Feature 6.2) |
 
 ---
 

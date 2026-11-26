@@ -271,11 +271,37 @@ jobs:
 
 ---
 
+## Addendum 2026-10-04: blocking lint and end-to-end tests
+
+The frontend job fails on any ESLint finding and on any file Prettier would reformat (`npm run lint`,
+`npm run format:check`); lint findings no longer pass silently.
+
+A separate `Playwright E2E` job runs on every pull request and push to `develop` and `main`, in parallel with the
+build jobs, and the image build waits for it. It repeats what `tools/e2e.ps1` does on a workstation:
+
+1. `docker compose up -d --wait postgres redis mailpit minio` (container names `award-postgres` and so on, which
+   the `sql()` fixture helper uses through `docker exec`; Mailpit on port 8025);
+2. the frontend nginx configuration in an `nginx:alpine` container on `127.0.0.1:4280` in front of the backend
+   (`E2E_NGINX_URL`), so that the upload limits are tested through it;
+3. the backend with `mvn spring-boot:run` on the `local` profile (development seed accounts, authentication rate
+   limit raised to 1000 requests per minute), waited for until `/actuator/health` answers `UP`;
+4. `npx playwright test` with Chromium; Playwright starts the Angular dev server itself and retries a failed test
+   once (`retries: 1` under `CI`).
+
+Reading a failed run: the failing tests and their first error appear as annotations on the pull request (GitHub
+reporter). The `playwright-report` artifact, uploaded only when the job fails, holds the HTML report
+(`playwright-report/index.html`), the traces of the failed attempts (`test-results/**/trace.zip`, opened with
+`npx playwright show-trace` or at trace.playwright.dev) and the backend log (`build/e2e-backend.log`). A test
+reported as flaky passed on its retry and does not fail the job, but it is a defect to fix, not to ignore.
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-21 | Stefan Kostyk | Initial version | Document creation |
+| 2026-10-04 | Stefan Kostyk | Addendum: blocking lint and end-to-end tests | Story 3.0.4 |
 
 ---
 

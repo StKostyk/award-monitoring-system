@@ -1,0 +1,154 @@
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButton } from '@angular/material/button';
+import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
+import { MatCheckbox } from '@angular/material/checkbox';
+import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatOptgroup, MatOption, MatSelect } from '@angular/material/select';
+import { Router, RouterLink } from '@angular/router';
+import { TranslocoPipe } from '@jsverse/transloco';
+
+import { fieldProblems, problemType } from '../../../core/api/problem';
+import { LanguageService } from '../../../core/i18n/language.service';
+import { nameValidator } from '../../../shared/name-rules';
+import { PASSWORD_VALIDATORS } from '../password-rules';
+import { OrganizationSummary } from '../../../core/organizations/organizations.service';
+import { ConsentsService } from '../../privacy/consents.service';
+import { RegistrationService } from '../registration.service';
+import { AuthLayoutComponent } from '../auth-layout/auth-layout.component';
+
+export const INSTITUTIONAL_DOMAIN = 'chnu.edu.ua';
+export const INSTITUTIONAL_EMAIL = new RegExp(
+  `^[^@\\s]+@${INSTITUTIONAL_DOMAIN.replace(/\./g, '\\.')}$`,
+  'i',
+);
+
+export interface DepartmentGroup {
+  faculty: string;
+  departments: OrganizationSummary[];
+}
+
+@Component({
+  selector: 'app-register',
+  imports: [
+    AuthLayoutComponent,
+    ReactiveFormsModule,
+    MatCard,
+    MatCardHeader,
+    MatCardTitle,
+    MatCardContent,
+    MatFormField,
+    MatLabel,
+    MatError,
+    MatInput,
+    MatSelect,
+    MatOptgroup,
+    MatOption,
+    MatCheckbox,
+    MatButton,
+    RouterLink,
+    TranslocoPipe,
+  ],
+  templateUrl: './register.component.html',
+  styleUrl: './register.component.scss',
+})
+export class RegisterComponent implements OnInit {
+  private readonly fb = inject(FormBuilder);
+  private readonly api = inject(RegistrationService);
+  private readonly router = inject(Router);
+  private readonly language = inject(LanguageService);
+  private readonly consents = inject(ConsentsService);
+
+  readonly form = this.fb.nonNullable.group({
+    email: ['', [Validators.required, Validators.email, Validators.pattern(INSTITUTIONAL_EMAIL)]],
+    password: ['', PASSWORD_VALIDATORS],
+    firstName: ['', nameValidator],
+    lastName: ['', nameValidator],
+    organizationId: [null as number | null, Validators.required],
+    privacyNotice: [false, Validators.requiredTrue],
+  });
+
+  readonly groups = signal<DepartmentGroup[]>([]);
+  readonly error = signal<string | null>(null);
+  readonly submitting = signal(false);
+  readonly noticeVersion = signal<string | null>(null);
+
+  ngOnInit(): void {
+    this.api
+      .departments()
+      .subscribe((departments) => this.groups.set(this.groupByFaculty(departments)));
+    this.loadNotice();
+  }
+
+  name(organization: { name: string; nameUk: string | null }): string {
+    return this.language.current() === 'uk' && organization.nameUk
+      ? organization.nameUk
+      : organization.name;
+  }
+
+  submit(): void {
+    if (this.form.invalid || this.submitting()) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    const privacyNoticeVersion = this.noticeVersion();
+    if (!privacyNoticeVersion) {
+      this.error.set('register.errors.notice-unavailable');
+      this.loadNotice();
+      return;
+    }
+    this.submitting.set(true);
+    this.error.set(null);
+    const value = this.form.getRawValue();
+    this.api
+      .register({
+        password: value.password,
+        email: value.email.trim(),
+        firstName: value.firstName.trim(),
+        lastName: value.lastName.trim(),
+        organizationId: value.organizationId as number,
+        privacyNoticeVersion,
+      })
+      .subscribe({
+        next: (response) =>
+          void this.router.navigate(['/registration-pending'], {
+            queryParams: { email: response.email },
+          }),
+        error: (err) => {
+          this.submitting.set(false);
+          if (noticeOutdated(err)) {
+            this.error.set('register.errors.notice-outdated');
+            this.form.controls.privacyNotice.setValue(false);
+            this.loadNotice();
+            return;
+          }
+          this.error.set(`register.errors.${problemType(err)}`);
+        },
+      });
+  }
+
+  groupByFaculty(departments: OrganizationSummary[]): DepartmentGroup[] {
+    const groups = new Map<string, DepartmentGroup>();
+    for (const department of departments) {
+      const faculty = department.parent ? this.name(department.parent) : '';
+      const group = groups.get(faculty) ?? { faculty, departments: [] };
+      group.departments.push(department);
+      groups.set(faculty, group);
+    }
+    return [...groups.values()].sort((a, b) => a.faculty.localeCompare(b.faculty));
+  }
+
+  private loadNotice(): void {
+    this.consents.notice().subscribe({
+      next: (notice) => this.noticeVersion.set(notice.version),
+      error: () => this.noticeVersion.set(null),
+    });
+  }
+}
+
+function noticeOutdated(error: unknown): boolean {
+  return fieldProblems(error).some(
+    (problem) => problem.field === 'privacyNoticeVersion' && problem.code === 'outdated',
+  );
+}

@@ -1,0 +1,168 @@
+package ua.edu.chnu.awards.award.controller;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
+
+import org.mockito.Answers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
+
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+
+import ua.edu.chnu.awards.audit.service.AuditService;
+import ua.edu.chnu.awards.audit.service.AuditTrailService;
+import ua.edu.chnu.awards.auth.config.ApiSecurityConfig;
+import ua.edu.chnu.awards.auth.config.LoginSessionConfig;
+import ua.edu.chnu.awards.auth.config.PublicApiSecurityConfig;
+import ua.edu.chnu.awards.auth.config.RateLimitConfig;
+import ua.edu.chnu.awards.auth.config.SecurityConfig;
+import ua.edu.chnu.awards.auth.security.AccessTokenDecoder;
+import ua.edu.chnu.awards.auth.security.AccountStatusChecker;
+import ua.edu.chnu.awards.auth.security.JpaUserDetailsService;
+import ua.edu.chnu.awards.auth.security.JwtAuthorityConverter;
+import ua.edu.chnu.awards.auth.security.LockedAccountChecker;
+import ua.edu.chnu.awards.auth.security.LoginAccessDeniedHandler;
+import ua.edu.chnu.awards.auth.security.LoginFailureHandler;
+import ua.edu.chnu.awards.auth.security.ProblemDetailsEntryPoint;
+import ua.edu.chnu.awards.authz.AccessDenials;
+import ua.edu.chnu.awards.authz.AccessDeniedProblems;
+import ua.edu.chnu.awards.authz.AccessScope;
+import ua.edu.chnu.awards.authz.ProblemDetailsAccessDeniedHandler;
+import ua.edu.chnu.awards.authz.RoleLevels;
+import ua.edu.chnu.awards.authz.RolePermissions;
+import ua.edu.chnu.awards.award.dto.AwardRecipient;
+import ua.edu.chnu.awards.award.dto.AwardResponse;
+import ua.edu.chnu.awards.award.dto.CategoryRef;
+import ua.edu.chnu.awards.award.dto.RequestSummary;
+import ua.edu.chnu.awards.award.dto.UserRef;
+import ua.edu.chnu.awards.award.entity.ApprovalLevel;
+import ua.edu.chnu.awards.award.entity.AwardSource;
+import ua.edu.chnu.awards.award.entity.AwardStatus;
+import ua.edu.chnu.awards.award.entity.AwardVisibility;
+import ua.edu.chnu.awards.award.entity.RecognitionLevel;
+import ua.edu.chnu.awards.award.entity.RequestStatus;
+import ua.edu.chnu.awards.award.service.AwardHistory;
+import ua.edu.chnu.awards.award.service.AwardService;
+import ua.edu.chnu.awards.award.service.AwardSubmission;
+import ua.edu.chnu.awards.common.limit.RateLimitMetrics;
+import ua.edu.chnu.awards.common.web.ApiExceptionHandler;
+import ua.edu.chnu.awards.config.InfrastructureConfig;
+import ua.edu.chnu.awards.organization.OrganizationTree;
+import ua.edu.chnu.awards.organization.dto.OrganizationRef;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
+
+/**
+ * The real security chain of {@code /api/v1/awards} with the services behind it mocked.
+ */
+@Import({SecurityConfig.class, PublicApiSecurityConfig.class, LoginSessionConfig.class, InfrastructureConfig.class,
+    JwtAuthorityConverter.class, ProblemDetailsEntryPoint.class, LoginAccessDeniedHandler.class,
+    ApiExceptionHandler.class, AccessScope.class, RoleLevels.class, RolePermissions.class, AccessDenials.class,
+    AccessDeniedProblems.class, ProblemDetailsAccessDeniedHandler.class, AwardBodyProblems.class,
+    ApiSecurityConfig.class, RateLimitConfig.class, RateLimitMetrics.class,
+    SimpleMeterRegistry.class})
+abstract class AbstractAwardEndpointsTest {
+
+    @Autowired
+    protected MockMvc mockMvc;
+
+    @MockitoBean
+    protected AwardService awardService;
+
+    @MockitoBean
+    protected AwardSubmission submission;
+
+    @MockitoBean
+    protected AuditService audit;
+
+    @MockitoBean
+    protected AwardHistory history;
+
+    @MockitoBean
+    protected AuditTrailService auditTrail;
+
+    @MockitoBean
+    private OrganizationTree tree;
+
+    @MockitoBean
+    private JwtDecoder jwtDecoder;
+
+    @MockitoBean(answers = Answers.RETURNS_MOCKS)
+    private AccessTokenDecoder accessTokenDecoder;
+
+    @MockitoBean
+    private JpaUserDetailsService userDetailsService;
+
+    @MockitoBean
+    private AccountStatusChecker statusChecker;
+
+    @MockitoBean
+    private LoginFailureHandler failureHandler;
+
+    @MockitoBean
+    private LockedAccountChecker lockChecker;
+
+    @MockitoBean(answers = Answers.RETURNS_DEEP_STUBS)
+    private StringRedisTemplate redisTemplate;
+
+    /**
+     * An employee of department 64 with the permissions of the role.
+     *
+     * @return the bearer token to send
+     */
+    protected static RequestPostProcessor employee() {
+        return jwt().jwt(token -> token.subject("21").claim("role_scopes", List.of("EMPLOYEE:64")))
+            .authorities(new SimpleGrantedAuthority("award:read:own"), new SimpleGrantedAuthority("award:create"),
+                new SimpleGrantedAuthority("award:update:own"));
+    }
+
+    /**
+     * The secretary of faculty 9, who reviews at the first level.
+     *
+     * @return the bearer token to send
+     */
+    protected static RequestPostProcessor secretary() {
+        return jwt().jwt(token -> token.subject("31").claim("role_scopes", List.of("FACULTY_SECRETARY:9")))
+            .authorities(new SimpleGrantedAuthority("award:read:own"),
+                new SimpleGrantedAuthority("award:approve:level1"));
+    }
+
+    /**
+     * The system administrator, who reads every award and submits none.
+     *
+     * @return the bearer token to send
+     */
+    protected static RequestPostProcessor administrator() {
+        return jwt().jwt(token -> token.subject("1").claim("role_scopes", List.of("SYSTEM_ADMIN:1")))
+            .authorities(new SimpleGrantedAuthority("award:read:own"), new SimpleGrantedAuthority("award:read:all"));
+    }
+
+    /**
+     * An award as the service returns it.
+     *
+     * @param status the award status
+     * @return the response
+     */
+    protected static AwardResponse award(AwardStatus status) {
+        RequestSummary request = status == AwardStatus.DRAFT ? null
+            : new RequestSummary(RequestStatus.SUBMITTED, ApprovalLevel.FACULTY_SECRETARY,
+                Instant.parse("2026-09-28T09:00:00Z"), Instant.parse("2026-10-01T09:00:00Z"),
+                LocalDate.of(2026, 10, 7), false, null);
+        return new AwardResponse(5L, null, "Грамота МОН", null, null,
+            new CategoryRef(13L, "Ministry Recognition", "Відзнака міністерства", RecognitionLevel.NATIONAL),
+            "МОН України", LocalDate.of(2025, 5, 1), null, status, request == null ? null : 80,
+            new UserRef(21L, "Анастасія Коваль", "employee.fmi@chnu.edu.ua"), AwardRecipient.PERSON,
+            new OrganizationRef(64L, "Algebra and Informatics", "Кафедра алгебри та інформатики", "DAI",
+                OrganizationType.DEPARTMENT), request, List.of(), AwardVisibility.PRIVATE,
+            Instant.parse("2026-09-28T08:00:00Z"), Instant.parse("2026-09-28T08:30:00Z"), 3L, false, false,
+            AwardSource.FORM);
+    }
+}

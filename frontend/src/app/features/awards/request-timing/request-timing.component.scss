@@ -1,0 +1,14 @@
+:host {
+  display: contents;
+}
+
+.timing {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.timing__delayed {
+  flex-shrink: 0;
+  border-color: transparent;
+  background: var(--mat-sys-tertiary-container);
+}

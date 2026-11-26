@@ -1,0 +1,136 @@
+package ua.edu.chnu.awards.award.controller;
+
+import java.time.LocalDate;
+
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import ua.edu.chnu.awards.award.dto.AwardForm;
+import ua.edu.chnu.awards.award.dto.AwardQuery;
+import ua.edu.chnu.awards.award.dto.AwardResponse;
+import ua.edu.chnu.awards.award.dto.AwardStatusView;
+import ua.edu.chnu.awards.award.dto.SubmitRequest;
+import ua.edu.chnu.awards.award.entity.AwardStatus;
+import ua.edu.chnu.awards.award.entity.AwardVisibility;
+import ua.edu.chnu.awards.award.service.AwardService;
+import ua.edu.chnu.awards.award.service.AwardStatusService;
+import ua.edu.chnu.awards.award.service.AwardSubmission;
+import ua.edu.chnu.awards.common.web.PageResponse;
+
+import lombok.RequiredArgsConstructor;
+
+/**
+ * Awards of the caller from draft to submission, and the reading of submitted awards within the caller's
+ * scope.
+ */
+@RestController
+@RequestMapping("/api/v1/awards")
+@RequiredArgsConstructor
+public class AwardController {
+
+    private final AwardService awardService;
+    private final AwardSubmission submission;
+    private final AwardStatusService statusService;
+
+    /**
+     * The caller's own awards, newest first.
+     *
+     * @param status     limit to an award status
+     * @param category   limit to a category
+     * @param dateFrom   earliest award date
+     * @param dateTo     latest award date
+     * @param q          search text; while searching the page is in relevance order
+     * @param visibility limit to personal awards with this visibility
+     * @param page       0-based page
+     * @param size       page size, capped at 100
+     * @return the page
+     */
+    @GetMapping
+    @PreAuthorize(AwardPermissionConstants.CAN_READ_OWN)
+    public PageResponse<AwardResponse> list(@RequestParam(required = false) AwardStatus status,
+                                            @RequestParam(required = false) Long category,
+                                            @RequestParam(required = false)
+                                            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
+                                            @RequestParam(required = false)
+                                            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
+                                            @RequestParam(required = false) String q,
+                                            @RequestParam(required = false) AwardVisibility visibility,
+                                            @RequestParam(defaultValue = "0") int page,
+                                            @RequestParam(defaultValue = "20") int size) {
+        return PageResponse.of(awardService.listOwn(new AwardQuery(status, category, dateFrom, dateTo, q,
+            visibility), page, size));
+    }
+
+    /**
+     * One award: the caller's own, or a submitted award inside the caller's reading scope.
+     *
+     * @param id the award
+     * @return the award
+     */
+    @GetMapping("/{id}")
+    @PreAuthorize(AwardPermissionConstants.CAN_READ_OWN)
+    public AwardResponse get(@PathVariable long id) {
+        return awardService.get(id);
+    }
+
+    /**
+     * The review timeline of an award: the caller's own, or a submitted award inside the caller's reading scope.
+     *
+     * @param id the award
+     * @return the timeline; without a request for a draft
+     */
+    @GetMapping("/{id}/status")
+    @PreAuthorize(AwardPermissionConstants.CAN_READ_OWN)
+    public AwardStatusView status(@PathVariable long id) {
+        return statusService.status(id);
+    }
+
+    /**
+     * Replaces the fields of the caller's draft.
+     *
+     * @param id   the draft
+     * @param form the full form with the version last read
+     * @return the draft with its new version
+     */
+    @PutMapping("/{id}")
+    @PreAuthorize(AwardPermissionConstants.CAN_UPDATE)
+    public AwardResponse update(@PathVariable long id, @RequestBody AwardForm form) {
+        return awardService.update(id, form);
+    }
+
+    /**
+     * Deletes the caller's draft.
+     *
+     * @param id the draft
+     */
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize(AwardPermissionConstants.CAN_READ_OWN)
+    public void delete(@PathVariable long id) {
+        awardService.delete(id);
+    }
+
+    /**
+     * Submits the caller's draft to the faculty secretary.
+     *
+     * @param id      the draft
+     * @param request the version last read
+     * @return the pending award with its request
+     */
+    @PostMapping("/{id}/submit")
+    @PreAuthorize(AwardPermissionConstants.CAN_CREATE)
+    public AwardResponse submit(@PathVariable long id, @RequestBody(required = false) SubmitRequest request) {
+        return submission.submit(id, request);
+    }
+}

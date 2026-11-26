@@ -1,0 +1,150 @@
+<section class="award-status" data-testid="award-status-panel" aria-labelledby="award-status-title">
+  <h2 id="award-status-title" class="award-status__title">
+    {{ 'awards.statusPanel.title' | transloco }}
+  </h2>
+  <p class="award-status__live" aria-live="polite" data-testid="award-status-announcement">
+    @if (announcements() > 0) {
+      {{ 'awards.statusPanel.updated' | transloco }}
+      @if (announcements() % 2 === 0) {
+        &nbsp;
+      }
+    }
+  </p>
+
+  @if (view(); as view) {
+    @if (view.requestStatus && view.submittedAt) {
+      <ol class="award-status__path" data-testid="award-status-path">
+        <li class="award-status__step award-status__step--DONE">
+          <span class="award-status__level" data-testid="award-status-submitted">{{
+            (resubmitted() ? 'awards.statusPanel.resubmitted' : 'awards.statusPanel.submitted')
+              | transloco
+          }}</span>
+          <span class="award-status__when">{{ view.submittedAt | kyivDate }}</span>
+        </li>
+        @for (step of view.path; track step.level) {
+          <li
+            [class]="
+              'award-status__step award-status__step--' +
+              (step.state === 'CURRENT' && !pendingReview() ? 'STOPPED' : step.state)
+            "
+            [attr.aria-current]="step.state === 'CURRENT' && pendingReview() ? 'step' : null"
+            [attr.data-state]="step.state"
+            data-testid="award-status-step"
+          >
+            <span class="award-status__level">{{ 'roles.' + step.level | transloco }}</span>
+            @if (step.state === 'CURRENT' && pendingReview()) {
+              <span class="award-status__now" data-testid="award-status-now">{{
+                'awards.statusPanel.now' | transloco
+              }}</span>
+            }
+            @if (step.state === 'SKIPPED') {
+              <span class="award-status__when" data-testid="award-status-skipped">{{
+                'awards.statusPanel.skipped' | transloco
+              }}</span>
+            } @else if (step.state === 'DONE' && step.completedAt) {
+              <span class="award-status__when">{{ step.completedAt | kyivDate }}</span>
+            } @else if (step.state === 'CURRENT' && step.dueDate) {
+              <span class="award-status__when" data-testid="award-status-due">{{
+                'awards.timing.expected' | transloco: { date: (step.dueDate | kyivDate) }
+              }}</span>
+            } @else if (step.dueDate) {
+              <span class="award-status__when">{{
+                'awards.statusPanel.upcomingBy' | transloco: { date: (step.dueDate | kyivDate) }
+              }}</span>
+            }
+          </li>
+        }
+      </ol>
+
+      @if (view.delay; as delay) {
+        <p class="award-status__delay" role="status" data-testid="award-status-delay">
+          @if (delay.reason === 'NO_REVIEWER' && view.currentLevel) {
+            {{
+              'awards.statusPanel.noReviewer'
+                | transloco: { level: ('roles.' + view.currentLevel | transloco) }
+            }}
+          } @else if (delay.since && delay.noticedAt) {
+            {{
+              'awards.statusPanel.overdueNoticed'
+                | transloco
+                  : { since: (delay.since | kyivDate), noticed: (delay.noticedAt | kyivDate) }
+            }}
+          } @else if (delay.since && view.estimatedCompletion) {
+            {{
+              'awards.statusPanel.overdue'
+                | transloco
+                  : { since: (delay.since | kyivDate), date: (view.estimatedCompletion | kyivDate) }
+            }}
+          }
+        </p>
+      }
+
+      @if (view.requestStatus === 'RETURNED') {
+        <p class="award-status__summary" data-testid="award-status-returned">
+          {{ 'awards.statusPanel.returned' | transloco }}
+        </p>
+      } @else if (view.estimatedCompletion) {
+        <p class="award-status__summary" data-testid="award-status-estimate">
+          {{
+            'awards.statusPanel.estimate'
+              | transloco: { date: (view.estimatedCompletion | kyivDate) }
+          }}
+        </p>
+      }
+      @if (view.completedAt) {
+        <p class="award-status__summary" data-testid="award-status-completed">
+          {{ 'awards.statusPanel.completed' | transloco: { date: (view.completedAt | kyivDate) } }}
+        </p>
+      }
+      @if (view.rejectionReason) {
+        <p class="award-status__summary" data-testid="award-status-rejection">
+          {{ 'awards.statusPanel.rejectionReason' | transloco: { reason: view.rejectionReason } }}
+        </p>
+      }
+
+      @if (view.decisions.length) {
+        <h3 class="award-status__subtitle">{{ 'awards.statusPanel.decisions' | transloco }}</h3>
+        <ul class="award-status__decisions" data-testid="award-status-decisions">
+          @for (decision of view.decisions; track decision.id) {
+            <li class="award-status__decision" data-testid="award-status-decision">
+              <div>
+                <strong>{{
+                  'awards.statusPanel.decision.' + decision.decision | transloco
+                }}</strong>
+                <span class="award-status__meta">
+                  · {{ decision.reviewerName }}
+                  @if (decision.delegatorName) {
+                    <span data-testid="award-status-delegator">{{
+                      'awards.statusPanel.onBehalf' | transloco: { name: decision.delegatorName }
+                    }}</span>
+                  }
+                  · {{ 'roles.' + decision.level | transloco }} ·
+                  <time [attr.datetime]="decision.decidedAt">{{ time(decision.decidedAt) }}</time>
+                </span>
+              </div>
+              @if (decision.comments) {
+                <p class="award-status__comment" data-testid="award-status-comment">
+                  {{ decision.comments }}
+                </p>
+              }
+            </li>
+          }
+        </ul>
+      }
+    }
+  }
+
+  @if (loading() && !view()) {
+    <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />
+  }
+  @if (problem(); as problem) {
+    <div class="award-status__problem" role="alert" data-testid="award-status-error">
+      <span>{{ 'awards.statusPanel.problems.' + problem | transloco }}</span>
+      @if (problem === 'failed') {
+        <button mat-button type="button" (click)="load()" data-testid="award-status-retry">
+          {{ 'awards.statusPanel.retry' | transloco }}
+        </button>
+      }
+    </div>
+  }
+</section>

@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title}">Sign in</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/login-assets/{id}/logo.svg(id=${@loginBrand.id})}">
+    <script th:src="@{/login-assets/scheme.js}"></script>
+    <link rel="stylesheet" th:href="@{/login-assets/brand-{id}.css(id=${@loginBrand.id})}">
+    <link rel="stylesheet" th:href="@{/login-assets/login.css}">
+    <link rel="stylesheet" th:href="@{/login-assets/signin-{theme}.css(theme=${@signInTheme.id})}">
+</head>
+</html>

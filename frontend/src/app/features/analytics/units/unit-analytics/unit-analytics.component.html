@@ -1,0 +1,185 @@
+@if (notFound()) {
+  <app-status-page
+    icon="search-x"
+    [title]="'unitAnalytics.notFoundTitle' | transloco"
+    [text]="'unitAnalytics.notFound' | transloco"
+    data-testid="unit-not-found"
+  >
+    <a mat-flat-button routerLink="/analytics">{{ 'unitAnalytics.back' | transloco }}</a>
+  </app-status-page>
+} @else {
+  <app-page-header [heading]="'unitAnalytics.title' | transloco" [context]="context()">
+    @if (!invalid()) {
+      <app-period-chips
+        pageChips
+        [period]="period()"
+        (choose)="choose($event)"
+        (allYears)="allYears()"
+      />
+    }
+    <app-export-menu
+      pageActions
+      [unitId]="unitId()"
+      [period]="shownPeriod()"
+      [disabled]="exportDisabled()"
+    />
+  </app-page-header>
+
+  @if (invalid()) {
+    <section class="units__problem" role="alert" data-testid="unit-analytics-invalid">
+      <p>{{ 'analytics.report.invalidPeriod' | transloco }}</p>
+      <button mat-stroked-button type="button" (click)="allYears()">
+        {{ 'analytics.period.allYears' | transloco }}
+      </button>
+    </section>
+  } @else {
+    <app-split
+      mode="stack"
+      stickySide
+      [class.units--updating]="updating()"
+      [attr.aria-busy]="updating()"
+      data-testid="unit-analytics-body"
+    >
+      <div splitSide>
+        @if (analytics(); as data) {
+          <app-pane
+            icon="layout-dashboard"
+            [heading]="'unitAnalytics.sections.totals' | transloco"
+            flush
+            data-testid="section-totals"
+          >
+            <app-delta-tiles [totals]="data.totals" [previousPeriod]="data.previousPeriod" />
+          </app-pane>
+        }
+        @if (units().length > 0) {
+          <app-pane
+            icon="building"
+            [heading]="'unitAnalytics.sections.units' | transloco"
+            flush
+            data-testid="section-units"
+          >
+            <app-analytics-rail [units]="units()" [selected]="unitId()" [counts]="counts()" />
+          </app-pane>
+        }
+      </div>
+
+      <div splitMain>
+        <div class="units__period">
+          <app-period-select
+            [period]="period()"
+            (choose)="choose($event)"
+            (allYears)="allYears()"
+          />
+          @if (loading()) {
+            <mat-progress-bar
+              mode="indeterminate"
+              [attr.aria-label]="'app.loading' | transloco"
+              data-testid="unit-analytics-loading"
+            />
+          }
+        </div>
+
+        @if (problem()) {
+          <div class="units__problem" role="alert" data-testid="unit-analytics-error">
+            <p>{{ 'unitAnalytics.failed' | transloco }}</p>
+            <button mat-stroked-button type="button" (click)="retry()">
+              {{ 'analytics.retry' | transloco }}
+            </button>
+          </div>
+        } @else if (analytics(); as data) {
+          <app-pane
+            icon="chart-line"
+            [heading]="'unitAnalytics.sections.trend' | transloco"
+            data-testid="section-trend"
+          >
+            @if (hasYears()) {
+              <app-unit-trend-chart [analytics]="data" />
+            } @else {
+              <p class="analytics-note">{{ 'unitAnalytics.noAwards' | transloco }}</p>
+            }
+          </app-pane>
+
+          <app-pane
+            icon="trophy"
+            [heading]="'unitAnalytics.sections.topPerformers' | transloco"
+            data-testid="section-top-performers"
+          >
+            <app-top-performers [topPerformers]="data.topPerformers" />
+          </app-pane>
+
+          <app-pane
+            icon="sparkles"
+            [heading]="'unitAnalytics.sections.highlights' | transloco"
+            tone="ink"
+            data-testid="section-highlights"
+          >
+            <app-highlights [highlights]="data.highlights" />
+          </app-pane>
+
+          @if (data.unit.type === 'FACULTY') {
+            <app-pane
+              icon="chart-bar"
+              [heading]="'unitAnalytics.sections.comparison' | transloco"
+              chartLabel="charts.ranking"
+              data-testid="section-comparison"
+            >
+              <app-unit-comparison
+                [rows]="data.units"
+                [period]="shownPeriod()"
+                [totals]="data.totals"
+              />
+            </app-pane>
+          }
+
+          <div class="units__pair">
+            <app-pane
+              icon="layout-grid"
+              [heading]="'unitAnalytics.sections.byCategory' | transloco"
+              data-testid="section-by-category"
+            >
+              @if (byCategory().length > 0) {
+                <app-comparison-bars
+                  [rows]="byCategory()"
+                  [caption]="'unitAnalytics.sections.byCategory' | transloco"
+                  [labelHeader]="'analytics.table.category' | transloco"
+                  tableId="unit-category-table"
+                />
+              } @else {
+                <p class="analytics-note">{{ 'unitAnalytics.noAwards' | transloco }}</p>
+              }
+            </app-pane>
+
+            <app-pane
+              icon="chart-bar"
+              [heading]="'unitAnalytics.sections.byLevel' | transloco"
+              data-testid="section-by-level"
+            >
+              @if (byLevel().length > 0) {
+                <app-comparison-bars
+                  [rows]="byLevel()"
+                  [caption]="'unitAnalytics.sections.byLevel' | transloco"
+                  [labelHeader]="'analytics.table.level' | transloco"
+                  tableId="unit-level-table"
+                />
+              } @else {
+                <p class="analytics-note">{{ 'unitAnalytics.noAwards' | transloco }}</p>
+              }
+            </app-pane>
+          </div>
+
+          <app-pane
+            icon="chart-column"
+            [heading]="'unitAnalytics.sections.bySource' | transloco"
+            data-testid="section-by-source"
+          >
+            @if (data.bySource.sources.length > 0) {
+              <app-source-chart [bySource]="data.bySource" />
+            } @else {
+              <p class="analytics-note">{{ 'unitAnalytics.noAwards' | transloco }}</p>
+            }
+          </app-pane>
+        }
+      </div>
+    </app-split>
+  }
+}

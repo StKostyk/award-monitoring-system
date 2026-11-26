@@ -1,26 +1,24 @@
-## Description
-Brief description of what this PR does.
+## Purpose
 
-## Type of Change
-- [ ] 📖 Documentation update
-- [ ] ✨ New feature  
-- [ ] 🐛 Bug fix
-- [ ] 🔄 Refactoring
-- [ ] 🧪 Testing improvements
-- [ ] 🎨 Style/formatting changes
+<!-- One or two sentences: what this PR delivers and which story it closes (SCRUM-xx). -->
 
-## Phase/Deliverable
-- **Phase**: [Phase number and name]
-- **Deliverable**: [Specific deliverable this PR addresses]
+## Changes
 
-## Checklist
-- [ ] I have performed a self-review of my code (if any)
-- [ ] If it is a core feature, I have added thorough tests
-- [ ] Documentation follows project standards
-- [ ] All links tested and working
-- [ ] CHANGELOG.md updated
-- [ ] README.md updated (if needed)
-- [ ] Self-review completed
+-
 
-## Additional Notes
-Any additional context or considerations.
+## Tests
+
+<!-- Unit / integration / functional / e2e counts and coverage from `mvn verify`. -->
+
+## Documentation
+
+- [ ] `docs/api/openapi.yml`
+- [ ] `docs/database/DATA_DICTIONARY.md`
+- [ ] ADR / addendum
+- [ ] `CHANGELOG.md`
+- [ ] Epic tracker / backlog
+- [ ] Not applicable
+
+## Design notes
+
+<!-- Optional: decisions worth a reviewer's attention, deviations from documented design. -->

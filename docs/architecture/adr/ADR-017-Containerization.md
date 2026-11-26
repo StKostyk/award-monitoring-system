@@ -237,11 +237,27 @@ docker-compose down
 
 ---
 
+## Addendum 2026-10: Compose services as built
+
+The development Compose file (`docker-compose.yaml`) runs `postgres`, `redis`, `mailpit` (local mail
+catcher), `minio` (S3-compatible object storage), `app` (backend) and `frontend` (nginx with the Angular bundle).
+The Kafka and Elasticsearch services in the example above are target-state; they are added only when ADR-006 and
+ADR-007 are implemented.
+
+Epic 3 added `minio-init` (a one-shot job that creates the bucket with server-side encryption and the backend's
+own MinIO account) and `clamav` (malware scanner, about 1.2 GB of memory; the backend starts once it is healthy).
+`docker-compose.prod.yml` overlays the same file for the demo: profile `production`, Caddy for TLS and no
+published data ports (ADR-021).
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-21 | Stefan Kostyk | Initial version | Document creation |
+| 2026-10-01 | Stefan Kostyk | Addendum: compose services as built | Documentation sync after Epic 2 |
+| 2026-10-05 | Stefan Kostyk | Addendum: `minio-init`, `clamav`, production overlay | Documentation sync after Epic 3 |
 
 ---
 

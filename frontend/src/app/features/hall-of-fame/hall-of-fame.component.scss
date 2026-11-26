@@ -1,0 +1,43 @@
+.hall__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.hall__heading {
+  min-width: 0;
+}
+
+.hall__title {
+  font: var(--mat-sys-headline-small);
+  margin: 0;
+}
+
+.hall__unit {
+  font: var(--mat-sys-body-large);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.hall__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hall__picker {
+  display: block;
+  margin-bottom: 16px;
+}
+
+.hall__problem {
+  color: var(--mat-sys-error);
+}
+
+.hall__empty {
+  color: var(--mat-sys-on-surface-variant);
+}

@@ -1,0 +1,209 @@
+<app-page-header [heading]="'admin.users.title' | transloco" [context]="counts()">
+  @if (canAddPeople) {
+    <button
+      pageActions
+      mat-flat-button
+      type="button"
+      (click)="addPerson()"
+      data-testid="person-add-open"
+    >
+      <app-icon matButtonIcon name="plus" />
+      {{ 'admin.people.add' | transloco }}
+    </button>
+  }
+</app-page-header>
+
+<app-onboarding-checklist landing />
+
+<form
+  [formGroup]="filters"
+  class="users__toolbar"
+  [class.users__toolbar--detail]="selectedId() !== null"
+  data-testid="users-toolbar"
+>
+  <mat-form-field class="users__search" appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'admin.users.filters.q' | transloco }}</mat-label>
+    <input matInput type="search" formControlName="q" data-testid="filter-q" />
+    <mat-hint>{{ 'admin.users.filters.qHint' | transloco }}</mat-hint>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'admin.users.filters.role' | transloco }}</mat-label>
+    <mat-select formControlName="role" data-testid="filter-role">
+      <mat-option [value]="null">{{ 'admin.users.filters.anyRole' | transloco }}</mat-option>
+      @for (role of roles; track role) {
+        <mat-option [value]="role">{{ 'roles.' + role | transloco }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'admin.users.filters.status' | transloco }}</mat-label>
+    <mat-select formControlName="status" data-testid="filter-status">
+      <mat-option [value]="null">{{ 'admin.users.filters.anyStatus' | transloco }}</mat-option>
+      @for (status of statuses; track status) {
+        <mat-option [value]="status">{{ 'admin.status.' + status | transloco }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-checkbox formControlName="unconfirmed" data-testid="filter-unconfirmed">
+    {{ 'admin.users.filters.unconfirmed' | transloco }}
+  </mat-checkbox>
+</form>
+
+<app-split mode="detail" [detailOpen]="selectedId() !== null" [sideFull]="tableMode()" stickySide>
+  <div splitSide class="users__side">
+    @if (loading()) {
+      <mat-progress-bar
+        [attr.aria-label]="'app.loading' | transloco"
+        mode="indeterminate"
+        data-testid="users-loading"
+      />
+    }
+
+    @if (problem(); as problem) {
+      <p class="users__problem" role="alert" data-testid="users-error">
+        {{ 'admin.problems.' + problem | transloco }}
+      </p>
+    }
+
+    <app-pane icon="users" [heading]="'admin.users.people' | transloco" flush>
+      <span paneMeta>{{ users().length }}</span>
+      @if (tableMode()) {
+        <div class="users__table-wrap">
+          <table class="users__table" data-testid="users-table">
+            <thead>
+              <tr>
+                <th scope="col">{{ 'admin.users.columns.name' | transloco }}</th>
+                <th scope="col">{{ 'admin.users.columns.unit' | transloco }}</th>
+                <th scope="col">{{ 'admin.users.columns.roles' | transloco }}</th>
+                <th scope="col">{{ 'admin.users.columns.status' | transloco }}</th>
+                <th scope="col">{{ 'admin.users.columns.lastLogin' | transloco }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (user of users(); track user.id) {
+                <tr data-testid="user-row">
+                  <th scope="row">
+                    <a
+                      class="users__person"
+                      [routerLink]="['/admin/users', user.id]"
+                      [attr.data-email]="address(user)"
+                      data-testid="user-link"
+                    >
+                      <span class="users__initials" aria-hidden="true">{{ initialsOf(user) }}</span>
+                      <span class="users__who">
+                        <span class="users__name">{{ user.lastName }} {{ user.firstName }}</span>
+                        @if (address(user); as address) {
+                          <span class="users__address" data-testid="user-address">{{
+                            address
+                          }}</span>
+                        }
+                      </span>
+                    </a>
+                  </th>
+                  <td>{{ name(user.organization) }}</td>
+                  <td data-testid="user-roles">
+                    @for (role of user.roles; track role.id) {
+                      <span class="users__role">{{ 'roles.' + role.role | transloco }}</span>
+                    } @empty {
+                      <span class="users__muted">{{ 'admin.users.noRoles' | transloco }}</span>
+                    }
+                  </td>
+                  <td>
+                    <span class="users__chips users__chips--row">
+                      <ng-container
+                        [ngTemplateOutlet]="chips"
+                        [ngTemplateOutletContext]="{ $implicit: user }"
+                      />
+                    </span>
+                  </td>
+                  <td data-testid="user-last-login">
+                    @if (user.lastLoginAt) {
+                      {{ moment(user.lastLoginAt) }}
+                    } @else {
+                      <span class="users__muted">{{ 'admin.detail.never' | transloco }}</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <nav
+          class="users__rows"
+          appListRows
+          [attr.aria-label]="'admin.users.title' | transloco"
+          data-testid="users-table"
+        >
+          @for (user of users(); track user.id) {
+            <a
+              appListRow
+              wrap
+              [routerLink]="['/admin/users', user.id]"
+              [initials]="initialsOf(user)"
+              [rowTitle]="user.lastName + ' ' + user.firstName"
+              [meta]="
+                selectedId() !== null
+                  ? name(user.organization)
+                  : (user.roles[0]
+                      ? ('roles.' + user.roles[0].role | transloco)
+                      : ('admin.users.noRoles' | transloco)) +
+                    ' · ' +
+                    name(user.organization)
+              "
+              [selected]="user.id === selectedId()"
+              [attr.data-email]="address(user)"
+              data-testid="user-link"
+            >
+              @if (selectedId() === null) {
+                <span rowEnd class="users__chips">
+                  <ng-container
+                    [ngTemplateOutlet]="chips"
+                    [ngTemplateOutletContext]="{ $implicit: user }"
+                  />
+                </span>
+              }
+            </a>
+          }
+        </nav>
+      }
+      @if (users().length === 0 && !loading()) {
+        <p class="users__empty" data-testid="users-empty">
+          {{ 'admin.users.empty' | transloco }}
+        </p>
+      }
+    </app-pane>
+
+    <mat-paginator
+      [length]="total()"
+      [pageIndex]="page()"
+      [pageSize]="size()"
+      [pageSizeOptions]="pageSizes"
+      (page)="changePage($event)"
+      data-testid="users-paginator"
+    />
+  </div>
+
+  <div splitMain>
+    <router-outlet />
+  </div>
+</app-split>
+
+<ng-template #chips let-user>
+  <span
+    class="app-st"
+    [class.app-st--ok]="user.status === 'ACTIVE'"
+    [class.app-st--bad]="user.status === 'SUSPENDED'"
+    data-testid="user-status"
+    >{{ 'admin.status.' + user.status | transloco }}</span
+  >
+  @if (user.status === 'UNCLAIMED') {
+    <span class="app-st app-st--wait" data-testid="unclaimed-badge">
+      {{ 'admin.people.badge' | transloco }}
+    </span>
+  } @else if (!user.membershipConfirmed) {
+    <span class="app-st app-st--wait" data-testid="unconfirmed-badge">
+      {{ 'admin.users.unconfirmedBadge' | transloco }}
+    </span>
+  }
+</ng-template>

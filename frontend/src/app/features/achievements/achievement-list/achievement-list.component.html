@@ -1,0 +1,197 @@
+@let filters = query().filters;
+@if (fixedUnit(); as unit) {
+  <app-unit-header [unitId]="unit" [scope]="scope" [fallback]="unitFallback()" />
+  @if (counterpart(); as link) {
+    <a
+      class="achievements__counterpart"
+      [routerLink]="link.path"
+      [queryParams]="link.queryParams"
+      data-testid="achievements-counterpart"
+    >
+      {{ 'achievements.' + link.label | transloco }}
+    </a>
+  }
+} @else {
+  <app-page-header
+    data-testid="achievements-title"
+    [heading]="
+      personName()
+        ? ('achievements.personTitle' | transloco: { name: personName() })
+        : ((scope === 'public' ? 'achievements.publicTitle' : 'achievements.title') | transloco)
+    "
+  >
+    @if (counterpart(); as link) {
+      <a
+        pageActions
+        mat-stroked-button
+        [routerLink]="link.path"
+        [queryParams]="link.queryParams"
+        data-testid="achievements-counterpart"
+      >
+        {{ 'achievements.' + link.label | transloco }}
+      </a>
+    }
+  </app-page-header>
+}
+
+<div
+  class="achievements__chips"
+  role="group"
+  [attr.aria-label]="'achievements.filters.recipient' | transloco"
+>
+  <button
+    type="button"
+    class="achievements__chip"
+    [attr.aria-pressed]="filters.recipient === null"
+    (click)="filter({ recipient: null })"
+    data-testid="recipient-all"
+  >
+    {{ 'achievements.filters.all' | transloco }}
+  </button>
+  @for (recipient of recipients; track recipient) {
+    <button
+      type="button"
+      class="achievements__chip"
+      [attr.aria-pressed]="filters.recipient === recipient"
+      (click)="filter({ recipient })"
+      [attr.data-testid]="'recipient-' + recipient"
+    >
+      {{ 'achievements.recipients.' + recipient | transloco }}
+    </button>
+  }
+</div>
+
+<div class="achievements__filters">
+  <app-search-field
+    class="achievements__filter achievements__filter--search"
+    label="achievements.filters.search"
+    [value]="filters.q"
+    (search)="filter({ q: $event })"
+  />
+  @if (fixedUnit() === null) {
+    <mat-form-field class="achievements__filter" subscriptSizing="dynamic">
+      <mat-label>{{ 'achievements.filters.unit' | transloco }}</mat-label>
+      <mat-select
+        [value]="filters.unit"
+        (selectionChange)="filter({ unit: $event.value })"
+        data-testid="filter-unit"
+      >
+        <mat-option [value]="null">{{ 'achievements.filters.all' | transloco }}</mat-option>
+        @for (option of units(); track option.unit.id) {
+          <mat-option [value]="option.unit.id" [class.achievements__child]="option.depth > 0">
+            {{ unitName(option) }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  }
+  <mat-form-field class="achievements__filter" subscriptSizing="dynamic">
+    <mat-label>{{ 'achievements.filters.year' | transloco }}</mat-label>
+    <mat-select
+      [value]="filters.year"
+      (selectionChange)="filter({ year: $event.value })"
+      data-testid="filter-year"
+    >
+      <mat-option [value]="null">{{ 'achievements.filters.all' | transloco }}</mat-option>
+      @for (year of years; track year) {
+        <mat-option [value]="year">{{ year }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field class="achievements__filter" subscriptSizing="dynamic">
+    <mat-label>{{ 'achievements.filters.level' | transloco }}</mat-label>
+    <mat-select
+      [value]="filters.level"
+      (selectionChange)="filter({ level: $event.value })"
+      data-testid="filter-level"
+    >
+      <mat-select-trigger>{{
+        'categories.levels.' + filters.level | transloco
+      }}</mat-select-trigger>
+      <mat-option [value]="null">{{ 'achievements.filters.all' | transloco }}</mat-option>
+      @for (level of levels; track level) {
+        <mat-option [value]="level">{{ 'categories.levels.' + level | transloco }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</div>
+
+@if (loading()) {
+  <mat-progress-bar
+    [attr.aria-label]="'app.loading' | transloco"
+    mode="indeterminate"
+    data-testid="achievements-loading"
+  />
+}
+
+@if (problem(); as problem) {
+  <div class="achievements__problem" role="alert" data-testid="achievements-error">
+    <p>{{ 'achievements.problems.' + problem | transloco }}</p>
+    @if (problem === 'failed') {
+      <button mat-stroked-button type="button" (click)="retry()" data-testid="achievements-retry">
+        {{ 'achievements.retry' | transloco }}
+      </button>
+    }
+  </div>
+}
+
+@if (highlight(); as top) {
+  <app-pane
+    icon="sparkles"
+    class="achievements__highlight"
+    [heading]="'achievements.highlight' | transloco"
+    tone="brand"
+    flush
+    data-testid="achievements-highlight"
+  >
+    <app-achievement-card
+      variant="hero"
+      [achievement]="top"
+      [unitPages]="unitPages"
+      [linked]="scope === 'signed-in'"
+    />
+  </app-pane>
+}
+
+<app-pane
+  icon="medal"
+  [heading]="'achievements.count.' + plural(total()) | transloco: { count: total() }"
+  flush
+  data-testid="achievements-feed"
+>
+  <span paneMeta>{{ 'achievements.newestFirst' | transloco }}</span>
+  <div data-testid="achievement-list">
+    @for (group of groups(); track group.year) {
+      <app-year-group [heading]="'' + group.year" data-testid="achievements-year">
+        <ul class="achievements__list">
+          @for (achievement of group.items; track achievement.awardId) {
+            <li>
+              <app-achievement-card
+                [achievement]="achievement"
+                [unitPages]="unitPages"
+                [linked]="scope === 'signed-in'"
+              />
+            </li>
+          }
+        </ul>
+      </app-year-group>
+    } @empty {
+      @if (!loading() && !problem()) {
+        <div class="achievements__empty" data-testid="achievements-empty">
+          <app-empty-state icon="trophy" [text]="'achievements.empty' | transloco" />
+        </div>
+      }
+    }
+  </div>
+</app-pane>
+
+@if (total() > 0) {
+  <mat-paginator
+    [length]="total()"
+    [pageIndex]="query().page"
+    [pageSize]="query().size"
+    [pageSizeOptions]="pageSizes"
+    (page)="page($event)"
+    data-testid="achievements-paginator"
+  />
+}

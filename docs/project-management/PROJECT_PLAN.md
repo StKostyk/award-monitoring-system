@@ -260,6 +260,107 @@ Before each milestone:
 
 ---
 
+## Addendum 2026-10: Re-baseline After Epic 2
+
+The plan above is the December 2025 baseline. Development since September 2026 runs differently:
+
+- **Cadence**: 1-week calendar sprints instead of 2-week sprints; Sprint 3 ran 2026-09-28 – 2026-10-04.
+- **Actual velocity**: Sprint 1 14 points (setup), Sprint 2 46 points, Sprint 3 60 points; 120 points delivered.
+- **Delivered scope**: Epic 1 (authentication on the embedded Spring Authorization Server, RBAC with organisation
+  scopes and delegation, profile, GDPR data export) and Epic 2 (award drafts, validation, categories, version
+  history, status tracking). MFA (1.3.5) is in the icebox; notification preferences (1.3.2) move to Epic 7;
+  award correction (2.4.1) and GDPR deletion (2.4.2) move to Epics 4 and 6.
+- **Epic order**: 1 → 2 → 3 (upload; OCR later) → 4 → 7 → 6 → 5 → 8, each epic a vertical slice (API and UI),
+  then Epic 9, production hardening before a pilot (backend-for-frontend with an HttpOnly cookie, refresh
+  tokens hashed at rest, rate limits for a campus NAT, shared sessions in Redis; design review of 2026-10-04).
+- **Deferred infrastructure**: Kafka, Elasticsearch, API gateway, Kubernetes and the cloud platform (ADR addenda
+  of 2026-10); the defense runs on one EU server with Docker Compose (ADR-021, 2026-10-02), rented shortly before the defense.
+  Production runs one Compose deployment per university, on university servers where available, and the backend
+  stays a modular monolith until a module meets the extraction criteria (ADR-022, proposed 2026-10-05).
+
+Current status: [BACKLOG.md](BACKLOG.md) and the epic trackers in [docs/epics](../epics/).
+
+## Addendum 2026-10: After Epic 3
+
+- **Velocity**: Sprint 3 closed with 91 points (Epic 2 and the first Epic 3 stories); Sprint 4 (2026-10-05 –
+  2026-10-11) has 18 points so far; 166 points delivered.
+- **Delivered scope**: Epic 3 as upload only. Feature 3.0 prepared the defense deployment (production Compose file,
+  university brand and dark mode, blocking lint and browser tests in CI); Feature 3.1 keeps award evidence in
+  encrypted object storage with malware scanning and per-user limits.
+- **Deferred**: OCR and confidence scoring (Features 3.2, 3.3, US-006, US-007, 29 points) are re-planned after
+  Epic 8; the BRD parsing metric stays unproven until then.
+- **Next**: Epic 4 (review workflow).
+
+## Addendum 2026-10-09: After Epic 4
+
+- **Velocity**: Epic 4 delivered 64 points within sprint 4 (2026-10-05 – 2026-10-11): feature 4.1 (reviewer queue, decisions,
+  withdrawal, batch review), feature 4.2 (per-faculty review period, overdue notice, reviewer corrections) and feature 4.3
+  (achievements pages), with a fix story after each validation. With the 166 points before it, about 230 points are delivered.
+- **Delivered scope**: standard workflow only; a missed deadline marks the request and notifies the next level and never
+  moves or decides it (ADR-023). Expedited, appeal and exception workflows are deferred.
+- **Next**: manual runs of the Epic 4 scenarios, then Epic 7 (notifications) and Epic 6.
+
+## Addendum 2026-10-15: After Epic 7
+
+- **Velocity**: Epic 7 delivered 36 points between 2026-10-09 and 2026-10-15 (end of sprint 4 and sprint 5): 32 planned
+  and four one-point fix stories from the validations; about 266 points are delivered.
+- **Delivered scope**: feature 7.1 moved the after-commit e-mails onto the Spring Modulith event publication registry
+  and turned the module boundaries of ADR-022 into a test; feature 7.2 added in-app notifications with a notification
+  centre, per-type e-mail and in-app preferences, a delivery log in the personal data export and HTML e-mails in the
+  university brand. Both features were walked through their manual scenarios.
+- **Not built**: Kafka (ADR-006 addendum: only for a consumer outside the application), SMS, browser push, real-time
+  delivery and digests; purging expired notifications belongs to the retention job of Epic 6.
+- **Next**: Epic 6 (compliance and security: erasure, retention), then Epic 5 (analytics and reporting).
+
+## Addendum 2026-10-18: After Epic 6
+
+- **Velocity**: Epic 6 delivered 46 points between 2026-10-15 and 2026-10-18 (sprint 5), ahead of the plan for sprints 6
+  and 7: 26 estimated on the roadmap, 46 after splitting the retention job and adding three small stories from the
+  reviews and manual runs. About 312 points are delivered.
+- **Delivered scope**: feature 6.1 added the versioned privacy notice and consent records, the privacy centre in the
+  profile, legal holds, and erasure of an account after a 30-day grace period across modules (approved awards stay under
+  a pseudonym, audit rows are redacted under ADR-024); feature 6.2 added the nightly retention job with configurable
+  policies (also for unverified and former accounts, consent records and audit partitions) and the compliance page for
+  the GDPR officer. Both features were walked through their manual scenarios.
+- **Not built**: CSV and PDF variants of the data export, breach notification, backups (before the deployment of Epic 9),
+  SMS and OCR consents, a screen that sets an account to retired or memorial; the legal review of GDPR compliance
+  stays outside the software.
+- **Next**: Epic 5 (analytics and reporting).
+
+## Addendum 2026-10-26: After Epic 5
+
+- **Velocity**: Epic 5 delivered 67 points between 2026-10-19 and 2026-10-26 (sprints 6 and 7): 55 estimated on the
+  roadmap, 67 after raising three analytics stories from 5 to 8 and adding three fix stories from the validations and
+  manual runs. About 379 points are delivered.
+- **Delivered scope**: feature 5.1 added the personal dashboard with a consented department rank and a shareable
+  summary; 5.2 the faculty and department analytics with CSV, Excel and PDF export; 5.3 the executive university
+  dashboard with a compliance summary, trends with a projection and a presentation-ready board report; 5.4 the
+  full-text award search on PostgreSQL (ADR-007 addendum), which settles the search engine decision. All four
+  features were walked through their manual scenarios.
+- **Not built**: a custom report builder, a recommendations engine and statistical significance tests (a rule-based
+  list of strengths and gaps and period-over-period deltas instead), raw data access, cross-university analytics, and
+  a separate search engine (Elasticsearch stays out unless a trigger of ADR-007 arises).
+- **Next**: Epic 8, then Epic 9 (production hardening and the demo deployment).
+
+---
+
+## Addendum 2026-10-29: After Epic 8
+
+- **Velocity**: Epic 8 delivered 35 points between 2026-10-26 and 2026-10-29 (sprint 7): 23 of the kickoff plan (roadmap
+  estimate 21; story 8.2.2, 5 points, moved to the icebox) plus 12 for seven fix stories from the validations and
+  manual runs. About 414 points are delivered.
+- **Delivered scope**: feature 8.1 made the production build an installable web app with an offline application
+  shell (ADR-013 addendum), an award draft that survives a lost connection and is created once on reconnect (V049),
+  touch layouts at 360 px and camera capture; 8.2 added page language and titles, a skip link, focus management after
+  navigation, reduced motion and an automated WCAG 2.1 AA sweep of every route in the end-to-end suite. Both features
+  were walked through their manual scenarios.
+- **Not built**: described form errors, tables and announced changes for screen readers (8.2.2, icebox), an
+  offline-first client (offline is a fallback for the award form), and the Lighthouse mobile performance target of the
+  signed-in pages, which moves to Epic 9.
+- **Next**: Epic 9 (production hardening and the demo deployment).
+
+---
+
 ## Summary
 
 | **Attribute** | **Value** |

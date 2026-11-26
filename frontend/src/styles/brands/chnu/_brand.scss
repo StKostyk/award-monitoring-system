@@ -1,0 +1,126 @@
+@use '@angular/material' as mat;
+@use './theme-colors' as colors;
+
+@mixin theme() {
+  @include mat.theme(
+    (
+      color: (
+        primary: colors.$primary-palette,
+        tertiary: colors.$tertiary-palette,
+      ),
+      typography: (
+        plain-family: (
+          'Onest Variable',
+          system-ui,
+          sans-serif,
+        ),
+        brand-family: (
+          'Manrope Variable',
+          system-ui,
+          sans-serif,
+        ),
+        bold-weight: 800,
+        medium-weight: 600,
+        regular-weight: 400,
+      ),
+      density: 0,
+    )
+  );
+  @include mat.theme-overrides(
+    (
+      primary: light-dark(#7a1f2e, #7ddcff),
+      on-primary: light-dark(#ffffff, #00243a),
+      primary-container: light-dark(#f6d9dc, #0e3a52),
+      on-primary-container: light-dark(#3e0a12, #cff1ff),
+      primary-fixed: light-dark(#ffd9dc, #c4eeff),
+      primary-fixed-dim: light-dark(#ffb2b9, #7ddcff),
+      on-primary-fixed: light-dark(#3e0a12, #001e2c),
+      on-primary-fixed-variant: light-dark(#5e1621, #004c69),
+      inverse-primary: light-dark(#ffb2b9, #00658a),
+      surface-tint: light-dark(#7a1f2b, #7ddcff),
+      secondary: light-dark(#77565a, #b9c6e4),
+      on-secondary: light-dark(#ffffff, #1b2540),
+      secondary-container: light-dark(#f2dddf, #222c48),
+      on-secondary-container: light-dark(#2c1518, #dce4f8),
+      secondary-fixed: light-dark(#ffd9dc, #dce4f8),
+      secondary-fixed-dim: light-dark(#e5bdc1, #b9c6e4),
+      on-secondary-fixed: light-dark(#2c1518, #0f1a33),
+      on-secondary-fixed-variant: light-dark(#5d3f43, #39455f),
+      tertiary: light-dark(#8a5a00, #f5c451),
+      on-tertiary: light-dark(#ffffff, #3b2a00),
+      tertiary-container: light-dark(#fce3b0, #4a3600),
+      on-tertiary-container: light-dark(#2c1b00, #ffe7a8),
+      tertiary-fixed: light-dark(#ffdea3, #ffe7a8),
+      tertiary-fixed-dim: light-dark(#f5c451, #f5c451),
+      on-tertiary-fixed: light-dark(#2c1b00, #261a00),
+      on-tertiary-fixed-variant: light-dark(#684400, #5a4300),
+      error: light-dark(#b3261e, #ffa493),
+      on-error: light-dark(#ffffff, #5c1308),
+      error-container: light-dark(#f9dedc, #7a2717),
+      on-error-container: light-dark(#410e0b, #ffdad3),
+      background: light-dark(#f7f1e9, #060914),
+      on-background: light-dark(#2b1b1e, #e8eefa),
+      surface: light-dark(#f7f1e9, #060914),
+      on-surface: light-dark(#2b1b1e, #e8eefa),
+      surface-variant: light-dark(#ede1d6, #151c33),
+      on-surface-variant: light-dark(#5c4a4d, #97a3be),
+      surface-dim: light-dark(#e2d6c6, #060914),
+      surface-bright: light-dark(#fffcf6, #242e4a),
+      surface-container-lowest: light-dark(#ffffff, #04060e),
+      surface-container-low: light-dark(#fffdf9, #0b1124),
+      surface-container: light-dark(#f1e8db, #10172c),
+      surface-container-high: light-dark(#ebe0d2, #161e36),
+      surface-container-highest: light-dark(#e4d8c9, #1d2640),
+      inverse-surface: light-dark(#3a2a2b, #e8eefa),
+      inverse-on-surface: light-dark(#f6efe4, #10172c),
+      outline: light-dark(#8f7a7c, #6a7591),
+      outline-variant: light-dark(#e6d8c7, #1f2842),
+      shadow: light-dark(#000000, #000000),
+      scrim: light-dark(#000000, #000000),
+    )
+  );
+
+  --app-nav-container: light-dark(#5a1622, #0b1124);
+  --app-nav-on-container: light-dark(#f6efe4, #e8eefa);
+  --app-nav-active: light-dark(#f7f1e9, rgb(125 220 255 / 16%));
+  --app-nav-on-active: light-dark(#5a1622, #e8eefa);
+  --app-nav-hover: light-dark(#6e1e2c, rgb(125 220 255 / 8%));
+  --app-nav-divider: light-dark(#7b2d3a, #1f2842);
+  --app-accent-from: light-dark(#7a1f2b, #7ddcff);
+  --app-accent-to: light-dark(#a23b47, #3fa9e0);
+  --app-gold: light-dark(#d9a441, #f5c451);
+  --app-on-gold: light-dark(#3a0e16, #1a1300);
+  --app-gold-text: light-dark(#8a5a00, #f5c451);
+  --app-cyan: light-dark(#00bbff, #7ddcff);
+  --app-on-cyan: #00243a;
+  --app-ok: light-dark(#2f6b3a, #5ee6c8);
+  --app-bad: light-dark(#b3261e, #ffa493);
+  --app-aurora-1: light-dark(rgb(122 31 43 / 10%), rgb(0 71 171 / 55%));
+  --app-aurora-2: light-dark(rgb(201 149 43 / 12%), rgb(0 187 255 / 28%));
+  --app-aurora-3: light-dark(rgb(94 22 33 / 6%), rgb(245 196 81 / 14%));
+  --app-card-radius: 18px;
+  --app-pane: light-dark(#fffdf9, #0b1124);
+  --app-pane-border: light-dark(#e6d8c7, #1f2842);
+  --app-pane-divider: light-dark(#efe4d6, #1a2238);
+  --app-pane-head: light-dark(#fbf4ea, #0f1730);
+  --app-row-divider: light-dark(#f1e8dc, #161e36);
+  --app-muted: light-dark(#5c4a4d, #97a3be);
+  --app-ink: light-dark(#2b1b1e, #151c33);
+  --app-on-ink: light-dark(#f6efe6, #e8eefa);
+  --app-on-ink-muted: light-dark(#d8c9bb, #b4bfd6);
+  --app-ink-divider: light-dark(#45333a, #242e4a);
+  --app-brand-panel: light-dark(#5a1622, #0e3a52);
+  --app-on-brand-panel: light-dark(#f6e8da, #cff1ff);
+  --app-brand-divider: light-dark(#7b2d3a, #1d5470);
+  --app-gold-soft: light-dark(#f5d58a, #f5c451);
+  --app-bar: light-dark(#7a1f2e, #7ddcff);
+  --app-bar-gold: light-dark(#b8862e, #f5c451);
+  --app-track: light-dark(#f1e8dc, #161e36);
+  --app-selected: light-dark(#f6e7d5, rgb(125 220 255 / 12%));
+  --app-selected-edge: light-dark(#7a1f2e, #7ddcff);
+  --app-field: light-dark(#fffdf9, #0b1124);
+  --app-avatar: light-dark(#ead8c3, #1d2640);
+  --app-on-avatar: light-dark(#5a1622, #cff1ff);
+  --app-chip-on: light-dark(#2b1b1e, #e8eefa);
+  --app-on-chip-on: light-dark(#fffdf9, #060914);
+}

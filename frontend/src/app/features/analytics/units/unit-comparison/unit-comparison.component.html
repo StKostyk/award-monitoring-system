@@ -1,0 +1,181 @@
+<ng-template #unitName let-entry>
+  @if (entry.link) {
+    <a
+      [routerLink]="['/analytics/units', entry.row.unit.id]"
+      [queryParams]="{ from: period().from, to: period().to }"
+      >{{ entry.name }}</a
+    >
+  } @else {
+    {{ entry.name }}
+  }
+  @if (!entry.row.facultyLevel && !entry.row.active) {
+    <span class="comparison__inactive">
+      ({{ 'unitAnalytics.comparison.inactive' | transloco }})
+    </span>
+  }
+</ng-template>
+
+<app-table-scroll class="comparison__scroll" [label]="labels().caption | transloco">
+  @if (table()) {
+    <table
+      class="analytics-table analytics-table--grouped comparison__table comparison__table--full"
+      matSort
+      [matSortActive]="sort().active"
+      [matSortDirection]="sort().direction"
+      (matSortChange)="sort.set($event)"
+      data-testid="comparison-full-table"
+    >
+      <caption class="cdk-visually-hidden">
+        {{
+          labels().caption | transloco
+        }}
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col" rowspan="2" mat-sort-header="name">
+            {{ 'unitAnalytics.comparison.unit' | transloco }}
+          </th>
+          <th
+            scope="colgroup"
+            colspan="3"
+            class="analytics-table__group analytics-table__tint"
+            data-testid="comparison-group-awards"
+          >
+            {{ 'unitAnalytics.comparison.awardsGroup' | transloco }}
+          </th>
+          <th
+            scope="colgroup"
+            colspan="3"
+            class="analytics-table__group"
+            data-testid="comparison-group-people"
+          >
+            {{ 'unitAnalytics.comparison.peopleGroup' | transloco }}
+          </th>
+        </tr>
+        <tr>
+          <th scope="col" class="analytics-table__tint" mat-sort-header="approved">
+            {{ 'unitAnalytics.comparison.approvedShort' | transloco }}
+          </th>
+          <th scope="col" class="analytics-table__tint" mat-sort-header="change">
+            {{ 'unitAnalytics.comparison.change' | transloco }}
+          </th>
+          <th scope="col" class="analytics-table__tint" mat-sort-header="verified">
+            {{ 'unitAnalytics.comparison.verifiedShort' | transloco }}
+          </th>
+          <th scope="col" mat-sort-header="awardedPeople">
+            {{ 'unitAnalytics.comparison.awardedShort' | transloco }}
+          </th>
+          <th scope="col" mat-sort-header="members">
+            {{ 'unitAnalytics.comparison.members' | transloco }}
+          </th>
+          <th scope="col" mat-sort-header="perHundred">
+            {{ 'unitAnalytics.comparison.perHundredGroup' | transloco }}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (entry of sorted(); track entry.row.unit.id + '-' + entry.row.facultyLevel) {
+          <tr [attr.data-testid]="'comparison-full-row-' + entry.row.unit.id">
+            <th scope="row">
+              <ng-container *ngTemplateOutlet="unitName; context: { $implicit: entry }" />
+            </th>
+            <td class="analytics-table__tint">{{ entry.row.approved.current }}</td>
+            <td class="analytics-table__tint"><app-delta [figure]="entry.row.approved" chip /></td>
+            <td class="analytics-table__tint">{{ entry.row.verified }}</td>
+            <td>{{ entry.row.awardedPeople }}</td>
+            <td>{{ entry.row.members }}</td>
+            <td>
+              @if (entry.row.perHundredMembers !== null) {
+                {{ entry.row.perHundredMembers | number: '1.0-1' }}
+              } @else {
+                —
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+      @if (totals(); as total) {
+        <tfoot>
+          <tr data-testid="comparison-full-total">
+            <th scope="row">{{ labels().total | transloco }}</th>
+            <td class="analytics-table__tint">{{ total.approved.current }}</td>
+            <td class="analytics-table__tint"><app-delta [figure]="total.approved" chip /></td>
+            <td class="analytics-table__tint">{{ total.verified }}</td>
+            <td>{{ total.awardedPeople.current }}</td>
+            <td>{{ total.members }}</td>
+            <td>
+              @if (total.perHundredMembers !== null) {
+                {{ total.perHundredMembers | number: '1.0-1' }}
+              } @else {
+                —
+              }
+            </td>
+          </tr>
+        </tfoot>
+      }
+    </table>
+  } @else {
+    <table
+      class="analytics-table comparison__table"
+      matSort
+      [matSortActive]="sort().active"
+      [matSortDirection]="sort().direction"
+      (matSortChange)="sort.set($event)"
+      data-testid="comparison-table"
+    >
+      <caption class="cdk-visually-hidden">
+        {{
+          labels().caption | transloco
+        }}
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col" mat-sort-header="name">
+            {{ 'unitAnalytics.comparison.unit' | transloco }}
+          </th>
+          <th scope="col" mat-sort-header="approved">
+            {{ 'unitAnalytics.comparison.approved' | transloco }}
+          </th>
+          <th scope="col" mat-sort-header="change">
+            {{ 'unitAnalytics.comparison.change' | transloco }}
+          </th>
+          <th scope="col" mat-sort-header="perHundred">
+            {{ 'unitAnalytics.comparison.perHundredShort' | transloco }}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (entry of sorted(); track entry.row.unit.id + '-' + entry.row.facultyLevel) {
+          <tr [attr.data-testid]="'comparison-row-' + entry.row.unit.id">
+            <th scope="row">
+              <ng-container *ngTemplateOutlet="unitName; context: { $implicit: entry }" />
+            </th>
+            <td class="comparison__barcell">
+              <span class="comparison__value">{{ entry.row.approved.current }}</span>
+              @if (!entry.row.facultyLevel) {
+                <span class="comparison__track" aria-hidden="true">
+                  <i [style.width.%]="entry.approvedWidth"></i>
+                </span>
+              }
+            </td>
+            <td><app-delta [figure]="entry.row.approved" chip /></td>
+            <td class="comparison__barcell">
+              @if (entry.row.perHundredMembers !== null) {
+                <span class="comparison__value">{{
+                  entry.row.perHundredMembers | number: '1.0-1'
+                }}</span>
+                @if (!entry.row.facultyLevel) {
+                  <span class="comparison__track" aria-hidden="true">
+                    <i [style.width.%]="entry.perHundredWidth"></i>
+                  </span>
+                }
+              } @else {
+                —
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</app-table-scroll>

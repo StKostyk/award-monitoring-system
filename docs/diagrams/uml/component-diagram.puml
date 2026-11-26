@@ -8,7 +8,9 @@ skinparam component {
     BackgroundColor<<external>> Pink
 }
 
-title Award Monitoring & Tracking System - Component Diagram
+title Award Monitoring & Tracking System - Component Diagram (target architecture)
+
+' Target architecture (2025 design). As built after Epic 2: package-diagram.puml and ../c4-container-as-built.puml; deferred parts are listed in the ADR addenda of 2026-10.
 
 ' Frontend Layer
 package "Presentation Layer" {

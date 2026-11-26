@@ -1,0 +1,161 @@
+<#
+.SYNOPSIS
+    Starts work on a story: closes merged stories, creates the branch, moves the trackers and prints the
+    acceptance criteria from the PRD.
+
+.DESCRIPTION
+    Finds the story row (Jira key, GitHub issue, title) in the epic trackers under docs/epics and creates
+    feature/<KEY>-<slug> from the base branch after pulling it. Every tracker row still "In review" whose pull
+    request (head feature/<KEY>-*) is merged is closed first: Jira and GitHub move to Done, the tracker row becomes
+    "Done", the BACKLOG row "✅ Done" and the local branch is deleted; these row edits are left in the new branch.
+    Then Jira and GitHub of the story move to In Progress, its tracker row is marked and the PRD section of the
+    story (the "### ... (<KEY>)" heading up to the next heading) is printed.
+    For an unplanned story (-Summary, -Points, -Epic, -GitHub) the tracker and BACKLOG rows are added on the new
+    branch, numbered from a leading number in -Summary ("4.2.7 Stabilise ..."), the PRD heading of the story
+    ("### 6.2.3 ...") or after the last started story of the epic. A number picks the tracker of its feature (also
+    when -Epic names the current epic), and the row follows the last started row there (Planned and To do rows do
+    not count). The BACKLOG sprint cell comes from -Sprint, the PRD's **Sprint** line or the neighbouring row; an
+    empty cell is reported. A rerun on the story
+    branch skips the checkout. -Carry stashes uncommitted changes, checks out the base and pops them on the new branch; a base without an
+    upstream is not pulled, and a failed pull or GitHub query is retried once. A -Base whose pull request is already
+    merged, or which is gone from origin, falls back to develop.
+    -RowsOnly adds the tracker and BACKLOG rows of an unplanned story on the current branch and stops (no branch,
+    no transitions), for fix stories filed during a manual run. Without a PRD section of the story a warning names
+    the missing PRD or section.
+
+.EXAMPLE
+    .\tools\story-start.ps1 SCRUM-49
+    .\tools\story-start.ps1 SCRUM-49 -Base docs/epic-04-kickoff -Slug reviewer-queue
+    .\tools\story-start.ps1 SCRUM-49 -DryRun    # prints branch, merged stories and PRD section only
+    .\tools\story-start.ps1 SCRUM-61 -Summary "Refactor from the Feature 4.2 sweep" -Points 3 -Epic SCRUM-47 -GitHub 171
+    .\tools\story-start.ps1 SCRUM-111 -Summary "4.2.7 Stabilise failing and flaky e2e specs" -Epic SCRUM-47 -GitHub 312 -Sprint 6
+    .\tools\story-start.ps1 SCRUM-140 -Summary "7.1.6 Retry mail after restart" -Epic SCRUM-90 -GitHub 400 -RowsOnly
+#>
+#Requires -Version 7
+
+[CmdletBinding()]
+param(
+    [Parameter(Position = 0, Mandatory = $true)]
+    [ValidatePattern('^[A-Z]+-\d+$')]
+    [string]$Key,
+    [string]$Base = 'develop',
+    [string]$Slug,
+    [string]$Summary,
+    [int]$Points = 3,
+    [ValidatePattern('^[A-Z]+-\d+$')]
+    [string]$Epic,
+    [int]$GitHub,
+    [string]$Sprint,
+    [switch]$NoTracker,
+    [switch]$NoClose,
+    [switch]$Carry,
+    [switch]$RowsOnly,
+    [switch]$DryRun
+)
+
+$ErrorActionPreference = 'Stop'
+$root = Split-Path $PSScriptRoot -Parent
+Set-Location $root
+. "$PSScriptRoot\story-common.ps1"
+
+function New-Slug([string]$title) {
+    $words = ($title -replace '^\d+(\.\d+)*\s+', '').ToLowerInvariant() -replace '[^a-z0-9 ]', ' ' -split '\s+' |
+        Where-Object { $_ -and $_ -notin @('a', 'an', 'and', 'the', 'of', 'for', 'to', 'with') }
+    return ($words | Select-Object -First 4) -join '-'
+}
+
+$row = Find-StoryRow $Key
+if ($Summary -and -not ($Epic -and $GitHub)) { throw '-Summary needs -Epic and -GitHub' }
+$number = ''
+if ($Summary -match '^\s*(\d+\.\d+\.\d+)\s+') { $number = $Matches[1] }
+$facts = if ($Summary) { Get-PrdFacts $Key }
+if (-not $number -and $facts) { $number = $facts.Number }
+if ($Summary) { $Summary = $Summary -replace '^\s*\d+\.\d+\.\d+\s+', '' }
+if (-not ($row -or $Summary)) { throw "No tracker row for $Key in docs/epics" }
+if (-not $Slug) { $Slug = New-Slug $(if ($row) { $row.Title } else { $Summary }) }
+$branch = "feature/$Key-$Slug"
+$closing = if ($NoClose -or $RowsOnly) { @() } else { @(Find-MergedStories) }
+
+if ($RowsOnly) {
+    if ($row) { Write-Host "Rows:    $Key already has a tracker row" }
+    else {
+        if (-not $Summary) { throw '-RowsOnly needs -Summary, -Epic and -GitHub' }
+        $hint = if ($Sprint) { $Sprint } elseif ($facts) { $facts.Sprint } else { '' }
+        $id = Add-StoryRows $Key $Summary $Points $Epic $GitHub $number $hint
+        Write-Host "Rows:    $id added to the epic tracker and BACKLOG (To do) on $(git branch --show-current)"
+    }
+    return
+}
+
+if ($DryRun) {
+    $closing | ForEach-Object { Write-Host "Would close: $($_.Key) (PR #$($_.Pr) merged)" }
+    if (-not $row) { $row = [pscustomobject]@{ Title = "(new) $Summary"; Issue = $GitHub } }
+} else {
+    if ((git branch --show-current) -ne $branch) {
+        if ((git status --porcelain) -and -not $Carry) {
+            throw 'The working tree is not clean; commit or stash first, or carry the changes with -Carry.'
+        }
+        $stashed = $false
+        if ($Carry -and (git status --porcelain)) {
+            git stash push -q -u -m "story-start $Key"
+            if ($LASTEXITCODE) { throw 'Cannot stash the carried changes' }
+            $stashed = $true
+        }
+        if ($Base -ne 'develop') {
+            $merged = gh pr list --head $Base --state merged --json number --jq '.[0].number' 2>$null
+            git ls-remote --exit-code --heads origin $Base *> $null
+            $gone = $LASTEXITCODE -eq 2
+            if ($merged -or $gone) {
+                $why = if ($merged) { "PR #$merged is merged" } else { 'it is gone from origin' }
+                Write-Host "Base:    $Base -> develop ($why)"
+                $Base = 'develop'
+            }
+        }
+        git checkout -q $Base
+        if ($LASTEXITCODE) { throw "Cannot check out $Base" }
+        git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' *> $null
+        if ($LASTEXITCODE) {
+            Write-Host "Base:    $Base has no upstream; not pulled"
+        } else {
+            Invoke-WithRetry { git pull --ff-only -q } | Out-Null
+        }
+        git checkout -b $branch
+        if ($LASTEXITCODE) { throw "Cannot create $branch" }
+        if ($stashed) {
+            git stash pop -q
+            if ($LASTEXITCODE) { throw "The carried changes conflict with $Base; resolve them, then git stash drop" }
+        }
+    }
+    $closing | ForEach-Object { Close-Story $_ -NoTracker:$NoTracker }
+    if (-not $row) {
+        $hint = if ($Sprint) { $Sprint } elseif ($facts) { $facts.Sprint } else { '' }
+        $id = Add-StoryRows $Key $Summary $Points $Epic $GitHub $number $hint
+        Write-Host "Rows:    $id added to the epic tracker and BACKLOG"
+        $row = Find-StoryRow $Key
+    }
+}
+
+if (-not ($NoTracker -or $DryRun)) {
+    Invoke-TrackerSync status -Jira $Key -GitHub $row.Issue -Status InProgress
+    $null = Set-TrackerStatus $Key 'In progress'
+    $null = Set-BacklogStatus $Key 'In progress'
+}
+
+Write-Host "Branch:  $branch"
+Write-Host "Story:   $($row.Title) ($Key, #$($row.Issue))"
+$prd = Get-PrdSection $Key
+if ($prd) {
+    Write-Host "PRD:     $($prd.Path.Substring($root.Length + 1))"
+    Write-Host ''
+    $prd.Lines | ForEach-Object { Write-Host $_ }
+} else {
+    Write-Host 'PRD:     no section with this key under docs/features'
+    $feature = ($row.Line.Trim('|').Split('|') | ForEach-Object { $_.Trim() })[2]
+    if (-not $Summary -and $feature -match '^\d+\.\d+$') {
+        $prdFile = Get-ChildItem docs/features -Recurse -Filter "feature-$feature-*.md" | Select-Object -First 1
+        if ($prdFile) { Write-Warning "$($prdFile.Name) has no '### ... ($Key)' section; write it before the code" }
+        else { Write-Warning "Feature $feature has no PRD under docs/features; write it before the code" }
+    }
+}
+Write-Host ''
+Write-Host 'Next:    tests first; .\tools\gate.ps1 -StaticOnly after writing code'

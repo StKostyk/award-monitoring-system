@@ -1,0 +1,170 @@
+<div class="layout__bar">
+  @if (editing()) {
+    <p class="layout__hint">{{ 'dashboardLayout.hint' | transloco }}</p>
+    <button mat-stroked-button type="button" (click)="reset()" data-testid="layout-reset">
+      {{ 'dashboardLayout.reset' | transloco }}
+    </button>
+    <button mat-flat-button type="button" (click)="done()" data-testid="layout-done">
+      <app-icon matButtonIcon name="check" />
+      {{ 'dashboardLayout.done' | transloco }}
+    </button>
+  } @else {
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="status() !== 'loaded'"
+      (click)="edit()"
+      data-testid="dashboard-customise"
+    >
+      <app-icon matButtonIcon name="sliders-horizontal" />
+      {{ 'dashboardLayout.customise' | transloco }}
+    </button>
+  }
+</div>
+
+<div class="cdk-visually-hidden" aria-live="polite" data-testid="layout-announcement">
+  {{ announcement() }}
+</div>
+
+@if (status() === 'failed') {
+  <div class="layout__problem" role="alert" data-testid="dashboard-preferences-error">
+    <p>{{ 'dashboardLayout.loadFailed' | transloco }}</p>
+    <button mat-stroked-button type="button" (click)="retry()">
+      {{ 'dashboardLayout.retry' | transloco }}
+    </button>
+  </div>
+}
+
+@if (saveProblem()) {
+  <p class="layout__problem" role="alert" data-testid="dashboard-save-error">
+    {{ 'dashboardLayout.saveFailed' | transloco }}
+  </p>
+}
+
+@if (side()) {
+  <app-split>
+    <div splitSide class="layout__column" data-testid="layout-side">
+      <ng-content select="[layoutSide]" />
+      @if (editing()) {
+        <ng-container
+          [ngTemplateOutlet]="list"
+          [ngTemplateOutletContext]="{ ids: draftSide(), column: 'side' }"
+        />
+      } @else {
+        @for (widget of shownSide(); track widget.id()) {
+          <div class="layout__cell" [attr.data-testid]="'widget-' + widget.id()">
+            <ng-container [ngTemplateOutlet]="widget.template" />
+          </div>
+        }
+      }
+    </div>
+    <div splitMain class="layout__column" data-testid="layout-main">
+      @if (editing()) {
+        <ng-container
+          [ngTemplateOutlet]="list"
+          [ngTemplateOutletContext]="{ ids: draftMain(), column: 'main' }"
+        />
+      } @else if (shownMain().length === 0) {
+        <ng-container [ngTemplateOutlet]="allHidden" />
+      } @else {
+        <ng-container
+          [ngTemplateOutlet]="grid"
+          [ngTemplateOutletContext]="{ widgets: shownMain() }"
+        />
+      }
+      <ng-content select="[layoutMain]" />
+    </div>
+  </app-split>
+} @else if (editing()) {
+  <ng-container
+    [ngTemplateOutlet]="list"
+    [ngTemplateOutletContext]="{ ids: draftOrder(), column: 'main' }"
+  />
+} @else if (shown().length === 0) {
+  <ng-container [ngTemplateOutlet]="allHidden" />
+} @else {
+  <ng-container [ngTemplateOutlet]="grid" [ngTemplateOutletContext]="{ widgets: shown() }" />
+}
+
+<ng-template #allHidden>
+  <p class="layout__empty" data-testid="dashboard-all-hidden">
+    {{ 'dashboardLayout.allHidden' | transloco }}
+  </p>
+</ng-template>
+
+<ng-template #grid let-widgets="widgets">
+  <div class="layout__grid">
+    @for (widget of widgets; track widget.id()) {
+      <div
+        class="layout__cell"
+        [class.layout__cell--wide]="widget.wide()"
+        [attr.data-testid]="'widget-' + widget.id()"
+      >
+        <ng-container [ngTemplateOutlet]="widget.template" />
+      </div>
+    }
+  </div>
+</ng-template>
+
+<ng-template #list let-ids="ids" let-column="column">
+  <ol
+    class="layout__list"
+    cdkDropList
+    (cdkDropListDropped)="drop($event, column)"
+    [attr.aria-label]="
+      (side() ? 'dashboardLayout.' + column + 'List' : 'dashboardLayout.listLabel') | transloco
+    "
+    [attr.data-testid]="side() ? 'layout-list-' + column : 'layout-list'"
+  >
+    @for (id of ids; track id; let first = $first; let last = $last) {
+      <li
+        class="layout__item"
+        cdkDrag
+        [class.layout__item--hidden]="draftHidden().has(id)"
+        [attr.data-testid]="'layout-item-' + id"
+      >
+        <span class="layout__handle" cdkDragHandle aria-hidden="true">
+          <app-icon name="grip-vertical" />
+        </span>
+        <span class="layout__name">{{ labels() + id | transloco }}</span>
+        @if (draftHidden().has(id)) {
+          <span class="layout__state">{{ 'dashboardLayout.hiddenLabel' | transloco }}</span>
+        }
+        <button
+          mat-icon-button
+          type="button"
+          [disabled]="first"
+          (click)="move(id, -1)"
+          [attr.aria-label]="'dashboardLayout.moveUp' | transloco: { widget: label(id) }"
+          data-move="up"
+          [attr.data-widget]="id"
+          [attr.data-testid]="'layout-up-' + id"
+        >
+          <app-icon name="arrow-up" />
+        </button>
+        <button
+          mat-icon-button
+          type="button"
+          [disabled]="last"
+          (click)="move(id, 1)"
+          [attr.aria-label]="'dashboardLayout.moveDown' | transloco: { widget: label(id) }"
+          data-move="down"
+          [attr.data-widget]="id"
+          [attr.data-testid]="'layout-down-' + id"
+        >
+          <app-icon name="arrow-down" />
+        </button>
+        <button
+          mat-icon-button
+          type="button"
+          (click)="toggle(id)"
+          [attr.aria-pressed]="draftHidden().has(id)"
+          [attr.aria-label]="'dashboardLayout.hide' | transloco: { widget: label(id) }"
+          [attr.data-testid]="'layout-hide-' + id"
+        >
+          <app-icon [name]="draftHidden().has(id) ? 'eye-off' : 'eye'" />
+        </button>
+      </li>
+    }
+  </ol>
+</ng-template>

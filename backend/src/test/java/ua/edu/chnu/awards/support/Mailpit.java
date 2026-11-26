@@ -1,0 +1,175 @@
+package ua.edu.chnu.awards.support;
+
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import io.restassured.RestAssured;
+import io.restassured.response.Response;
+
+/**
+ * Reads messages from the Mailpit container through its HTTP API.
+ */
+public final class Mailpit {
+
+    private static final Pattern LINK = Pattern.compile("https?://[^\s\"<]+token=[A-Za-z0-9_-]+");
+
+    private static final int OK = 200;
+    private static final int PAGE = 200;
+    private static final Duration DELIVERY_WAIT = Duration.ofSeconds(60);
+    private static final Duration PAUSE = Duration.ofMillis(250);
+
+    private final String apiUrl;
+
+    public Mailpit(String apiUrl) {
+        this.apiUrl = apiUrl;
+    }
+
+    /**
+     * Deletes every stored message.
+     */
+    public void clear() {
+        RestAssured.given().delete(apiUrl + "/api/v1/messages").then().statusCode(OK);
+    }
+
+    /**
+     * Messages addressed to the given recipient, newest first.
+     *
+     * @param recipient email address
+     * @return message summaries as returned by Mailpit
+     */
+    public List<Map<String, Object>> messagesTo(String recipient) {
+        return messagesTo(recipient, "");
+    }
+
+    /**
+     * Messages addressed to the given recipient whose subject contains the given text, newest first.
+     *
+     * @param recipient email address
+     * @param subject   text the subject must contain; empty for any subject
+     * @return message summaries as returned by Mailpit
+     */
+    public List<Map<String, Object>> messagesTo(String recipient, String subject) {
+        Response response = RestAssured.given().queryParam("limit", PAGE).get(apiUrl + "/api/v1/messages");
+        response.then().statusCode(OK);
+        List<Map<String, Object>> all = response.jsonPath().getList("messages");
+        return all.stream()
+            .filter(message -> addressedTo(message, recipient))
+            .filter(message -> String.valueOf(message.get("Subject")).contains(subject))
+            .toList();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static boolean addressedTo(Map<String, Object> message, String recipient) {
+        List<Map<String, Object>> to = (List<Map<String, Object>>) message.get("To");
+        return to != null && to.stream().anyMatch(a -> recipient.equalsIgnoreCase(String.valueOf(a.get("Address"))));
+    }
+
+    /**
+     * Waits briefly for a message to the recipient and returns its plain-text body.
+     *
+     * @param recipient email address
+     * @return text body of the newest message
+     */
+    public String latestTextTo(String recipient) {
+        return latestTextTo(recipient, "");
+    }
+
+    /**
+     * Waits briefly for a message to the recipient with the given subject text and returns its plain-text body.
+     *
+     * @param recipient email address
+     * @param subject   text the subject must contain; empty for any subject
+     * @return text body of the newest matching message
+     */
+    public String latestTextTo(String recipient, String subject) {
+        return latestTextTo(recipient, subject, 1);
+    }
+
+    /**
+     * Waits until at least the given number of matching messages reached the recipient and returns the newest.
+     *
+     * @param recipient email address
+     * @param subject   text the subject must contain; empty for any subject
+     * @param count     how many matching messages must be present
+     * @return text body of the newest matching message
+     */
+    public String latestTextTo(String recipient, String subject, int count) {
+        return latestPartTo(recipient, subject, count, "Text");
+    }
+
+    /**
+     * Waits until a message with the given subject text reached the recipient and returns the HTML part of the newest.
+     *
+     * @param recipient email address
+     * @param subject   text the subject must contain; empty for any subject
+     * @return HTML body of the newest matching message
+     */
+    public String latestHtmlTo(String recipient, String subject) {
+        return latestPartTo(recipient, subject, 1, "HTML");
+    }
+
+    private String latestPartTo(String recipient, String subject, int count, String part) {
+        return Eventually.attempt(() -> Optional.of(messagesTo(recipient, subject))
+                .filter(messages -> messages.size() >= count)
+                .map(messages -> RestAssured.given().get(apiUrl + "/api/v1/message/" + messages.get(0).get("ID"))
+                    .jsonPath().getString(part)), DELIVERY_WAIT, PAUSE)
+            .orElseThrow(() -> new IllegalStateException("No message with subject '" + subject + "' delivered to "
+                + recipient + "; inbox has "
+                + RestAssured.given().get(apiUrl + "/api/v1/messages").jsonPath().getInt("total") + " messages, "
+                + messagesTo(recipient).size() + " of them to this address"));
+    }
+
+    /**
+     * Waits until a message to the recipient with the given subject text mentions the fragment and returns its body;
+     * other matching messages, such as a late one of an earlier test, are skipped.
+     *
+     * @param recipient email address
+     * @param subject   text the subject must contain; empty for any subject
+     * @param fragment  text the body must contain
+     * @return text body of the newest message mentioning the fragment
+     */
+    public String textMentioning(String recipient, String subject, String fragment) {
+        return partMentioning(recipient, subject, fragment, "Text");
+    }
+
+    /**
+     * Waits until a message to the recipient with the given subject text mentions the fragment in its text part and
+     * returns its HTML part.
+     *
+     * @param recipient email address
+     * @param subject   text the subject must contain; empty for any subject
+     * @param fragment  text the plain-text body must contain
+     * @return HTML body of the newest message mentioning the fragment
+     */
+    public String htmlMentioning(String recipient, String subject, String fragment) {
+        return partMentioning(recipient, subject, fragment, "HTML");
+    }
+
+    private String partMentioning(String recipient, String subject, String fragment, String part) {
+        return Eventually.attempt(() -> messagesTo(recipient, subject).stream()
+                .map(message -> RestAssured.given().get(apiUrl + "/api/v1/message/" + message.get("ID")).jsonPath())
+                .filter(body -> body.getString("Text") != null && body.getString("Text").contains(fragment))
+                .findFirst()
+                .map(body -> body.getString(part)), DELIVERY_WAIT, PAUSE)
+            .orElseThrow(() -> new IllegalStateException("No message with subject '" + subject + "' to " + recipient
+                + " mentions '" + fragment + "'"));
+    }
+
+    /**
+     * The first verification-style link (one carrying a {@code token} parameter) in a message body.
+     *
+     * @param text message text
+     * @return the link
+     */
+    public static String linkIn(String text) {
+        Matcher matcher = LINK.matcher(text);
+        if (!matcher.find()) {
+            throw new IllegalStateException("No link with a token in: " + text);
+        }
+        return matcher.group();
+    }
+}

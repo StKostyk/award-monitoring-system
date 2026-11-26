@@ -258,7 +258,7 @@ This document contains detailed user stories for the Award Monitoring & Tracking
 
 ---
 
-## Epic 4: Analytics & Reporting Platform
+## Epic 5: Analytics & Reporting Platform
 
 ### US-008: Personal Achievement Dashboard
 **Epic:** Analytics & Reporting Platform  
@@ -367,7 +367,7 @@ This document contains detailed user stories for the Award Monitoring & Tracking
 
 ---
 
-## Epic 5: Compliance & Security Framework
+## Epic 6: Compliance & Security Framework
 
 ### US-011: GDPR Consent Management
 **Epic:** Compliance & Security Framework  
@@ -441,7 +441,7 @@ This document contains detailed user stories for the Award Monitoring & Tracking
 
 ---
 
-## Epic 6: Mobile & Accessibility
+## Epic 8: Mobile & Accessibility
 
 ### US-013: Mobile Award Submission
 **Epic:** Mobile & Accessibility  

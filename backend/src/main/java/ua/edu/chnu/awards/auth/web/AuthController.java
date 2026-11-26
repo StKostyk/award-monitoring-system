@@ -1,0 +1,79 @@
+package ua.edu.chnu.awards.auth.web;
+
+import jakarta.validation.Valid;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import ua.edu.chnu.awards.auth.dto.EmailChangeConfirmRequest;
+import ua.edu.chnu.awards.auth.dto.EmailChangeResponse;
+import ua.edu.chnu.awards.auth.dto.EmailRequest;
+import ua.edu.chnu.awards.auth.dto.RegisterRequest;
+import ua.edu.chnu.awards.auth.dto.RegistrationResponse;
+import ua.edu.chnu.awards.auth.dto.RevokeRequest;
+import ua.edu.chnu.awards.auth.dto.TokenRequest;
+import ua.edu.chnu.awards.auth.service.DeviceService;
+import ua.edu.chnu.awards.auth.service.EmailChangeService;
+import ua.edu.chnu.awards.auth.service.PasswordResetService;
+import ua.edu.chnu.awards.auth.service.RegistrationService;
+
+import lombok.RequiredArgsConstructor;
+
+/**
+ * Registration, email verification, password reset, address change confirmation and sign-in denial, open without
+ * a token.
+ */
+@RestController
+@RequestMapping("/api/v1/auth")
+@RequiredArgsConstructor
+public class AuthController {
+
+    private final RegistrationService registrationService;
+    private final PasswordResetService passwordResetService;
+    private final DeviceService deviceService;
+    private final EmailChangeService emailChangeService;
+
+    @PostMapping("/register")
+    @ResponseStatus(HttpStatus.CREATED)
+    public RegistrationResponse register(@Valid @RequestBody RegisterRequest request) {
+        return registrationService.register(request);
+    }
+
+    @PostMapping("/verify-email")
+    public RegistrationResponse verifyEmail(@Valid @RequestBody TokenRequest request) {
+        return registrationService.verify(request.token(), request.password());
+    }
+
+    @PostMapping("/resend-verification")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public void resendVerification(@Valid @RequestBody EmailRequest request) {
+        registrationService.resend(request.email());
+    }
+
+    @PostMapping("/password-reset/request")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public void requestPasswordReset(@Valid @RequestBody EmailRequest request) {
+        passwordResetService.request(request.email());
+    }
+
+    @PostMapping("/password-reset/confirm")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void confirmPasswordReset(@Valid @RequestBody TokenRequest request) {
+        passwordResetService.confirm(request.token(), request.password());
+    }
+
+    @PostMapping("/email-change/confirm")
+    public EmailChangeResponse confirmEmailChange(@Valid @RequestBody EmailChangeConfirmRequest request) {
+        return emailChangeService.confirm(request.token());
+    }
+
+    @PostMapping("/security/revoke")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void revokeAccess(@Valid @RequestBody RevokeRequest request) {
+        deviceService.revoke(request.token());
+    }
+}

@@ -2,6 +2,9 @@
 
 > Award Monitoring & Tracking System - Phase 16 Documentation
 
+> **Not used for the defense.** The demo runs on Docker Compose on a single server (ADR-021); the Kubernetes material below is kept as the
+> alternative described in ADR-018 and is neither deployed nor tested.
+
 ## Overview
 
 This document defines the environment promotion flow and gates for deploying changes from development to production.
@@ -102,6 +105,16 @@ This document defines the environment promotion flow and gates for deploying cha
 | UAT | Redeploy previous | 5 min |
 | PREPROD | Kubernetes rollback | 2 min |
 | PROD | Blue-Green switch | < 1 min |
+
+---
+
+## Addendum 2026-10-02: Environments in practice
+
+The five-stage pipeline above is the target for a production rollout. For the thesis there are two
+environments: **local** (Docker Compose on the developer workstation, `local`/`docker` profiles, where every
+gate and end-to-end test runs) and **demo** (one server, `production` profile, ADR-021). A change reaches demo
+only after it is merged and its gates passed; rollback is redeploying the previous image tag. See
+[DEMO_DEPLOYMENT.md](DEMO_DEPLOYMENT.md).
 
 ---
 

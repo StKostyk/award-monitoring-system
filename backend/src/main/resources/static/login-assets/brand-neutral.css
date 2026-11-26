@@ -1,0 +1,21 @@
+:root {
+    --lp-radius: 6px;
+    --lp-bg: light-dark(#f6f7f5, #181c1a);
+    --lp-card: light-dark(#ffffff, #222724);
+    --lp-text: light-dark(#191c1a, #e1e3df);
+    --lp-muted: light-dark(#404943, #c0c9c1);
+    --lp-outline: light-dark(#707973, #8a938c);
+    --lp-divider: light-dark(#dce3de, #39423d);
+    --lp-primary: light-dark(#2d6a4f, #8fd5b0);
+    --lp-primary-hover: light-dark(#1e4d38, #c9ecd8);
+    --lp-on-primary: light-dark(#ffffff, #003822);
+    --lp-panel: light-dark(#1e3d30, #121614);
+    --lp-on-panel: light-dark(#ffffff, #e1e4e1);
+    --lp-count: light-dark(#f2be4e, #f2be4e);
+    --lp-aurora-1: light-dark(rgb(224 165 38 / 18%), rgb(45 106 79 / 40%));
+    --lp-aurora-2: light-dark(rgb(45 106 79 / 45%), rgb(242 190 78 / 12%));
+    --lp-error: light-dark(#ba1a1a, #ffdad6);
+    --lp-error-bg: light-dark(#ffdad6, #93000a);
+    --lp-notice: light-dark(#002113, #c9ecd8);
+    --lp-notice-bg: light-dark(#c9ecd8, #0f5137);
+}

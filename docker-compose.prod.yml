@@ -1,0 +1,221 @@
+# =============================================================================
+# Award Monitoring System - production override (single host, see ADR-021)
+# Usage: docker compose -f docker-compose.yaml -f docker-compose.prod.yml --env-file .env.prod up -d
+# =============================================================================
+
+# Every service logs through json-file with rotation (about 50 MB a service); mem_limit is about 1.5 times the
+# peak measured on the rehearsal stack (DEMO_DEPLOYMENT §3), rounded up to 64 MB steps
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  postgres:
+    logging: *logging
+    mem_limit: 256m
+    ports: !reset []
+
+  redis:
+    logging: *logging
+    mem_limit: 64m
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?set REDIS_PASSWORD}
+    ports: !reset []
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep -q PONG"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+  # Only for a rehearsal on a workstation: --profile local-mail, SMTP_HOST=mailpit, SMTP_STARTTLS_REQUIRED=false
+  mailpit:
+    logging: *logging
+    mem_limit: 64m
+    profiles: ["local-mail"]
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+
+  minio:
+    logging: *logging
+    mem_limit: 512m
+    ports: !reset []
+    environment:
+      MINIO_KMS_SECRET_KEY: ${MINIO_KMS_SECRET_KEY:?set MINIO_KMS_SECRET_KEY}
+
+  clamav:
+    logging: *logging
+    mem_limit: 2944m
+    ports: !reset []
+
+  minio-init:
+    logging: *logging
+    mem_limit: 128m
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD}
+      MINIO_APP_USER: ${MINIO_APP_USER:?set MINIO_APP_USER}
+      MINIO_APP_PASSWORD: ${MINIO_APP_PASSWORD:?set MINIO_APP_PASSWORD}
+
+  app:
+    logging: *logging
+    mem_limit: 1024m
+    deploy: !reset {}
+    image: ${BACKEND_IMAGE:-award-backend:prod}
+    ports: !reset []
+    environment: !override
+      - SPRING_PROFILES_ACTIVE=production
+      - ENVIRONMENT=production
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-award_monitoring}
+      - DATABASE_USERNAME=${POSTGRES_USER:?set POSTGRES_USER}
+      - DATABASE_PASSWORD=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - SPRING_MAIL_HOST=${SMTP_HOST:?set SMTP_HOST}
+      - SPRING_MAIL_PORT=${SMTP_PORT:-587}
+      - SPRING_MAIL_USERNAME=${SMTP_USERNAME:?set SMTP_USERNAME}
+      - SPRING_MAIL_PASSWORD=${SMTP_PASSWORD:?set SMTP_PASSWORD}
+      - SMTP_STARTTLS_REQUIRED=${SMTP_STARTTLS_REQUIRED:-true}
+      - APP_MAIL_FROM=${MAIL_FROM:?set MAIL_FROM}
+      - APP_MAIL_EHLO_HOST=${SITE_ADDRESS:?set SITE_ADDRESS}
+      - STORAGE_S3_ENDPOINT=http://minio:9000
+      - STORAGE_S3_ACCESS_KEY=${MINIO_APP_USER:?set MINIO_APP_USER}
+      - STORAGE_S3_SECRET_KEY=${MINIO_APP_PASSWORD:?set MINIO_APP_PASSWORD}
+      - CLAMAV_HOST=clamav
+      - AUTH_ISSUER=https://${SITE_ADDRESS:?set SITE_ADDRESS}
+      - AUTH_FRONTEND_URL=https://${SITE_ADDRESS}
+      - AUTH_ALLOWED_ORIGINS=https://${SITE_ADDRESS}
+      - AUTH_REDIRECT_URIS=https://${SITE_ADDRESS}/callback
+      - AUTH_POST_LOGOUT_REDIRECT_URIS=https://${SITE_ADDRESS}
+      - AUTH_ALLOWED_EMAIL_DOMAINS=${ALLOWED_EMAIL_DOMAINS:-chnu.edu.ua}
+      - APP_BRAND=${APP_BRAND:-chnu}
+      - APP_SIGN_IN_THEME=${APP_SIGN_IN_THEME:-catalogue}
+      - AUTH_JWK_KEY_ID=${JWK_KEY_ID:?set JWK_KEY_ID}
+      - AUTH_JWK_PRIVATE_KEY=${JWK_PRIVATE_KEY:?set JWK_PRIVATE_KEY}
+      - AUTH_JWK_PUBLIC_KEY=${JWK_PUBLIC_KEY:?set JWK_PUBLIC_KEY}
+      - SPRING_FLYWAY_LOCATIONS=${FLYWAY_LOCATIONS:-classpath:db/migration}
+      - DEMO_PASSWORD_HASH=${DEMO_PASSWORD_HASH:-}
+      - OTEL_SDK_DISABLED=true
+      - JAVA_OPTS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=60.0 -XX:+UseG1GC -XX:MaxGCPauseMillis=200
+        -Djava.security.egd=file:/dev/./urandom
+    depends_on: !override
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      clamav:
+        condition: service_healthy
+    # A fixed address outside the dynamic range: the frontend proxy resolves app once at start, and a recreated
+    # backend (deploy, restore) would otherwise come back on another address
+    networks: !override
+      award-network:
+        ipv4_address: 172.26.255.10
+
+  frontend:
+    logging: *logging
+    mem_limit: 64m
+    deploy: !reset {}
+    image: ${FRONTEND_IMAGE:-award-frontend:prod}
+    ports: !reset []
+
+  # Nightly encrypted backup of the database and the documents (DEMO_DEPLOYMENT §4); restore.sh restores one
+  backup:
+    logging: *logging
+    mem_limit: 1152m
+    build: ./infra/backup
+    image: ${BACKUP_IMAGE:-award-backup:prod}
+    container_name: award-backup
+    environment:
+      TZ: Europe/Kyiv
+      BACKUP_CRON: ${BACKUP_CRON:-30 4 * * *}
+      BACKUP_REMOTE: ${BACKUP_REMOTE:?set BACKUP_REMOTE}
+      BACKUP_AGE_RECIPIENT: ${BACKUP_AGE_RECIPIENT:?set BACKUP_AGE_RECIPIENT}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      BACKUP_IMAGE_TAG: ${BACKEND_IMAGE:-award-backend:prod}
+      PGHOST: postgres
+      PGDATABASE: ${POSTGRES_DB:-award_monitoring}
+      PGUSER: ${POSTGRES_USER:?set POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_APP_USER:?set MINIO_APP_USER}
+      MINIO_SECRET_KEY: ${MINIO_APP_PASSWORD:?set MINIO_APP_PASSWORD}
+      RCLONE_CONFIG_S3_TYPE: s3
+      RCLONE_CONFIG_S3_PROVIDER: ${RCLONE_CONFIG_S3_PROVIDER:-AWS}
+      RCLONE_CONFIG_S3_REGION: ${RCLONE_CONFIG_S3_REGION:-eu-north-1}
+      RCLONE_CONFIG_S3_ENDPOINT: ${RCLONE_CONFIG_S3_ENDPOINT:-}
+      RCLONE_CONFIG_S3_ACCESS_KEY_ID: ${RCLONE_CONFIG_S3_ACCESS_KEY_ID:?set RCLONE_CONFIG_S3_ACCESS_KEY_ID}
+      RCLONE_CONFIG_S3_SECRET_ACCESS_KEY: ${RCLONE_CONFIG_S3_SECRET_ACCESS_KEY:?set RCLONE_CONFIG_S3_SECRET_ACCESS_KEY}
+    tmpfs:
+      - /tmp:size=768m,mode=1777
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      backup-bucket-init:
+        condition: service_completed_successfully
+        required: false
+    restart: unless-stopped
+    networks:
+      - award-network
+
+  # Only for a rehearsal on a workstation: the backup bucket on the Compose MinIO (BACKUP_REMOTE=s3:award-backups)
+  backup-bucket-init:
+    logging: *logging
+    mem_limit: 128m
+    image: cgr.dev/chainguard/minio:latest
+    container_name: award-backup-bucket-init
+    profiles: ["local-mail"]
+    user: "0"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        export MC_CONFIG_DIR=/tmp/mc &&
+        mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" >/dev/null &&
+        mc mb --ignore-existing local/award-backups
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - award-network
+
+  caddy:
+    logging: *logging
+    mem_limit: 128m
+    image: caddy:2-alpine
+    container_name: award-caddy
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      frontend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - award-network
+
+volumes:
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local
+
+networks:
+  award-network:
+    ipam:
+      config: !override
+        - subnet: 172.26.0.0/16
+          ip_range: 172.26.0.0/17

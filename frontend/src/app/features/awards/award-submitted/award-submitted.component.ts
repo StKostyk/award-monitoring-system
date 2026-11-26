@@ -1,0 +1,134 @@
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { MatButton } from '@angular/material/button';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TranslocoPipe } from '@jsverse/transloco';
+
+import { readProblem } from '../../../core/api/problem';
+import { AuthService } from '../../../core/auth/auth.service';
+import { LanguageService } from '../../../core/i18n/language.service';
+import { IconComponent } from '../../../shared/icons/icon.component';
+import { StatusPageComponent } from '../../../shared/status-page/status-page.component';
+import { Award, AwardsService, awardTitle, managesAward } from '../awards.service';
+
+/** Confirms the caller's own submitted award; any other award or id is not a submission to confirm. */
+@Component({
+  selector: 'app-award-submitted',
+  imports: [
+    RouterLink,
+    MatButton,
+    IconComponent,
+    MatProgressBar,
+    StatusPageComponent,
+    TranslocoPipe,
+  ],
+  template: `
+    @if (loading()) {
+      <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />
+    }
+    @if (notFound()) {
+      <app-status-page
+        icon="search-x"
+        [title]="'awards.notFound' | transloco"
+        [text]="'awards.notFoundText' | transloco"
+        data-testid="award-not-found"
+      >
+        <a mat-flat-button routerLink="/awards">{{ 'awards.back' | transloco }}</a>
+      </app-status-page>
+    }
+    @if (failed()) {
+      <p class="award-submitted__problem" role="alert" data-testid="award-submitted-error">
+        {{ 'awards.problems.unknown' | transloco }}
+      </p>
+    }
+    @if (award(); as award) {
+      <section class="award-submitted" role="status" data-testid="award-submitted">
+        <app-icon class="award-submitted__icon" name="circle-check" />
+        <h1 class="award-submitted__title">{{ 'awards.submitted.title' | transloco }}</h1>
+        <p class="award-submitted__name" data-testid="award-submitted-name">«{{ name(award) }}»</p>
+        <p data-testid="award-submitted-text">{{ 'awards.submitted.text' | transloco }}</p>
+        <div class="award-submitted__actions">
+          <a mat-flat-button routerLink="/awards" data-testid="award-submitted-list">
+            {{ 'awards.submitted.toList' | transloco }}
+          </a>
+          <a mat-button routerLink="/awards/new">{{ 'awards.add' | transloco }}</a>
+        </div>
+      </section>
+    }
+  `,
+  styles: `
+    .award-submitted {
+      max-width: 560px;
+      text-align: center;
+      margin: 24px auto;
+    }
+    .award-submitted__icon {
+      --app-icon-size: 48px;
+      color: var(--mat-sys-primary);
+    }
+    .award-submitted__title {
+      font: var(--mat-sys-headline-small);
+    }
+    .award-submitted__name {
+      font: var(--mat-sys-title-medium);
+      overflow-wrap: anywhere;
+    }
+    .award-submitted__actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+    }
+    .award-submitted__problem {
+      color: var(--mat-sys-error);
+    }
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class AwardSubmittedComponent implements OnInit {
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly service = inject(AwardsService);
+  private readonly auth = inject(AuthService);
+  private readonly language = inject(LanguageService);
+
+  readonly award = signal<Award | null>(null);
+  readonly loading = signal(false);
+  readonly notFound = signal(false);
+  readonly failed = signal(false);
+
+  ngOnInit(): void {
+    const param = this.route.snapshot.paramMap.get('id') ?? '';
+    if (!/^\d+$/.test(param)) {
+      this.notFound.set(true);
+      return;
+    }
+    this.loading.set(true);
+    this.service.get(Number(param)).subscribe({
+      next: (award) => this.show(award),
+      error: (error: unknown) => {
+        this.loading.set(false);
+        if (readProblem(error) === 'failed') {
+          this.failed.set(true);
+        } else {
+          this.notFound.set(true);
+        }
+      },
+    });
+  }
+
+  name(award: Award): string {
+    return awardTitle(award, this.language.current());
+  }
+
+  private show(award: Award): void {
+    this.loading.set(false);
+    if (!managesAward(award, this.auth.userId())) {
+      void this.router.navigate(['/awards', award.id], { replaceUrl: true });
+    } else if (award.status === 'DRAFT') {
+      void this.router.navigate(['/awards', award.id, 'edit'], { replaceUrl: true });
+    } else {
+      this.award.set(award);
+    }
+  }
+}

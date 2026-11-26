@@ -1,0 +1,159 @@
+# Epic 7: Notification & Communication System — Status
+
+> **Started**: 2026-10-09 (kickoff)
+> **Done**: -
+> **Author**: Stefan Kostyk
+> **Jira epic**: SCRUM-63
+> **Roadmap**: DEVELOPMENT_ROADMAP.md § Epic 7 (local planning document)
+
+## Progress
+
+| Feature | Status | Started | Done |
+|---------|--------|---------|------|
+| 7.1 Reliable events and module boundaries (publication registry, Spring Modulith verification) | Done, manually verified 2026-10-11 to 2026-10-14 ([PRD](../features/epic-07/feature-7.1-reliable-events-module-boundaries.md), validation §13) | 2026-10-10 | 2026-10-14 |
+| 7.2 Notification centre and preferences (in-app notifications, preferences, delivery log, HTML mails) | Done, manually verified 2026-10-15 ([PRD](../features/epic-07/feature-7.2-notification-centre-preferences.md), validation §13; all 31 steps pass, fixes SCRUM-82, SCRUM-83, SCRUM-84) | 2026-10-14 | 2026-10-15 |
+
+## Current focus
+
+Epic delivered 2026-10-15: features 7.1 and 7.2 are merged, validated against their PRDs and walked through their
+manual scenarios. The documentation sync of 2026-10-15 (`docs/sync-epic-07`) brought the contract documents, the
+diagrams and the Ukrainian copies up to date; the epic refactor sweep follows. Next: Epic 6.
+
+## Scope
+
+Events that already send e-mail after the commit (authentication, roles and delegations, decisions, corrections,
+overdue notices, data export) move onto the Spring Modulith event publication registry, so a failed send or a restart
+no longer loses them. The module boundaries of ADR-022 become a test. A new `notification` module stores in-app
+notifications for award and review events and serves the notification centre in the toolbar; each person chooses per
+event type whether it reaches them by e-mail, in the app or both. Deliveries are recorded, counted as metrics and
+included in the personal data export. Notification e-mails get HTML templates in the university brand.
+
+Out of scope here: SMS (needs a paid gateway; no spend before the demo, ADR-021), browser push notifications (with the
+PWA work of Epic 8), Kafka (ADR-006 addendum: only for a consumer outside the application), real-time delivery over
+WebSocket or server-sent events (polling as on the award page, design review H-1), daily digests, purging expired
+notifications (retention job of Epic 6, Feature 6.2), the three code gaps of the Epic 4 documentation sync (separate
+fix stories if chosen).
+
+## Stories
+
+`parallel` marks stories whose UI can be built in a separate lane from the OpenAPI contract while the backend is in progress.
+
+| # | Story | Feature | Pts | Jira | GitHub | Parallel | Status |
+|---|-------|---------|-----|------|--------|----------|--------|
+| 1 | 7.1.1 Event publication registry for the after-commit mails | 7.1 | 5 | SCRUM-64 | #181 | no | Done |
+| 2 | 7.1.2 Module boundaries checked by Spring Modulith | 7.1 | 8 | SCRUM-65 | #182 | no | Done |
+| 2a | 7.1.3 Drop the duplicate async error log for undelivered mails | 7.1 | 1 | SCRUM-75 | #197 | no | Done |
+| 3 | 7.2.1 In-app notifications from award and review events | 7.2 | 5 | SCRUM-66 | #183 | no | Done |
+| 4 | 7.2.2 Notification centre in the toolbar | 7.2 | 5 | SCRUM-67 | #184 | yes | Done |
+| 5 | 1.3.2 Notification preferences | 7.2 | 3 | SCRUM-16 | #39 | yes | Done |
+| 6 | 7.2.3 Delivery log and notifications in the personal data export | 7.2 | 3 | SCRUM-68 | #185 | no | Done |
+| 7 | 7.2.4 HTML e-mail templates in the university brand | 7.2 | 3 | SCRUM-69 | #186 | no | Done |
+| 7a | 7.2.5 Name the target level in the passed-on notification text | 7.2 | 1 | SCRUM-82 | #239 | no | Done |
+| 7b | 7.2.6 Save only the changed notification preferences | 7.2 | 1 | SCRUM-83 | #242 | no | Done |
+| 7c | 7.2.7 Out-of-range notification page shows the empty state | 7.2 | 1 | SCRUM-84 | #245 | no | Done |
+
+Total: 32 points, planned for sprint 5 (2026-10-12 to 2026-10-18).
+
+## Decisions
+
+| Date | Decision | Rationale | Reference |
+|------|----------|-----------|-----------|
+| 2026-10-09 | Events stay in-process Spring application events on the Spring Modulith publication registry (PostgreSQL); no Kafka in this epic | No consumer outside the application exists; the registry closes the lost-mail gap without operating a broker | ADR-006 addendum 2026-10-05 (confirmed) |
+| 2026-10-09 | Spring Modulith verification test and boundary fixes in Feature 7.1, before the `notification` module is written | ADR-022 step 2; the new module is checked from its first commit | ADR-022 |
+| 2026-10-09 | Channels: e-mail and in-app; SMS out of scope, browser push with Epic 8 | No paid gateway before the demo; push needs the service worker of the PWA work | BRD §6.2, ADR-021 |
+| 2026-10-09 | The notification centre polls the unread count while the tab is visible; no WebSocket | Same pattern as the award page; one instance, no session affinity needed | Design review H-1 |
+| 2026-10-09 | Security mails (verification, password reset, new device, lock, address change) are always sent and have no preference | They protect the account; a person must not switch them off | PRIVACY_BY_DESIGN §4.2 |
+| 2026-10-09 | Story 1.3.2 (notification preferences) moves from Epic 1 to this epic | Preferences need the notification types and channels built here | Design review A-9 |
+| 2026-10-09 | Story order: registry, boundaries, in-app notifications, centre, preferences, delivery log, HTML templates | Infrastructure before features; the HTML templates are the first to drop if the sprint runs short | This kickoff |
+| 2026-10-14 | Feature 7.1 validated (PASSED WITH NOTES); duplicate mails from a backlog behind the SMTP lock stay within at-least-once and are revisited with the delivery log of 7.2.3 | PRD §13 F-1; the delivery log can skip a resend already logged as sent | Feature 7.1 validation |
+| 2026-10-15 | ADR-022 accepted: the module boundaries hold through Epic 7 under `ApplicationModules.verify()`; steps 3 and 4 wait for OCR and a second university | Step 2 done in 7.1.2 with no exception left; the decision is enforced by a test | Documentation sync |
+| 2026-10-15 | Feature 7.2 validated (PASSED WITH NOTES); a preferences save sends only the changed types (fix SCRUM-83), so a stale tab no longer reverts another tab's choices | PRD §5 "last PUT wins per type"; the endpoint already keeps unlisted types | Feature 7.2 validation F-1 |
+
+## Documentation deviations
+
+To settle in the Feature 7.1 and 7.2 PRDs; each document is updated in the story that changes it.
+
+1. ~~ADR-006 still names Kafka as the decision~~ Settled in 7.1.1: status line amended, Addendum 2026-10-09 is the
+   decision (at-least-once delivery, transient events).
+2. Roadmap task "Create notification queue with Kafka" and the 3-week, sprint 11 estimate: superseded by the decisions
+   above; the roadmap stays as the local original.
+3. BRD §6.2 and US-005 (definition of done "Mobile notifications") promise SMS and push; e-mail and in-app only here.
+4. `ck_notifications_type` (V011) lists `AWARD_SUBMITTED` … `SYSTEM_ALERT`; the events that exist are decisions
+   (including escalation), corrections, overdue notices and hand-over. A new migration aligns the list (7.2.1).
+5. `notifications` has no delivery status; the delivery log of 7.2.3 needs one (new migration).
+6. PRIVACY_BY_DESIGN §4.2 keeps the e-mail choice as a consent type `EMAIL_NOTIFICATIONS` "per type", while
+   `notification_preferences` holds the same choice per event type and channel. One store, decided in the 7.2 PRD.
+7. `openapi.yml` `NotificationPreferences` (`emailEnabled`, `browserEnabled`) and the `UserUpdateRequest` note do
+   not match the per-type table; rewritten with 1.3.2.
+8. DATA_DICTIONARY § notifications says no code writes the table; updated with 7.2.1.
+
+## Technical notes
+
+- Eighteen event records under `*/event/` and eleven listener classes; mail listeners are `@Async`
+  `@TransactionalEventListener(AFTER_COMMIT)`. `MailDelivery` retries three times and then logs and drops; for the
+  registry a final failure has to propagate so the publication stays incomplete.
+- Spring Modulith's JDBC registry needs the `event_publication` table; Flyway owns the schema, so it comes as a
+  `V` migration, with schema initialisation off.
+- Registry retry settings (7.1.1, `app.events.*`): first run 1 min after start, then every 10 min
+  (`APP_EVENTS_RETRY_INTERVAL`); resubmits incomplete publications older than 10 min (`APP_EVENTS_RETRY_AFTER`)
+  and younger than 24 h; older ones log one error per run; deleted after 30 days. Gauges `award.events.incomplete`,
+  `award.events.abandoned`. Spring Modulith 1.4.13, completion mode `delete`.
+- Module boundaries today: about 74 imports of another module's `repository` or `entity` package (gdpr 23, award 14,
+  auth 13, delegation 10, authz 6, document 4, audit 2, user 2). `User` and `Organization` are read everywhere; the
+  PRD decides between service lookups and a named interface for read-only types.
+- `notifications` and `notification_preferences` exist since V011 and no code writes them; `notifications.expires_at`
+  carries the one-year retention.
+- Decision and overdue mails are bilingual (uk and en in one message, Feature 4.1 validation F-3); no per-user
+  language is stored.
+- The award page already polls the status every 60 s and pauses while hidden (`features/awards`); the centre reuses
+  that approach.
+- Refactor sweep of 7.1 (validation 2026-10-14), not applied: every module's `service` package is one named
+  interface, wider than the class list of ADR-022 (narrow it or reword the ADR when ADR-022 is accepted);
+  `UserAccounts` and `OrganizationLookup` repeat the Spring Data methods one for one; `RoleHolders` and
+  `DelegationLookup` pair up in three callers (one "holders including delegates" method); `DeviceLookup`,
+  `AwardVersionLookup.findOfOwner`, `RoleHolders.findHistoryByUserId` serve only the data export (a per-module
+  personal-data contributor, with the Epic 6 erasure story); `EventPublicationRegistryIT` waits with
+  `Thread.sleep` (Awaitility); the two `*EventJsonTest` classes share one structure.
+- Refactor sweep of 7.2 (validation 2026-10-15), not applied: the five mail listeners each assemble "uk, separator,
+  en" with repeated labels ("Переглянути нагороду" / "View the award", "Причина" / "Reason"), a candidate for
+  `MailTextHelper`; `CorrectionMails` keeps field labels in Java beside `awards.fields.*` in i18n;
+  `AuthorityChangeMails.onDelegationRevoked` pairs drafts and recipients by index. The smaller items are in PRD 7.2
+  §13 F-5.
+- Epic refactor `refactor(epic-07)` (2026-10-15) applied: one `support/Eventually` for the polling loops, `TestEvents`
+  builders, `LevelNamesHelper`, an explicit `NotificationDrafts.typeOf`, the digest zone from the `Clock`, a
+  `NotificationFeed` shared by the bell and the list (mark-read and mark-all failures shown), `NOTIFICATION_TYPES`
+  as the source of the type union, the preferences card on OnPush, and the PRD 7.2 F-3 integration test. Not applied,
+  for Epic 6: in-app and e-mail treat an unreachable recipient differently (in-app needs an account, e-mail an
+  address), and `DeliveryLog` counts both a duplicate and a missing recipient as `skipped` — one reachability rule and
+  a split metric outcome belong with the erasure story; the one-year notification retention is a literal
+  (`plusYears(1)` in `NotificationRows`) and becomes a property with Feature 6.2; the dedupe key of two events of one
+  type for one award at the same instant would collide (no such case exists, remark only). The two `*EventJsonTest`
+  classes keep their explicit constructors, since a round trip should show every field.
+
+### Findings of the documentation sync of 2026-10-15
+
+Corrected in the sync: the ERD and the class diagram still showed `notifications` with `title` and `message` and
+`Notification` as planned (now the V038/V039 columns, `event_publication`, the `notification` package with
+`NotificationPreference` and its enums); the package diagram showed one class in `notification`; the as-built container
+diagram listed a broker and a notification service as planned; PRIVACY_BY_DESIGN purpose P003 named SMS and
+account-lifetime retention (now e-mail and in-app, one year for notifications); the Ukrainian notification section of
+the data dictionary predated V038. API, data dictionary (English) and RBAC matrix matched the code. Deviations kept on
+purpose: the roadmap's Kafka task and the SMS and push promises of BRD §6.2 and US-005 (documentation deviations 2
+and 3 above).
+
+## Risks
+
+1. 7.1.2 touches every module; done as one refactor with no behaviour change, proven by the full gate, before any new
+   feature code. If the fixes outgrow 8 points, the remaining violations are listed in the test as named exceptions
+   and closed in a follow-up story.
+2. Moving the mails onto the registry changes when a send counts as finished; a mail that fails three times is retried
+   at the next start, so duplicates after a crash are possible. The PRD states the at-least-once behaviour.
+3. Notification rows carry personal data (award titles, decisions, reviewer comments); they enter the export, the
+   erasure rules of Epic 6 and the one-year retention.
+
+## Quick links
+
+- [ADR-006 Message queue](../architecture/adr/ADR-006-Message-Queue.md) · [ADR-022 Modular monolith](../architecture/adr/ADR-022-Modular-Monolith-Multi-Tenancy.md) · [ADR-023 Approval workflow](../architecture/adr/ADR-023-Approval-Workflow-Transitions.md)
+- [Data dictionary § Notification domain](../database/DATA_DICTIONARY.md#5-notification-domain)
+- [Privacy by design § Consent types](../security/PRIVACY_BY_DESIGN.md) · [User story US-005](../requirements/USER_STORIES.md)
+- [Business requirements § Communication services](../requirements/BUSINESS_REQUIREMENTS.md) · [OpenAPI](../api/openapi.yml)

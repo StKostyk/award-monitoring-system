@@ -1,0 +1,29 @@
+<span class="cv-export__tip" [matTooltip]="'analytics.cv.menu' | transloco">
+  <button
+    mat-icon-button
+    type="button"
+    [matMenuTriggerFor]="menu"
+    [disabled]="disabled() || busy()"
+    [attr.aria-label]="'analytics.cv.menu' | transloco"
+    data-testid="cv-export"
+  >
+    <app-icon name="download" />
+  </button>
+</span>
+<mat-menu #menu="matMenu" xPosition="before">
+  @for (format of formats; track format) {
+    <button
+      mat-menu-item
+      type="button"
+      (click)="download(format)"
+      [attr.data-testid]="'cv-export-' + format"
+    >
+      {{ 'analytics.cv.' + format | transloco }}
+    </button>
+  }
+</mat-menu>
+@if (failed()) {
+  <p class="cv-export__failed" role="alert" data-testid="cv-export-failed">
+    {{ 'analytics.cv.failed' | transloco }}
+  </p>
+}

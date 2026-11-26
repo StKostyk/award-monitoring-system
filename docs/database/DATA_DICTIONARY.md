@@ -2,10 +2,10 @@
 ## Award Monitoring & Tracking System
 
 > **Phase 9 Deliverable**: Data Architecture & Database Design  
-> **Document Version**: 1.0  
-> **Last Updated**: December 2025  
+> **Document Version**: 1.1  
+> **Last Updated**: October 2026  
 > **Author**: Stefan Kostyk  
-> **Total Entities**: 14  
+> **Total Entities**: 17, plus 3 authorization-server tables  
 > **Classification**: Internal
 
 ---
@@ -18,11 +18,12 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 | **Domain** | **Entities** | **Purpose** |
 |------------|--------------|-------------|
-| **User Domain** | `users`, `user_roles`, `organizations` | Identity, access control, organizational structure |
-| **Award Domain** | `awards`, `award_categories`, `documents` | Core business entities for award management |
-| **Workflow Domain** | `award_requests`, `review_decisions` | Multi-level approval workflow tracking |
-| **Compliance Domain** | `audit_logs`, `consent_records` | GDPR compliance, audit trails |
-| **Notification Domain** | `notifications`, `notification_preferences` | Communication and user preferences |
+| **User Domain** | `users`, `user_roles`, `role_delegations`, `organizations`, `dashboard_preferences` | Identity, access control, approval authority lent to a colleague, organizational structure, colour scheme, dashboard layouts and getting-started progress |
+| **Authentication Domain** | `one_time_tokens`, `user_devices`, `oauth2_*` | Email links, known browsers, authorization-server state |
+| **Award Domain** | `awards`, `award_versions`, `award_categories`, `documents` | Core business entities for award management |
+| **Workflow Domain** | `award_requests`, `review_decisions`, `review_templates` | Multi-level approval workflow tracking |
+| **Compliance Domain** | `audit_logs`, `consent_records`, `legal_holds`, `erasure_requests`, `retention_runs` | GDPR compliance, audit trails, erasure and retention |
+| **Notification Domain** | `notifications`, `notification_preferences`, `event_publication` | Communication, user preferences, event publication registry |
 
 ---
 
@@ -36,12 +37,13 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - Email address must be unique across all users
 - Users belong to exactly one primary organization
 - Status transitions: PENDING → ACTIVE ↔ INACTIVE → SUSPENDED → RETIRED/MEMORIAL
+- A faculty secretary or dean can add a colleague without an account (2.5.1): status `UNCLAIMED`, `added_by_id` set, no role, no sign-in; without a known address the row holds a placeholder `unclaimed-<uuid>@unclaimed.invalid`, so `email_address` stays NOT NULL and unique; no mail goes to any `*.invalid` address
 - Password hash uses BCrypt algorithm with strength 12
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
 | `user_id` | `BIGSERIAL` | NO | Auto | PK | Unique user identifier |
-| `email_address` | `VARCHAR(255)` | NO | - | UK | User's email (login credential) |
+| `email_address` | `VARCHAR(255)` | NO | - | UK | User's email (login credential); `unclaimed-<uuid>@unclaimed.invalid` for a person without an account whose address is unknown, replaced once one is entered |
 | `first_name` | `VARCHAR(100)` | NO | - | - | User's first name (GDPR: Personal Data) |
 | `last_name` | `VARCHAR(100)` | NO | - | - | User's last name (GDPR: Personal Data) |
 | `password_hash` | `VARCHAR(255)` | NO | - | - | BCrypt hashed password (GDPR: Confidential) |
@@ -50,7 +52,10 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `last_login_at` | `TIMESTAMPTZ` | YES | - | - | Last successful authentication timestamp |
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
 | `updated_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Last modification timestamp |
+| `status_changed_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | When `account_status` last changed: set by `trg_users_status_changed` (`fn_users_status_changed`, `BEFORE UPDATE OF account_status`, only when the value differs); backfilled with `updated_at` (V045, 6.2.3); the `former-staff` retention policy counts its period from it |
 | `version` | `BIGINT` | NO | `1` | - | Optimistic locking version |
+| `added_by_id` | `BIGINT` | YES | - | FK→users (`fk_users_added_by`, ON DELETE SET NULL) | Faculty secretary or dean who added the person without an account (V051, 2.5.1); null for self-registered accounts |
+| `invited_at` | `TIMESTAMPTZ` | YES | - | - | When the last invitation to register went to the person (V051); null when none did; a repeat is refused within `app.people.invitation-interval` |
 
 **Status Values** (`account_status`):
 | Value | Description | Transitions To |
@@ -61,20 +66,27 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `SUSPENDED` | Administrative hold | ACTIVE, RETIRED |
 | `RETIRED` | Former employee (read-only access) | MEMORIAL |
 | `MEMORIAL` | Deceased (awards preserved, no access) | - |
+| `UNCLAIMED` | Person without an account added by a faculty secretary or dean (2.5.1): random password hash, no role, sign-in answers as a wrong password | PENDING (claim by registration, 2.5.3), DELETED (removal while every award is a draft) |
+| `DELETED` | Erased on request (GDPR, 6.1.5): the row stays with `first_name` `Erased`, `last_name` `#<id>`, `email_address` `erased-<id>@erased.invalid`, a random password hash and no `last_login_at`; the old address can register a new account | - |
 
 **Indexes**:
 - `pk_users` - Primary key on `user_id`
 - `uk_users_email` - Unique on `email_address`
 - `idx_users_organization` - B-tree on `organization_id`
 - `idx_users_status` - B-tree on `account_status`
-- `idx_users_lower_email` - Expression index on `LOWER(email_address)`
+- `idx_users_status_changed` - Composite on `(account_status, status_changed_at)` (V045)
+- `uk_users_email_lower` - Unique expression index on `LOWER(email_address)` (V015); addresses are stored lower-case
+- `idx_users_unclaimed` - Partial on `(organization_id, last_name)` where `account_status = 'UNCLAIMED'` (V051): the people list and the duplicate check
 
 **Relationships**:
 - BELONGS TO `organizations` (N:1) via `organization_id`
+- ADDED BY `users` (N:1, optional) via `added_by_id`
 - HAS MANY `user_roles` (1:N)
 - HAS MANY `awards` (1:N)
 - HAS MANY `audit_logs` (1:N)
 - HAS MANY `consent_records` (1:N)
+- HAS MANY `legal_holds` (1:N)
+- HAS MANY `erasure_requests` (1:N)
 - HAS MANY `notifications` (1:N)
 
 ---
@@ -85,9 +97,10 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 **Business Rules**:
 - Users can have multiple roles across different organizations
-- Role validity period cannot have `valid_to` before `valid_from`
-- Current roles are those where `valid_to IS NULL OR valid_to >= CURRENT_DATE`
-- Role hierarchy determines approval authority
+- Role validity period cannot have `valid_to` before `valid_from - 1`: revocation ends an assignment on the previous day, so a role taken back on the day it began ends one day before it started and the day stays free for a fresh assignment (V017)
+- Current roles are those where `valid_from <= CURRENT_DATE AND (valid_to IS NULL OR valid_to >= CURRENT_DATE)`
+- The same role is held at most once per organization while it is open-ended (`uk_user_roles_current`); nothing is ever deleted, so the history stays readable
+- Role hierarchy determines approval authority; a role is granted only by somebody holding a role strictly above it inside the same organization subtree
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
@@ -96,7 +109,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `role_type` | `VARCHAR(30)` | NO | - | CK | Role type (see enum below) |
 | `organization_id` | `BIGINT` | NO | - | FK→organizations | Organizational scope of role |
 | `valid_from` | `DATE` | NO | `CURRENT_DATE` | - | Role effective start date |
-| `valid_to` | `DATE` | YES | - | CK | Role effective end date (NULL=current) |
+| `valid_to` | `DATE` | YES | - | CK | Role effective end date (NULL=open-ended); revocation sets it to yesterday |
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
 | `created_by` | `BIGINT` | YES | - | FK→users | Admin who assigned the role |
 
@@ -116,6 +129,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - `idx_user_roles_user` - B-tree on `user_id`
 - `idx_user_roles_org` - B-tree on `organization_id`
 - `idx_user_roles_current` - Partial index for active roles
+- `uk_user_roles_current` - Partial unique index on `(user_id, role_type, organization_id) WHERE valid_to IS NULL` (V017)
 
 **Relationships**:
 - BELONGS TO `users` (N:1) via `user_id`
@@ -145,6 +159,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `hierarchy_path` | `LTREE` | YES | - | - | Materialized path for queries |
 | `depth` | `INTEGER` | NO | `0` | - | Hierarchy depth level |
 | `is_active` | `BOOLEAN` | NO | `TRUE` | - | Active status flag |
+| `review_working_days` | `INTEGER` | YES | - | CK 1–20 | A faculty's review period: working days each faculty level (faculty secretary, dean) has for a request of the faculty or its departments; NULL = `app.workflow.review-working-days`. Set by the dean through `PUT /organizations/{id}/review-period` (V032, 4.2.1) |
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
 | `updated_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Last modification timestamp |
 
@@ -152,8 +167,10 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | Value | Description | Depth |
 |-------|-------------|-------|
 | `UNIVERSITY` | Top-level institution | 0 |
-| `FACULTY` | Academic faculty | 1 |
-| `DEPARTMENT` | Academic department | 2 |
+| `COLLEGE` | Applied college of the university | 1 |
+| `FACULTY` | Academic faculty or institute | 1 |
+| `SPECIALITY` | Study programme within the college | 2 |
+| `DEPARTMENT` | Academic department within a faculty | 2 |
 
 **Indexes**:
 - `pk_organizations` - Primary key on `org_id`
@@ -169,6 +186,140 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 ---
 
+### 1.4 Entity: `one_time_tokens`
+
+**Description**: Single-use tokens delivered by email for address verification, password reset, security revocation and sign-in address change. Only the SHA-256 hash of the token is stored; the raw value exists solely in the email link.
+
+**Business Rules**:
+- A token is redeemable once: `used_at` is set on first use and later attempts are rejected
+- Lifetime by purpose: `EMAIL_VERIFICATION` 24 hours, `PASSWORD_RESET` 1 hour, `SECURITY_REVOKE` 24 hours, `EMAIL_CHANGE` 1 hour
+- An `EMAIL_CHANGE` token carries the requested address in `new_email_address`; a `SECURITY_REVOKE` token may carry the previous sign-in address after an address change (V026), and redeeming it moves the account back there unless another account uses it; no other purpose carries an address. A confirmed change binds the user's unused "not me" links to the old address and issues one more for the notice to the old address; a password reset and the link of a new device cancel only the unbound ones. A new request cancels the user's earlier unused `EMAIL_CHANGE` tokens; a confirmed change cancels the unused `PASSWORD_RESET` tokens
+- The `one-time-tokens` retention policy deletes rows used or expired longer ago than `app.retention.one-time-tokens` (default 30 days) in the nightly retention run (6.2.1, §4.5)
+
+| **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
+|------------|---------------|--------------|-------------|-----------------|-----------------|
+| `id` | `BIGSERIAL` | NO | Auto | PK | Unique token identifier |
+| `token_hash` | `VARCHAR(64)` | NO | - | UK | SHA-256 hex digest of the token |
+| `user_id` | `BIGINT` | NO | - | FK→users | Owner of the token |
+| `purpose` | `VARCHAR(30)` | NO | - | CK | `EMAIL_VERIFICATION`, `PASSWORD_RESET`, `SECURITY_REVOKE`, `EMAIL_CHANGE` |
+| `new_email_address` | `VARCHAR(255)` | YES | - | CK | `EMAIL_CHANGE`: requested sign-in address, lower case, always present; `SECURITY_REVOKE`: the address to restore after an address change, otherwise null; null for other purposes (GDPR: Personal Data) |
+| `expires_at` | `TIMESTAMPTZ` | NO | - | - | Moment after which the token is rejected |
+| `used_at` | `TIMESTAMPTZ` | YES | - | - | Moment of redemption (NULL while unused) |
+| `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
+
+**Indexes**: `pk_one_time_tokens`, `uk_one_time_tokens_hash`, `idx_one_time_tokens_user`, `idx_one_time_tokens_expires`
+
+**Relationships**: BELONGS TO `users` (N:1) via `user_id`, deleted with the user
+
+---
+
+### 1.5 Entity: `user_devices`
+
+**Description**: Browsers a user has signed in from. A sign-in whose fingerprint is unknown for the user creates a row and triggers a notification email.
+
+**Business Rules**:
+- Fingerprint is a SHA-256 digest of browser family, operating-system family and accept-language
+- One row per user and fingerprint; `last_used_at` and `last_ip_address` are refreshed on every sign-in
+- A "this was not me" confirmation (`SECURITY_REVOKE` token) removes every row of the user, so each browser announces itself again after the password is reset; rows are also removed with the user
+- The `devices` retention policy deletes rows with `last_used_at` older than `app.retention.devices` (default 730 days); the next sign-in from such a browser counts as a new device (6.2.1)
+
+| **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
+|------------|---------------|--------------|-------------|-----------------|-----------------|
+| `id` | `BIGSERIAL` | NO | Auto | PK | Unique device identifier |
+| `user_id` | `BIGINT` | NO | - | FK→users | Owner of the device |
+| `fingerprint` | `VARCHAR(64)` | NO | - | UK (with `user_id`) | Device fingerprint digest |
+| `browser` | `VARCHAR(100)` | YES | - | - | Browser name and version for display |
+| `operating_system` | `VARCHAR(100)` | YES | - | - | Operating system for display |
+| `last_ip_address` | `VARCHAR(45)` | YES | - | - | IPv4/IPv6 address of the last sign-in (GDPR: Technical ID) |
+| `first_seen_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | First sign-in from this device |
+| `last_used_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Most recent sign-in from this device |
+
+**Indexes**: `pk_user_devices`, `uk_user_devices_fingerprint`, `idx_user_devices_last_used`
+
+**Relationships**: BELONGS TO `users` (N:1) via `user_id`, deleted with the user
+
+---
+
+### 1.6 Authorization server tables
+
+`oauth2_registered_client`, `oauth2_authorization` and `oauth2_authorization_consent` follow the reference schema of Spring Authorization Server with the PostgreSQL adjustments it recommends (`blob` → `TEXT`, `timestamp` → `TIMESTAMPTZ`). Their columns are owned by the library and are not listed here; `oauth2_authorization.principal_name` holds the user's email address and is indexed for revocation queries. Token values in `oauth2_authorization` (authorization code, access, id and refresh token, user and device code) are stored as SHA-256 hashes, `sha256:` followed by 64 lower-case hex digits, and the first four are indexed for lookups by value (V050, 9.1.1; GDPR: Confidential); access to the table is limited to the application role. The `authorizations` retention policy deletes `oauth2_authorization` rows whose every expiry column is null or older than `app.retention.authorizations` (default 1 day), so an authorization with a live refresh token stays (6.2.1).
+
+---
+
+### 1.7 Entity: `role_delegations`
+
+**Description**: Temporary handover of an approval role to a colleague. The delegate borrows the reading and approving permissions of the role for a bounded period; user management never travels with a delegation (V018).
+
+**Business Rules**:
+- Only the four approval roles can be lent: `FACULTY_SECRETARY`, `DEAN`, `RECTOR_SECRETARY`, `RECTOR` (`ck_role_delegations_type`)
+- The delegator must hold that role in that organization on the day they lend it, and must hold it themselves: borrowed authority is never passed on
+- The delegate must be another active user holding a current role inside the organization's subtree (`ck_role_delegations_parties`)
+- The period is mandatory at both ends and lasts at most 90 days (`ck_role_delegations_dates`); it simply stops applying after `valid_to`, without any job
+- One standing delegation of a role per organization per delegator at a time: overlapping periods are refused by the application
+- A delegation taken back keeps its row with `revoked_at` and `revoked_by`; revoking the underlying role takes back what it had lent in the same transaction, and moving the delegate to another department takes back what they had borrowed for organizations in which they no longer hold any role
+- Every revocation path locks the rows it ends (`SELECT … FOR UPDATE`), so two revocations arriving at once end a delegation once
+- The delegate carries the borrowed authority in the `delegations` token claim (`ROLE:orgId:delegatorId`) and in `role_scopes`, and is signed out everywhere when it is taken back
+
+| **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
+|------------|---------------|--------------|-------------|-----------------|-----------------|
+| `delegation_id` | `BIGSERIAL` | NO | Auto | PK | Unique delegation identifier |
+| `delegator_id` | `BIGINT` | NO | - | FK→users | User who lends the approval authority |
+| `delegate_id` | `BIGINT` | NO | - | FK→users, CK | User who borrows it; never the delegator |
+| `organization_id` | `BIGINT` | NO | - | FK→organizations | Organizational scope of the lent role |
+| `role_type` | `VARCHAR(30)` | NO | - | CK | Approval role being lent |
+| `reason` | `VARCHAR(500)` | YES | - | - | Why the authority was handed over, shown to the delegate |
+| `valid_from` | `DATE` | NO | - | CK | First day the borrowed authority applies |
+| `valid_to` | `DATE` | NO | - | CK | Last day it applies; at most `valid_from + 90` |
+| `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
+| `revoked_at` | `TIMESTAMPTZ` | YES | - | - | When it was taken back before its last day |
+| `revoked_by` | `BIGINT` | YES | - | FK→users | Who took it back |
+
+**States** (derived, never stored):
+| Value | Meaning |
+|-------|---------|
+| `active` | `revoked_at IS NULL` and today lies between `valid_from` and `valid_to` |
+| `upcoming` | `revoked_at IS NULL` and `valid_from` is in the future |
+| `expired` | `revoked_at IS NULL` and `valid_to` has passed |
+| `revoked` | `revoked_at IS NOT NULL` |
+
+**Indexes**:
+- `pk_role_delegations` - Primary key on `delegation_id`
+- `idx_role_delegations_delegate` - Partial B-tree on `(delegate_id, valid_from, valid_to) WHERE revoked_at IS NULL`, read when a token is issued
+- `idx_role_delegations_delegator` - B-tree on `delegator_id`
+- `idx_role_delegations_role` - Partial B-tree on `(delegator_id, role_type, organization_id) WHERE revoked_at IS NULL`, read when the underlying role is revoked
+
+**Relationships**:
+- BELONGS TO `users` (N:1) via `delegator_id`, `delegate_id` and `revoked_by`
+- BELONGS TO `organizations` (N:1) via `organization_id`
+
+---
+
+### 1.8 Entity: `dashboard_preferences`
+
+**Description**: The colour scheme and the dashboard layouts a person chose (V046, 5.1.2; V052, 9.4.1) and the getting-started progress (V055, 9.7.9). No row means the system scheme, every dashboard in its default layout and no progress saved.
+
+**Business Rules**:
+- At most one row per account; a save replaces the whole choice (`insert ... on conflict (user_id) do update`), last write wins
+- `layouts` maps a dashboard (`MY_AWARDS`, `HALL_OF_FAME`, `COMMAND_CENTRE`) to `{"order": [...], "hidden": [...]}`; both lists hold widgets of that dashboard only (`MY_AWARDS`: `KPI`, `FACT`, `TREND`, `LEVEL_STAIRS`, `IN_PROGRESS`, `LATEST`, `BY_CATEGORY`, `RANK`, `VISIBILITY`; `HALL_OF_FAME`: `KPI`, `TREND`, `RACE`, `RECORDS`, `FACT`, `TOP`, `LEVEL_MAP`; `COMMAND_CENTRE`: `TODAY`, `QUEUE`, `UNITS`, `TOP`), without duplicates; the service rejects anything else with `invalid-parameter` naming the field. A missing dashboard keeps its default; widgets missing from `order` follow in their default order
+- V052 moved the V046 `hidden_widgets` lists into `layouts.MY_AWARDS.hidden` with the 9.4 names (`SUMMARY`→`KPI`, `YEAR_TREND`→`TREND`, `BY_LEVEL`→`LEVEL_STAIRS`, `BY_CATEGORY` and `RANK` unchanged, `TIMELINE` dropped) and removed the column
+- `onboarding` holds `{"done": [step keys], "dismissed": bool, "tourSeen": bool}`, written only by `PUT /users/me/onboarding` with its own upsert (a new row gets the default scheme and layouts; the dashboard save leaves the column alone). `done` holds stored steps of the caller's current roles only (`PROFILE`, `VISIBILITY`, `NOTIFICATIONS`, `REVIEW_QUEUE`, `IMPORT`); `NOTICE`, `FIRST_AWARD` and `DELEGATE` are decided from `consent_records`, `awards` and `role_delegations` and never stored. Keys of a role the person lost stay until the next save and are ignored
+- Not audited (no trigger, no audit row): it records a display choice, not a processing decision
+- Personal data: part of the export (`dashboard_preferences`, `color_scheme`, `layouts` and `updated_at` since format 1.8, `onboarding` since 1.9) and deleted by the erasure (`RoleErasure`, order 20, count `dashboardPreferencesDeleted`)
+
+| **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
+|------------|---------------|--------------|-------------|-----------------|-----------------|
+| `user_id` | `BIGINT` | NO | - | PK, FK→users (`ON DELETE CASCADE`) | The account the choice belongs to |
+| `updated_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | When the choice was last saved |
+| `color_scheme` | `VARCHAR(10)` | NO | `'SYSTEM'` | CHECK `ck_dashboard_preferences_color_scheme` (`SYSTEM`, `LIGHT`, `DARK`) | `SYSTEM` follows the browser |
+| `layouts` | `JSONB` | NO | `'{}'` | - | Widget order and hidden widgets per dashboard |
+| `onboarding` | `JSONB` | NO | `'{}'` | - | Getting-started progress: stored steps, hidden checklist, seen tour |
+
+**Indexes**: `pk_dashboard_preferences`
+
+**Relationships**: BELONGS TO `users` (1:1) via `user_id`, deleted with the user
+
+---
+
 ## 2. Award Domain
 
 ### 2.1 Entity: `awards`
@@ -176,58 +327,92 @@ This Data Dictionary provides comprehensive documentation for all database entit
 **Description**: Core business entity representing professional achievements, recognition, and awards received by employees. Contains both public award information and metadata.
 
 **Business Rules**:
-- Each award belongs to exactly one user (recipient)
-- Awards must be categorized via `category_id`
+- Each award belongs to exactly one user (owner). A personal award (`recipient_org_id` NULL) was received by its owner; a unit award (`recipient_org_id` set, V027) was received by a faculty or department and its owner is the faculty secretary or dean who entered and submitted it (own or delegated role whose scope covers the unit)
+- A unit award belongs to the unit: `organization_id` = `recipient_org_id` from the first save (`ck_awards_recipient`), so scoped reads and reviewer routing follow the unit; the duplicate check compares it with the awards of the same unit only (other people's drafts left out), and it is part of the owner's GDPR export
+- An award is entered as a `DRAFT` and may be saved with a title alone (Ukrainian or English, `ck_awards_title`); category, awarding organization and award date are required once it leaves `DRAFT` (`ck_awards_complete`, V020)
+- `organization_id` of a personal award is the owner's department: set when the draft is created, refreshed at submission and kept afterwards, so scoped reads and reviewer routing do not follow a later transfer
+- Only the owner may change or delete a `DRAFT`; a submitted award is changed only by the workflow
+- Awards must be categorized via `category_id` before submission
 - Award status follows defined workflow progression
 - Verified awards display a verification badge
 - Impact score calculated based on category level and awarding organization
-- Awards are publicly visible (core system feature for transparency)
+- An award is seen by its owner and the reviewers whose scope covers it; beyond them only by the owner's choice for an approved personal award (`visibility`, V035, 4.3.1), while an approved unit award is shared with every signed-in user without a stored choice. Personal awards of a `DELETED` account are never shared; the erasure sets `visibility` to `PRIVATE` on the approved awards it keeps (6.1.5)
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
 | `award_id` | `BIGSERIAL` | NO | Auto | PK | Unique award identifier |
-| `user_id` | `BIGINT` | NO | - | FK→users | Award recipient |
-| `category_id` | `BIGINT` | NO | - | FK→award_categories | Award classification |
-| `title` | `VARCHAR(500)` | NO | - | - | Award title/name |
-| `title_uk` | `VARCHAR(500)` | YES | - | - | Ukrainian title |
-| `description` | `TEXT` | YES | - | - | Detailed description |
-| `description_uk` | `TEXT` | YES | - | - | Ukrainian description |
-| `awarding_organization` | `VARCHAR(255)` | NO | - | - | Organization that granted the award |
-| `award_date` | `DATE` | NO | - | - | Date award was granted |
+| `user_id` | `BIGINT` | NO | - | FK→users | Owner: the recipient of a personal award, the person who entered a unit award (V027); for a person without an account (2.5.2) the person, whose awards the faculty secretaries and deans of the person's department manage |
+| `organization_id` | `BIGINT` | NO | - | FK→organizations | Owner's department at submission (V020); the recipient unit of a unit award |
+| `recipient_org_id` | `BIGINT` | YES | - | FK→organizations; CK: NULL or = `organization_id`; partial index with `award_date` | Faculty or department that received the award; NULL for a personal award (V027) |
+| `category_id` | `BIGINT` | YES (draft) | - | FK→award_categories | Award classification; required outside `DRAFT` |
+| `title` | `VARCHAR(500)` | YES | - | CK: `title` or `title_uk` | English title |
+| `title_uk` | `VARCHAR(500)` | YES | - | CK: `title` or `title_uk` | Ukrainian title |
+| `description` | `TEXT` | YES | - | App: ≤ 4000 | Detailed description |
+| `description_uk` | `TEXT` | YES | - | App: ≤ 4000 | Ukrainian description |
+| `awarding_organization` | `VARCHAR(255)` | YES (draft) | - | - | Organization that granted the award; required outside `DRAFT` |
+| `award_date` | `DATE` | YES (draft) | - | CK: ≤ today in Europe/Kyiv | Date award was granted; required outside `DRAFT`; the application also refuses dates more than 50 years back |
 | `status` | `VARCHAR(20)` | NO | `'DRAFT'` | CK | Current workflow status |
-| `verification_badge` | `BOOLEAN` | NO | `FALSE` | - | Verified by supporting documents |
+| `verification_badge` | `BOOLEAN` | NO | `FALSE` | - | Set when a reviewer approves with «Документи перевірено» (the award has at least one document, 4.1.2) |
 | `impact_score` | `INTEGER` | YES | - | CK: 0-100 | Calculated significance score |
 | `external_url` | `VARCHAR(2048)` | YES | - | - | Link to external verification |
+| `creation_key` | `UUID` | YES | - | UQ with `user_id` (partial) | `Idempotency-Key` of the `POST /awards` request that created the draft, generated by the browser once per new award; a repeat with the same key answers this award instead of creating another (V049, 8.1.4). Not personal data; null for awards created without a key |
+| `visibility` | `VARCHAR(20)` | NO | `'PRIVATE'` | CK: `PRIVATE`, `UNIVERSITY`, `PUBLIC` | Owner's choice for an approved personal award: `PRIVATE` (owner and scoped reviewers), `UNIVERSITY` (also signed-in colleagues on the achievements page), `PUBLIC` (also the public page, 4.3.2); written only by `PUT /awards/{id}/visibility`, without a new `version` or award version (V035) |
+| `source` | `VARCHAR(10)` | NO | `'FORM'` | CK: `FORM`, `IMPORT` | How the award was entered: `FORM` (award form and review path) or `IMPORT` (an approved past award read from a faculty spreadsheet without a review request, 2.5.5; shown as «Імпортовано»); set once, never changed (V054) |
+| `search_vector` | `TSVECTOR` | NO | generated | `GENERATED ALWAYS AS … STORED` | Words of `title` and `title_uk` (weight A), `awarding_organization` (B), `description` and `description_uk` (C), `simple` configuration, each text through `search_words()` (NFC, apostrophes `'`, `’`, `ʼ` and the backtick removed, every run of characters other than letters and digits read as a space, so `2024-2025` gives `2024` and `2025`); never written by the application (V047, 5.4.1; V048, 5.4.2) |
+| `search_text` | `TEXT` | NO | generated | `GENERATED ALWAYS AS … STORED` | Lower-cased `search_words()` of `title`, `title_uk` and `awarding_organization`, for the trigram typo fallback (V047, V048) |
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
 | `updated_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Last modification timestamp |
-| `version` | `BIGINT` | NO | `1` | - | Optimistic locking version |
+| `version` | `BIGINT` | NO | `1` | - | Optimistic locking version; a new draft starts at 1 and every save that changes a field adds 1 (`award_versions.version_number`) |
 
 **Status Values** (`status`):
 | Value | Description | Transitions To |
 |-------|-------------|----------------|
 | `DRAFT` | Initial state, being edited | PENDING |
-| `PENDING` | Submitted, awaiting approval | APPROVED, REJECTED |
+| `PENDING` | Submitted, awaiting approval | APPROVED, REJECTED, DRAFT (returned for changes, or withdrawn by the owner before a claim) |
 | `APPROVED` | Approved through workflow | ARCHIVED |
-| `REJECTED` | Rejected during workflow | DRAFT (resubmission) |
+| `REJECTED` | Rejected during workflow; final | - |
 | `ARCHIVED` | Historical record, no longer active | - |
 
 **Impact Score Calculation** (0-100):
-- Base score from category level (Department: 20, Faculty: 40, University: 60, National: 80, International: 100)
+- Base score from the category's recognition level (§2.2: Speciality 10, Department 20, College 30, Faculty 40, Local 45, University 60, Regional 70, National 80, International 100)
 - Modifiers based on awarding organization prestige
+
+**Constraints added by V020**:
+- `ck_awards_title` - `title IS NOT NULL OR title_uk IS NOT NULL`
+- `ck_awards_complete` - `status = 'DRAFT'` or category, awarding organization and award date all present
+- `ck_awards_visibility` - `visibility IN ('PRIVATE', 'UNIVERSITY', 'PUBLIC')` (V035)
+- `ck_awards_visibility_personal` - `recipient_org_id IS NULL OR visibility = 'PRIVATE'`: a unit award has no stored choice (V035)
+- `ck_awards_date` - recreated as `award_date <= (now() AT TIME ZONE 'Europe/Kyiv')::date`; the V005 version compared with the session date (UTC) and refused awards dated today between 00:00 and 03:00 Kyiv time
+- `fk_awards_organizations` - `organization_id` → `organizations(org_id)`
+
+**Submission** (`POST /awards/{id}/submit`): under a row lock on the draft, `status` becomes `PENDING`, `impact_score` the level base score, `organization_id` the owner's current department, one `award_requests` row is created (`SUBMITTED`, `FACULTY_SECRETARY`) and an `AWARD_SUBMITTED` row is written to `audit_logs` (`entity_type = 'awards'`, `entity_id` = the award). A draft with another award of the same owner on the same `award_date` and a `pg_trgm` similarity of at least 0.6 on the lower-cased `title` or `title_uk` is submitted only when the owner confirms it; the audit row then carries `duplicateAcknowledged: true`. A returned or withdrawn draft keeps its `award_requests` row: the submission locks it before the draft and reuses it (`SUBMITTED` at the returning level after a return, at the start level after a withdrawal; reviewer cleared, new `submitted_at` and `deadline`), so its `review_decisions` stay on the timeline; the audit row carries `resubmittedFrom`. Such a draft cannot be deleted (409 `award-has-request`).
+
+**Withdrawal** (`POST /awards/{id}/withdraw`, V030): the owner of a `PENDING` award whose request is `SUBMITTED` or `ESCALATED` with no `current_reviewer_id` sets the request `WITHDRAWN` (deadline null) and the award `DRAFT`, under the same request row lock as a claim; `AWARD_WITHDRAWN` is written to `audit_logs` with the former status and level.
 
 **Indexes**:
 - `pk_awards` - Primary key on `award_id`
+- `idx_awards_organization_status` - B-tree on `(organization_id, status)` for scoped reads (V020)
+- `idx_awards_user_date` - B-tree on `(user_id, award_date DESC)` (V012), also used by the duplicate check of 2.1.2
 - `idx_awards_user` - B-tree on `user_id`
 - `idx_awards_category` - B-tree on `category_id`
 - `idx_awards_status` - B-tree on `status`
 - `idx_awards_date` - B-tree on `award_date DESC`
-- `idx_awards_status_pending` - Partial index where `status = 'PENDING'`
-- `ftidx_awards_title` - Full-text on `title` for search
+- `idx_awards_user_status` - B-tree on `(user_id, status)`
+- `idx_awards_category_date` - B-tree on `(category_id, award_date DESC)`
+- `idx_awards_category_status` - B-tree on `(category_id, status)` (V012)
+- `idx_awards_pending` - Partial B-tree on `(user_id, created_at DESC)` where `status = 'PENDING'`
+- `idx_awards_approved` - Partial B-tree on `award_date DESC` where `status = 'APPROVED'`
+- `idx_awards_search` - Full-text GIN on `search_vector` (V047; replaces V005's `ftidx_awards_title` and `ftidx_awards_title_uk`, dropped)
+- `trgm_awards_search` - Trigram GIN on `search_text` (V047)
+- `trgm_awards_title` - Trigram GIN on `title` (V012)
+- `ux_awards_creation_key` - Partial unique B-tree on `(user_id, creation_key)` where `creation_key IS NOT NULL` (V049): two creations of one owner under one key store one draft, also when they arrive at once
 
 **Relationships**:
 - BELONGS TO `users` (N:1) via `user_id`
 - BELONGS TO `award_categories` (N:1) via `category_id`
+- BELONGS TO `organizations` (N:1) via `organization_id`, fixed at submission
 - HAS MANY `documents` (1:N)
+- HAS MANY `award_versions` (1:N), deleted with the award
 - HAS ONE `award_requests` (1:1)
 
 ---
@@ -253,23 +438,38 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `sort_order` | `INTEGER` | NO | `0` | - | Display order |
 | `is_active` | `BOOLEAN` | NO | `TRUE` | - | Active status |
 | `is_system` | `BOOLEAN` | NO | `FALSE` | - | System-defined (non-deletable) |
+| `keywords` | `TEXT[]` | NO | `'{}'` | - | Lower-case Ukrainian and English stems that suggest the category (V021) |
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
 | `updated_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Last modification timestamp |
 
-**Recognition Levels** (`level`):
-| Value | Description | Minimum Approval Level |
-|-------|-------------|------------------------|
-| `DEPARTMENT` | Department-level recognition | Faculty Secretary |
-| `FACULTY` | Faculty-level recognition | Dean |
-| `UNIVERSITY` | University-level recognition | Rector |
-| `NATIONAL` | National-level recognition | Rector |
-| `INTERNATIONAL` | International recognition | Rector |
+**Recognition Levels** (`level`, application enum `RecognitionLevel`):
+
+The minimum approval level is the lowest role that may give the final approval; every role above it in the line Faculty Secretary → Dean → Rector's Secretary → Rector may approve as well. Only national and international awards climb past the faculty secretary (design review of 2026-10-04, V026 rescored submitted awards).
+
+| Value | Description | Minimum Approval Level | Impact Base Score |
+|-------|-------------|------------------------|-------------------|
+| `SPECIALITY` | Recognition within an academic speciality | Faculty Secretary | 10 |
+| `DEPARTMENT` | Department-level recognition | Faculty Secretary | 20 |
+| `COLLEGE` | Recognition by a university college | Faculty Secretary | 30 |
+| `FACULTY` | Faculty-level recognition | Faculty Secretary | 40 |
+| `UNIVERSITY` | University-level recognition | Faculty Secretary | 50 |
+| `LOCAL` | City or community recognition | Faculty Secretary | 60 |
+| `REGIONAL` | Oblast-level recognition | Faculty Secretary | 70 |
+| `NATIONAL` | National-level recognition | Rector's Secretary | 80 |
+| `INTERNATIONAL` | International recognition | Rector's Secretary | 100 |
+
+**Reference data**: rows are seeded by `R__seed_award_categories.sql` (one root per level, subcategories below it), upserted by `category_id`; system categories removed from the seed are deactivated, never deleted, so existing awards keep their category.
+
+**Keywords** (category suggestion, V021): each keyword is one or more stems; a stem matches the start of a word of the award title or awarding organisation, the stems of one keyword match consecutive words. Keywords of a root name its recognition level («міжнародн», «international»), keywords of a subcategory its kind of award («best paper», «грант»). They are reference data written by the category seed.
 
 **Indexes**:
 - `pk_award_categories` - Primary key on `category_id`
 - `uk_award_categories_name` - Unique on `name`
 - `idx_award_categories_level` - B-tree on `level`
 - `idx_award_categories_parent` - B-tree on `parent_category_id`
+- `idx_award_categories_active` - Partial B-tree on `category_id` where `is_active`
+- `idx_award_categories_sort` - B-tree on `(sort_order, name)`
+- `idx_award_categories_keywords` - GIN on `keywords` (V021)
 
 **Relationships**:
 - BELONGS TO `award_categories` (N:1, self-reference) via `parent_category_id`
@@ -280,35 +480,41 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 ### 2.3 Entity: `documents`
 
-**Description**: File metadata for supporting documents attached to awards. Actual files stored in object storage (S3/Azure Blob). Includes AI-parsed metadata results.
+**Description**: File metadata for documents attached to awards (Feature 3.1). The content is kept in the private S3 bucket `award-documents` (MinIO, ADR-021), encrypted at rest by the storage; only metadata is in the database. Columns for AI-parsed results are reserved for the deferred OCR features (3.2, 3.3).
 
 **Business Rules**:
-- Documents belong to either an award or a request (or both)
-- Maximum file size: 10MB per document
-- Allowed file types: PDF, JPG, PNG, WEBP
-- AI parsing extracts metadata from scanned certificates
-- Confidence score below 0.7 triggers manual review
-- Files stored in object storage, only metadata in database
+- Documents belong to an award; `request_id` is reserved for documents added during a resubmission (Epic 4)
+- Upload and deletion only on the owner's `DRAFT`; documents of a submitted award are frozen (Feature 3.1 D-5)
+- Maximum file size: 10MB per document; at most 10 documents per award; one copy of a file per award (`uq_documents_award_checksum`)
+- Allowed formats: PDF, JPEG (`.jpg`, `.jpeg`), PNG, WEBP, decided from the leading bytes of the content; `file_type` and `mime_type` come from the content, never from the request
+- Object key `awards/<award_id>/<random UUID>`: no file name or personal data in the key (Feature 3.1 D-1)
+- The object is written before the row and removed when the transaction rolls back; objects of deleted rows are removed after the commit; a daily sweep removes objects older than 24 h that no row refers to
+- Readers of a document are the readers of its award; every download writes a `DOCUMENT_DOWNLOAD` row to `audit_logs`
+- The owner of an approved personal award shared at `UNIVERSITY` or `PUBLIC` may show chosen documents to colleagues (`shown_to_colleagues`, V037, 4.3.8): any signed-in user then lists them on `GET /achievements/{id}` and downloads them (`DOCUMENT_DOWNLOAD` with `via: colleague`) while the award stays shared and the owner's account is not `DELETED`. The public page never serves a document. Going back to `PRIVATE` clears every flag of the award; `PUBLIC` ↔ `UNIVERSITY` keeps them
+- AI parsing (deferred) extracts metadata from scanned certificates; a confidence score below 0.7 triggers manual review
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
 | `document_id` | `BIGSERIAL` | NO | Auto | PK | Unique document identifier |
 | `award_id` | `BIGINT` | YES | - | FK→awards | Associated award |
 | `request_id` | `BIGINT` | YES | - | FK→award_requests | Associated request |
-| `file_name` | `VARCHAR(255)` | NO | - | - | Original file name |
-| `file_type` | `VARCHAR(50)` | NO | - | CK | File extension |
-| `mime_type` | `VARCHAR(100)` | YES | - | - | MIME content type |
+| `file_name` | `VARCHAR(255)` | NO | - | - | Uploaded name: last path segment, control characters removed, extension of the content, max 255 characters |
+| `file_type` | `VARCHAR(50)` | NO | - | CK | Format found in the content: `PDF`, `JPEG`, `PNG`, `WEBP` (`JPG` allowed by the check, not written) |
+| `mime_type` | `VARCHAR(100)` | YES | - | - | Media type of the format; the download is served with it |
 | `file_size` | `BIGINT` | NO | - | CK: ≤10485760 | File size in bytes |
 | `storage_bucket` | `VARCHAR(100)` | NO | - | - | Object storage bucket name |
-| `storage_key` | `VARCHAR(500)` | NO | - | - | Object storage key/path |
-| `storage_url` | `VARCHAR(2048)` | YES | - | - | Pre-signed access URL |
-| `checksum_sha256` | `VARCHAR(64)` | YES | - | - | File integrity checksum |
+| `storage_key` | `VARCHAR(500)` | NO | - | - | Object key `awards/<award_id>/<random UUID>` |
+| `storage_url` | `VARCHAR(2048)` | YES | - | - | Unused: downloads go through `GET /api/v1/documents/{id}`, no pre-signed URLs |
+| `checksum_sha256` | `VARCHAR(64)` | YES | - | UQ with `award_id` | SHA-256 of the content, hex; one copy of a file per award |
 | `parsed_metadata` | `JSONB` | YES | - | - | AI-extracted metadata |
 | `confidence_score` | `NUMERIC(5,4)` | YES | - | CK: 0-1 | AI confidence (0.0000-1.0000) |
-| `processing_status` | `VARCHAR(20)` | NO | `'PENDING'` | CK | AI processing state |
+| `processing_status` | `VARCHAR(20)` | NO | `'PENDING'` | CK | AI processing state; stays `PENDING` until OCR is delivered |
 | `processed_at` | `TIMESTAMPTZ` | YES | - | - | AI processing completion time |
 | `uploaded_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Upload timestamp |
 | `uploaded_by` | `BIGINT` | NO | - | FK→users | Uploader user ID |
+| `document_type` | `VARCHAR(30)` | NO | `'SUPPORTING_DOCUMENT'` | CK | Chosen by the uploader: `CERTIFICATE`, `DIPLOMA`, `SUPPORTING_DOCUMENT`, `PHOTO` (V025) |
+| `description` | `VARCHAR(500)` | YES | - | - | Optional note of the uploader (V025) |
+| `shown_to_colleagues` | `BOOLEAN` | NO | `FALSE` | - | Owner's choice to show the document to signed-in colleagues while its approved personal award is shared; written only by `PUT /documents/{id}/sharing` and cleared when the award returns to `PRIVATE` (V037) |
 
 **Processing Status Values** (`processing_status`):
 | Value | Description | Next States |
@@ -337,13 +543,60 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - `pk_documents` - Primary key on `document_id`
 - `idx_documents_award` - B-tree on `award_id`
 - `idx_documents_request` - B-tree on `request_id`
+- `idx_documents_uploader` - B-tree on `uploaded_by`
 - `idx_documents_status` - B-tree on `processing_status`
+- `idx_documents_pending` - Partial B-tree on `uploaded_at` where `processing_status = 'PENDING'`
+- `idx_documents_uploaded` - B-tree on `uploaded_at DESC` (V012)
+- `idx_documents_type` - B-tree on `file_type` (V012)
 - `gin_documents_metadata` - GIN on `parsed_metadata`
+- `gin_documents_metadata_path` - GIN on `parsed_metadata jsonb_path_ops`
+- `uq_documents_award_checksum` - Unique B-tree on `(award_id, checksum_sha256)` (V025)
+- `idx_documents_shown` - Partial B-tree on `award_id` where `shown_to_colleagues` (V037)
 
 **Relationships**:
 - BELONGS TO `awards` (N:1) via `award_id`
 - BELONGS TO `award_requests` (N:1) via `request_id`
 - BELONGS TO `users` (N:1) via `uploaded_by`
+
+---
+
+### 2.4 Entity: `award_versions`
+
+**Description**: One row per saved state of an award (Feature 2.2, V023), written by the application in the transaction of the change. It records the business fields as a snapshot; the field changes between two versions are computed when read. The table follows the award's lifecycle, while `audit_logs` stays the untouched compliance record (Feature 2.2 D-2).
+
+**Business Rules**:
+- A version is written after the award is flushed by the draft creation (`CREATED`), a save that moved `awards.version` (`UPDATED`; a save without a change writes none) and the submission (`SUBMITTED`); a failed save writes none, as it rolls back with the change
+- A reviewer's correction of a pending award (4.2, story 2.4.1) writes a `CORRECTED` version with the reviewer as actor and the reason in `comment`, in the transaction of the correction
+- `version_number` is the award's `version` after the change; V023 wrote one `BASELINE` row per existing award with its current state and version and no actor
+- Rows are immutable: `trg_award_versions_immutable` refuses every update except clearing `actor_id` (`ON DELETE SET NULL` when the actor's account is erased)
+- Deleted with the award (`ON DELETE CASCADE`); an erasure deletes every award of the person that is not `APPROVED` with its versions, keeps the approved ones with theirs, and clears `actor_id` wherever the person acted (6.1.5)
+- Readable by the owner in full and, from the first `SUBMITTED` version (or the `BASELINE` of an award submitted before V023), by readers whose scope covers `awards.organization_id`
+
+| **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
+|------------|---------------|--------------|-------------|-----------------|-----------------|
+| `version_id` | `BIGSERIAL` | NO | Auto | PK | Row identifier |
+| `award_id` | `BIGINT` | NO | - | FK→awards `ON DELETE CASCADE` | The award |
+| `version_number` | `BIGINT` | NO | - | UNIQUE with `award_id` | `awards.version` after the change |
+| `action` | `VARCHAR(20)` | NO | - | CHECK | `BASELINE`, `CREATED`, `UPDATED`, `SUBMITTED`, `DECIDED` (a reviewer decision changed the award's status, V029), `CORRECTED` (a reviewer corrected a pending award, V034) |
+| `actor_id` | `BIGINT` | YES | - | FK→users `ON DELETE SET NULL` | Who saved the version; NULL for baselines and erased accounts |
+| `snapshot` | `JSONB` | NO | - | - | `title`, `titleUk`, `description`, `descriptionUk`, `awardingOrganization`, `awardDate` (ISO date), `categoryId`, `status`, `impactScore`, `verificationBadge`, `externalUrl`, `organizationId` |
+| `changed_fields` | `TEXT[]` | YES | - | - | Snapshot keys that differ from the previous version; NULL for the first |
+| `comment` | `TEXT` | YES | - | - | The reviewer's reason for a `CORRECTED` version (1–1000 characters, checked by the application); NULL otherwise (V034) |
+| `created_at` | `TIMESTAMPTZ` | NO | `now()` | - | When the version was saved |
+
+**Constraints**:
+- `uk_award_versions_number` - `UNIQUE (award_id, version_number)`
+- `ck_award_versions_action` - action in the list above
+- `fk_award_versions_awards`, `fk_award_versions_actor`
+
+**Indexes**:
+- `pk_award_versions` - Primary key on `version_id`
+- `uk_award_versions_number` - also serves the reads by award, newest first
+- `idx_award_versions_actor` - B-tree on `actor_id` for clearing the actor on erasure
+
+**Relationships**:
+- BELONGS TO `awards` (N:1) via `award_id`
+- BELONGS TO `users` (N:1) via `actor_id`
 
 ---
 
@@ -356,35 +609,40 @@ This Data Dictionary provides comprehensive documentation for all database entit
 **Business Rules**:
 - One-to-one relationship with awards (each award has exactly one request)
 - Workflow levels: Faculty Secretary → Dean → Rector Secretary → Rector
-- Escalation based on award category recognition level
-- Deadlines calculated based on SLA requirements
-- Request expiration if not processed within deadline
+- Transitions follow the table of ADR-023: a reviewer approves, rejects, returns or escalates at the request's level; an approval below the category's minimum level, or an escalation (any level below the rector), moves the request to the next level not passed over with a fresh deadline and no reviewer; a return gives the award back as a draft without reviewer or deadline; approval and rejection set `completed_at` (4.1.2)
+- `deadline` is the end of the current level's review period: set at submission to `submitted_at` moved by the level's working days (Monday to Friday, same Kyiv time of day, so a clock change does not move it; a weekend start counts from Monday 00:00) and reset at every level change and resubmission by the Epic 4 workflow. The faculty levels use the faculty's `organizations.review_working_days` when set (4.2.1), the rector's levels and a faculty without its own value `app.workflow.review-working-days` (default 3); a period change leaves stored deadlines as they are; requests submitted before V024 were back-filled with `submitted_at` + 3 days, and deadlines stored before 2.1.8 (SCRUM-43) keep their calendar-day value
+- Expected completion is computed on read, never stored: the deadline plus each level's review period for every level still ahead on the approval path (faculty secretary up to the higher of the category's minimum approval level and the current level); a level past its deadline gets a fresh period from now
+- A request past its deadline is marked overdue and explained; it is never escalated or expired automatically (`EXPIRED` stays in the check constraint, unused)
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
 | `request_id` | `BIGSERIAL` | NO | Auto | PK | Unique request identifier |
 | `award_id` | `BIGINT` | NO | - | FK→awards, UK | Associated award (unique) |
-| `submitter_id` | `BIGINT` | NO | - | FK→users | User who submitted |
+| `submitter_id` | `BIGINT` | NO | - | FK→users | User who submitted first: the owner, or the secretary or dean who submitted the award of a person without an account (2.5.2), who then receives its review notices; kept on later submissions |
 | `status` | `VARCHAR(20)` | NO | `'SUBMITTED'` | CK | Current request status |
-| `current_reviewer_id` | `BIGINT` | YES | - | FK→users | Currently assigned reviewer |
+| `current_reviewer_id` | `BIGINT` | YES | - | FK→users | Reviewer who claimed the request; NULL while nobody holds it (claim, release, hand-over, take-over since 4.1.1) |
 | `current_level` | `VARCHAR(30)` | NO | - | CK | Current approval level |
 | `submitted_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Submission timestamp |
-| `deadline` | `TIMESTAMPTZ` | YES | - | - | Processing deadline |
+| `deadline` | `TIMESTAMPTZ` | YES | - | - | End of the current level's review period (set at submission since V024) |
+| `overdue_noticed_at` | `TIMESTAMPTZ` | YES | - | CK pair | When the hourly overdue job noticed the passed deadline and e-mailed the next level with a reviewer; cleared with every new deadline (other level, resubmission, return, withdrawal) (V033, 4.2.2) |
+| `overdue_noticed_level` | `VARCHAR(30)` | YES | - | CK as `current_level`; CK pair | Level the request waited at when noticed; set and cleared together with `overdue_noticed_at` (`ck_award_requests_noticed_pair`) (V033) |
 | `completed_at` | `TIMESTAMPTZ` | YES | - | - | Final decision timestamp |
 | `rejection_reason` | `TEXT` | YES | - | - | Reason if rejected |
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
 | `updated_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Last modification timestamp |
+| `version` | `BIGINT` | NO | `0` | - | Optimistic lock version; raised by every claim, release, hand-over and decision; sent back as `requestVersion` (V028) |
 
 **Request Status Values** (`status`):
 | Value | Description | Transitions To |
 |-------|-------------|----------------|
-| `SUBMITTED` | Initial submission | IN_REVIEW |
-| `IN_REVIEW` | Currently being reviewed | ESCALATED, APPROVED, REJECTED, RETURNED |
-| `ESCALATED` | Moved to higher approval level | IN_REVIEW |
+| `SUBMITTED` | Initial submission, waiting to be claimed | IN_REVIEW (claim), ESCALATED, APPROVED, REJECTED, RETURNED (a decision claims it in the same transaction), WITHDRAWN |
+| `IN_REVIEW` | Claimed by `current_reviewer_id` | SUBMITTED or ESCALATED (release), ESCALATED, APPROVED, REJECTED, RETURNED |
+| `ESCALATED` | Moved to a higher level by a decision, waiting to be claimed | IN_REVIEW (claim), ESCALATED, APPROVED, REJECTED, RETURNED, WITHDRAWN |
 | `APPROVED` | Final approval granted | - |
 | `REJECTED` | Final rejection | - |
-| `RETURNED` | Returned for corrections | SUBMITTED |
-| `EXPIRED` | Deadline passed without decision | - |
+| `RETURNED` | Returned for corrections | SUBMITTED (resubmission at the returning level) |
+| `EXPIRED` | Unused (kept in the check constraint) | - |
+| `WITHDRAWN` | Withdrawn by the owner before a claim (V030) | SUBMITTED (resubmission at the start level) |
 
 **Approval Levels** (`current_level`):
 | Value | Description | Next Level |
@@ -397,17 +655,24 @@ This Data Dictionary provides comprehensive documentation for all database entit
 **Indexes**:
 - `pk_award_requests` - Primary key on `request_id`
 - `uk_award_requests_award` - Unique on `award_id`
-- `idx_award_requests_status` - B-tree on `status`
-- `idx_award_requests_reviewer` - B-tree on `current_reviewer_id`
-- `idx_award_requests_deadline` - B-tree on `deadline`
-- `idx_award_requests_active` - Partial index for active requests
+- `idx_requests_submitter` - B-tree on `submitter_id`
+- `idx_requests_reviewer` - B-tree on `current_reviewer_id`
+- `idx_requests_status` - B-tree on `status`
+- `idx_requests_level` - B-tree on `current_level`
+- `idx_requests_deadline` - Partial B-tree on `deadline` where `status IN ('SUBMITTED', 'IN_REVIEW', 'ESCALATED')`
+- `idx_requests_reviewer_pending` - Partial B-tree on `(current_reviewer_id, deadline)` where `status IN ('SUBMITTED', 'IN_REVIEW')`
+- `idx_requests_active` - Partial B-tree on `(current_reviewer_id, created_at DESC)` where `status IN ('SUBMITTED', 'IN_REVIEW', 'ESCALATED')`
+- `idx_requests_status_level` - B-tree on `(status, current_level)` (V012)
+- `idx_requests_submitted` - B-tree on `submitted_at DESC` (V012)
+- `idx_requests_overdue_unnoticed` - Partial B-tree on `deadline` where `status IN ('SUBMITTED', 'IN_REVIEW', 'ESCALATED') AND overdue_noticed_at IS NULL` (V033, the overdue job)
+- `idx_requests_open_level` - Partial B-tree on `(current_level, deadline, request_id)` where `status IN ('SUBMITTED', 'IN_REVIEW', 'ESCALATED')`: the reviewer queue (V028)
 
 **Relationships**:
 - BELONGS TO `awards` (1:1) via `award_id`
 - BELONGS TO `users` (N:1) via `submitter_id`
 - BELONGS TO `users` (N:1) via `current_reviewer_id`
 - HAS MANY `review_decisions` (1:N)
-- HAS MANY `documents` (1:N)
+- `documents.request_id` exists but is not used; documents belong to the award
 
 ---
 
@@ -421,6 +686,9 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - Decisions are immutable once recorded
 - Comments required for rejections and returns
 - Timestamp records exact decision moment
+- Read by the status timeline (`GET /awards/{id}/status`), oldest first with the reviewer's name and, for a delegate, the delegator's, for everybody who may read the award; written by `POST /awards/{id}/decisions` at the level the request stood at (4.1.2)
+- A level the request passed over (its only reviewer submitted the award) has no row; the status page shows it as skipped
+- Part of the GDPR export (format 1.2, 4.3.4): the award owner gets the decisions on their awards (`review_decisions`, with the reviewer's and delegator's full names), the reviewer the decisions they made and the delegator those made under the lent role (`decisions_made`, award titles, comment, reviewer and delegator by name); no other column of another person leaves the database
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
@@ -431,13 +699,14 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `level` | `VARCHAR(30)` | NO | - | CK | Approval level at decision |
 | `comments` | `TEXT` | YES | - | - | Reviewer comments |
 | `decided_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Decision timestamp |
+| `delegator_id` | `BIGINT` | YES | - | FK→users | Holder of the role the reviewer borrowed ("за дорученням"); NULL for a decision under an own role (V028, written from 4.1.2) |
 
 **Decision Types** (`decision`):
 | Value | Description | Request Status After |
 |-------|-------------|---------------------|
 | `APPROVED` | Approved at this level | ESCALATED or APPROVED (final) |
 | `REJECTED` | Rejected at this level | REJECTED |
-| `ESCALATED` | Manually escalated to higher level | ESCALATED |
+| `ESCALATED` | Escalated one level up by the reviewer (any level below the rector) | ESCALATED |
 | `RETURNED` | Returned to submitter for corrections | RETURNED |
 
 **Indexes**:
@@ -445,10 +714,40 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - `idx_review_decisions_request` - B-tree on `request_id`
 - `idx_review_decisions_reviewer` - B-tree on `reviewer_id`
 - `idx_review_decisions_decided` - B-tree on `decided_at DESC`
+- `idx_review_decisions_delegator` - Partial B-tree on `delegator_id` where not NULL (V028)
 
 **Relationships**:
 - BELONGS TO `award_requests` (N:1) via `request_id`
 - BELONGS TO `users` (N:1) via `reviewer_id`
+- BELONGS TO `users` (N:1) via `delegator_id`
+
+### 3.3 Entity: `review_templates`
+
+**Description**: Ready-made reviewer comments per decision, offered in the decision dialog; the chosen text fills the comment, which the reviewer may still edit (V031, 4.1.4).
+
+**Business Rules**:
+- Reference data maintained by migrations; no API writes them
+- Read by `GET /reviews/templates?decision=` (`award:approve:level1`): active rows of the decision by `sort_order`, title and body in the caller's language, Ukrainian when the English text is empty
+- English title and body are both set or both empty
+- The seed holds three templates for `RETURN`, two for `REJECT`, one each for `ESCALATE` and `APPROVE`
+- No row-audit trigger: the rows change only through migrations
+
+| **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
+|------------|---------------|--------------|-------------|-----------------|-----------------|
+| `template_id` | `BIGSERIAL` | NO | Auto | PK | Unique template identifier |
+| `decision` | `VARCHAR(10)` | NO | - | CK (`APPROVE`, `REJECT`, `RETURN`, `ESCALATE`) | Decision the template is offered for |
+| `title_uk` | `VARCHAR(120)` | NO | - | - | Name in the list, Ukrainian |
+| `title_en` | `VARCHAR(120)` | YES | - | CK (set with `body_en`) | Name in the list, English |
+| `body_uk` | `VARCHAR(2000)` | NO | - | - | Comment text, Ukrainian |
+| `body_en` | `VARCHAR(2000)` | YES | - | CK (set with `title_en`) | Comment text, English |
+| `sort_order` | `INTEGER` | NO | `0` | - | Position in the list, ascending |
+| `active` | `BOOLEAN` | NO | `TRUE` | - | False when no longer offered |
+| `created_at` | `TIMESTAMPTZ` | NO | `now()` | - | Creation timestamp |
+| `updated_at` | `TIMESTAMPTZ` | NO | `now()` | - | Last change (trigger `trg_review_templates_updated_at`) |
+
+**Indexes**:
+- `pk_review_templates` - Primary key on `template_id`
+- `idx_review_templates_decision` - Partial B-tree on `(decision, sort_order)` where `active`
 
 ---
 
@@ -460,8 +759,11 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 **Business Rules**:
 - All data modifications logged automatically via triggers
-- Logs are immutable (no UPDATE/DELETE allowed)
-- Retention period: 7 years (per GDPR requirements)
+- Trigger rows carry the signed-in caller in `user_id` and the request's `correlation_id`: the transaction manager sets `app.current_user_id` and `app.correlation_id` with `set_config(…, true)` when a read-write transaction of a request with an access token begins (Feature 2.2, D-3); changes without a signed-in caller (migrations, seeds, jobs, sign-in and registration) keep `user_id` empty, as do rows written before 2.2.1
+- Trigger rows take `entity_id` from the changed record's own key for `INSERT`, `UPDATE` and, since V023, `DELETE` (V013 used `user_id` of the deleted row, so older `DELETE` rows of `awards` point at the owner and of `user_roles` at the user)
+- Logs are append-only (V043, ADR-024): `trg_audit_logs_guard` (`fn_audit_logs_guard`, `BEFORE UPDATE OR DELETE … FOR EACH ROW`, inherited by every partition) raises on every `DELETE` and on every `UPDATE` unless the transaction-local setting `app.audit_redaction` is `on` and only `old_values`, `new_values`, `ip_address` and `user_agent` change; the rules `audit_logs_no_update` and `audit_logs_no_delete` of V009 are gone
+- Only `fn_redact_audit_subject(p_user_id, p_names, p_entities)` sets the flag (`SECURITY DEFINER`, called last in an erasure, 6.1.5): the person's own rows lose `ip_address` and `user_agent`; rows about the person (`users`, `USER`, `AUTHENTICATION`, `AUTHORIZATION`, `GDPR` with `entity_id` the person, and trigger rows of `consent_records`, `notification_preferences`, `notifications`, `user_roles`, `role_delegations`, `one_time_tokens`, `legal_holds`, `erasure_requests` whose snapshot `user_id`, `delegator_id` or `delegate_id` is the person) get `"[erased]"` for the personal keys listed in `fn_redact_audit_values`; rows of the awards, requests and documents deleted at the erasure, and decisions on those requests, become `{"erased": true}`; the person's names in the listed notifications of others become `Erased #<id>` (`fn_jsonb_replace_strings`); one `AUDIT_REDACTED` row records the counts
+- Retention period: 7 years after the end of the month (`app.retention.audit-logs`, default `P7Y`), applied by whole partitions (6.2.3): the `audit-logs` policy calls `fn_drop_expired_audit_partitions(p_before, p_held)` (`SECURITY DEFINER`, `EXECUTE` revoked from `PUBLIC`), which detaches and drops every monthly partition whose upper bound is at or before `p_before`, except one holding a row by a held person (`user_id`) or about one (the person keys of `fn_redact_audit_subject`); the default partition is never dropped, single rows never deleted; it writes `AUDIT_PARTITIONS_DROPPED` and returns `dropped` and `held` partition names
 - Partition by month for performance
 - Stores both old and new values for change tracking
 
@@ -481,12 +783,39 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Log entry timestamp |
 
 **Action Types** (common values):
-- `CREATE`, `UPDATE`, `DELETE` - CRUD operations
-- `LOGIN`, `LOGOUT`, `LOGIN_FAILED` - Authentication
-- `PASSWORD_CHANGE`, `PASSWORD_RESET` - Security
+- `INSERT`, `UPDATE`, `DELETE` - row changes written by the audit triggers (`entity_type` = table name); since V022 the snapshots of `users` rows leave out `password_hash` (rows written earlier keep it)
+- `PROFILE_UPDATED`, `EMAIL_CHANGE_REQUESTED`, `EMAIL_CHANGED` - the user's own account changes written by the application (`entity_type` = `USER`, `entity_id` = the user); a name change stores the old and new values of the changed fields only in `old_values`/`new_values` with their names in `changed_fields`; the address events carry the requested address, or the old and new address
+- `LOGIN_SUCCESS`, `LOGIN_FAILED`, `ACCOUNT_LOCKED`, `LOGOUT`, `EMAIL_VERIFIED`, `PASSWORD_RESET_REQUESTED`, `PASSWORD_RESET` - authentication events written by the application (`entity_type` = `AUTHENTICATION`, `entity_id` = user id, facts such as the failure reason in `new_values`)
+- `REGISTRATION_REPLACED`, `ACCOUNT_CLAIMED` - a registration took over an abandoned `PENDING` row, or the row of a person added without an account (`new_values` = `organizationId`, plus `claim: true` for a claim), and the verification of a claimed account (`new_values` = `awards`, the awards waiting for the person); `entity_type` = `AUTHENTICATION`, `entity_id` = the account
+- `ACCOUNT_LINKED` - a faculty secretary or dean joined a person without an account to a registered account: the person's awards moved to the account and the person row was scrubbed (`entity_type` = `USER`, `entity_id` = the person, `user_id` = the caller; `new_values` = `accountId`, `movedAwards`)
+- `AWARD_IMPORTED` - a faculty secretary or dean imported a spreadsheet row as an approved award (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the caller; `new_values` = `file`, the file name without a path, and `row`, its row number); the people the import adds are `PERSON_ADDED` rows with `source` = `import`
+- `ACCESS_DENIED`, `ROLE_ASSIGNED`, `ROLE_REVOKED` - authorization events written by the application (`entity_type` = `AUTHORIZATION`, `entity_id` = the user concerned; `new_values` carries the missing requirement for a refusal, or the actor, role, organization and validity for a role change)
+- `DELEGATION_CREATED`, `DELEGATION_REVOKED` - approval authority lent and taken back (`entity_type` = `AUTHORIZATION`, `entity_id` = the delegate; `new_values` carries the actor, both parties, role, organization and period)
+- `PASSWORD_CHANGE` - Security
 - `CONSENT_GRANTED`, `CONSENT_WITHDRAWN` - Privacy
-- `DATA_EXPORT`, `DATA_DELETE` - GDPR rights
-- `APPROVAL`, `REJECTION` - Workflow decisions
+- `LEGAL_HOLD_PLACED`, `LEGAL_HOLD_LIFTED` - the GDPR officer placed or lifted a legal hold (`entity_type` = `GDPR`, `entity_id` = the account, `user_id` = the officer; `new_values` = `holdId` and `reasonLength`, never the text)
+- `DATA_EXPORT` - the person downloaded their own data (`entity_type` = `GDPR`, `entity_id` = the user; `new_values` carries the entry count of each list section of the file)
+- `AUDIT_EXPORT` - an `audit:read` holder downloaded the audit trail of an award as CSV (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the auditor; `new_values` = `rows` written and `truncated` when older rows beyond 10 000 were left out)
+- `UNIT_REMINDED` - a faculty secretary or dean (own or delegated role) sent «Нагадати завідувачу» to a colleague of a department with no counted award this year (`entity_type` = `organizations`, `entity_id` = the department, `user_id` = the sender; `new_values` = `recipientId`, `year`). Written in the reminder's transaction under the department's advisory lock; the newest row within `app.reminders.unit-interval` refuses the next reminder with 409 `recently-reminded` and is the department's `lastReminderAt` (9.4.5)
+- `ANALYTICS_EXPORTED` - a dean, faculty secretary or rector exported the analytics of a faculty or department (`entity_type` = `ANALYTICS`, `entity_id` = the unit, `user_id` = the exporter; `new_values` = `format` (`csv`, `xlsx`, `pdf`), the period `from` and `to`, `language` and `peopleNamed`, the number of people named in the file); not written for a refused request (5.2.3). The rector or the rector's secretary exporting the board report writes the same row with `entity_id` = the university, `format` = `board-pdf` and `peopleNamed` = 0 (5.3.3). A person exporting their own approved awards for a CV writes it with `entity_id` = `user_id` = the person and `new_values` = `format` (`cv-pdf`, `cv-text`), `language` and `count`, never award content (9.4.4)
+- `DOCUMENT_DOWNLOAD` - a reader of the award downloaded a document (`entity_type` = `documents`, `entity_id` = the document, `user_id` = the reader; `new_values` = `awardId`, and `via: colleague` when a colleague opened a document shown on a shared award, 4.3.8); uploads and deletions are the trigger's `INSERT` and `DELETE` rows with the caller as actor (Feature 3.1)
+- `DOCUMENT_SHARING_CHANGED` - a document was shown to or hidden from colleagues (`entity_type` = `documents`, `entity_id` = the document, `user_id` = the award owner; `new_values` = `awardId`, `from`, `to` as booleans); written for an effective change by the owner and for each flag cleared when the award returns to `PRIVATE`; the record of the owner's consent (4.3.8)
+- `DOCUMENT_REJECTED` - the malware scanner refused an upload (`entity_type` = `documents`, `entity_id` null since nothing was stored, `user_id` = the uploader; `new_values` = `awardId` and the `signature` ClamAV found; never the file name) (Feature 3.1.3)
+- `AWARD_SUBMITTED`, `AWARD_WITHDRAWN` - the owner submitted a draft or took an unclaimed request back to a draft (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the owner; `new_values` carries `requestId` and `level`, `from` the status left on a withdrawal, `recipientOrganizationId` for a unit award on submission)
+- `REVIEW_CLAIMED`, `REVIEW_TAKEN_OVER`, `REVIEW_RELEASED`, `REVIEW_HANDED_OVER` - the claim of a request changed (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the acting reviewer; `new_values` carries `requestId`, `level`, `previousReviewerId` on a take-over, `reviewerId` and `delegated` on a hand-over, `delegatorId` under a delegation)
+- `REVIEW_DECISION` - one decision on a request (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the reviewer; `new_values` = `level`, `decision`, `requestStatus`, `newLevel`, and `delegatorId` under a delegation)
+- `REVIEW_BATCH` - a reviewer applied one decision to several awards with `POST /reviews/decisions` (`entity_type` = `awards`, `entity_id` null, `user_id` = the reviewer; `new_values` = `decision`, `items`, `done`, `failed`); every decided item also has its own `REVIEW_DECISION` row (4.1.4)
+- `REVIEW_PERIOD_CHANGED` - a dean (own role or a delegation) or a system administrator changed a faculty's review period with `PUT /organizations/{id}/review-period` (`entity_type` = `organizations`, `entity_id` = the faculty, `user_id` = the caller; `old_values`/`new_values` = `workingDays` (own value, null for the default) and `effectiveWorkingDays`; `new_values.delegatorId` under a delegation); an unchanged value writes no row (4.2.1)
+- `REVIEW_OVERDUE_NOTICED` - the hourly overdue job marked an open request past its deadline (`entity_type` = `awards`, `entity_id` = the award, `user_id` NULL; `new_values` = `requestId`, `level`, `deadline`, `recipients` = user ids e-mailed, empty at the rector or without a reviewer above); once per level (4.2.2)
+- `AWARD_CORRECTED` - a reviewer corrected the fields of a pending award (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the reviewer; `new_values` = `requestId`, `level`, `changes` = list of `field`, `from`, `to`, `reason`, `delegatorId` under a delegation); preceded by `REVIEW_CLAIMED` when the correction claimed the request (4.2, story 2.4.1)
+- `AWARD_VISIBILITY_CHANGED` - the owner changed who sees an approved personal award (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the owner; `new_values` = `from`, `to`); written only for an effective change and the record of the owner's consent to show the award (4.3.1)
+- `ERASURE_POSTPONED` - a due erasure waits (`entity_type` = `GDPR`, `entity_id` = the account; `new_values` = `requestId`, `reason` `legal-hold` or `last-administrator`, `origin` `request` or `retention` (6.2.3)); once per request (6.1.5)
+- `ERASURE_COMPLETED` - the account was erased (`entity_type` = `GDPR`, `entity_id` = the account; `new_values` = `requestId`, `origin` (6.2.3) and the counts each erasure contributor reported) (6.1.5)
+- `RETENTION_RUN_COMPLETED` - a retention run ended (`entity_type` = `RETENTION`, `entity_id` = the run, no `user_id`; `new_values` = `status` and per policy `policy`, `affected`, `held`, `failed`) (6.2.1)
+- `AUDIT_PARTITIONS_DROPPED` - written by `fn_drop_expired_audit_partitions` when it dropped at least one partition (`entity_type` = `RETENTION`, no `user_id` or `entity_id`; `new_values` = `dropped` and `held` partition names) (6.2.3)
+- `AUDIT_REDACTED` - written by `fn_redact_audit_subject` after an erasure (`entity_type` = `GDPR`, `entity_id` = the account; `new_values` = `context`, `values`, `erasedRecords`, `names` row counts) (6.1.5)
+- `DATA_DELETE` - reserved and unused; erasure is written as `ERASURE_COMPLETED`
+- `APPROVAL`, `REJECTION` - reserved and unused; decisions are written as `REVIEW_DECISION`
 
 **Indexes**:
 - `pk_audit_logs` - Primary key on `(log_id, created_at)` (partitioned)
@@ -497,7 +826,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 **Partitioning**:
 - Partitioned by `RANGE (created_at)`
-- Monthly partitions for efficient retention management
+- Monthly partitions for efficient retention management: `audit_logs_2026_01` … `audit_logs_2027_12` exist (V009, V016) plus `audit_logs_default`; `fn_create_audit_partition(p_month DATE)` creates the partition of a month and returns whether it was created; the `audit-partitions` retention policy calls it nightly for the current month and `app.retention.audit-partitions-ahead` (default 3) months ahead (6.2.1); the form without an argument creates next month's
 
 **Relationships**:
 - BELONGS TO `users` (N:1) via `user_id`
@@ -506,36 +835,37 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 ### 4.2 Entity: `consent_records`
 
-**Description**: GDPR-compliant consent tracking for user data processing agreements. Records all consent grants and withdrawals.
+**Description**: Append-only history of privacy notice acknowledgements and of the optional `ANALYTICS` consent (V040, 6.1.1). The newest row per user and type is the current state.
 
 **Business Rules**:
-- Each consent type tracked separately per user
-- Consent version tracked for policy updates
-- Withdrawal timestamp preserved for audit
-- Consent required before processing personal data
-- Historical consent records never deleted
+- Rows are only appended: `trg_consent_records_guard` (`fn_consent_records_guard`) raises on `DELETE` and on any `UPDATE` other than setting `ip_address` and `user_agent` to NULL (kept for erasure); the one exception is the retention purge below
+- Retention (`app.retention.consent-records`, default `P7Y`, 6.2.3): the `consent-records` policy calls `fn_purge_consent_records(p_before, p_held)` (`SECURITY DEFINER`, `EXECUTE` revoked from `PUBLIC`), which sets `app.consent_retention` for the transaction, deletes the rows `fn_consent_purge_candidates(p_before)` lists except those of held persons, and resets the flag. Candidates are every `ANALYTICS` row of a person whose latest `ANALYTICS` row is a withdrawal written before `p_before` (the whole chain goes, so no grant remains without its withdrawal), and every row of an account whose erasure completed before `p_before`; `DATA_PROCESSING` rows of living accounts stay as proof
+- Registration writes a `DATA_PROCESSING` row for the notice version the person acknowledged, in the same transaction as the account; a later notice version asks for a new acknowledgement (another `DATA_PROCESSING` row)
+- An acknowledgement of the version already acknowledged, or an `ANALYTICS` choice equal to the current state, appends nothing; changes of one person are serialised by a row lock on `users`
+- A withdrawal is a row with `is_granted` false and `withdrawn_at`; `granted_at` is set on grants only
+- Processing itself rests on legitimate interest (PRIVACY_BY_DESIGN §4.2): `DATA_PROCESSING` records that the notice was read, not a consent that could be withdrawn
+- Audited as `PRIVACY_NOTICE_ACKNOWLEDGED`, `CONSENT_GRANTED`, `CONSENT_WITHDRAWN` (entity type `GDPR`)
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
 | `consent_id` | `BIGSERIAL` | NO | Auto | PK | Unique consent record identifier |
-| `user_id` | `BIGINT` | NO | - | FK→users | User granting consent |
-| `consent_type` | `VARCHAR(50)` | NO | - | CK | Type of consent |
-| `consent_version` | `VARCHAR(20)` | NO | - | - | Policy version consented to |
-| `is_granted` | `BOOLEAN` | NO | - | - | Current consent state |
-| `granted_at` | `TIMESTAMPTZ` | YES | - | - | Timestamp when granted |
-| `withdrawn_at` | `TIMESTAMPTZ` | YES | - | - | Timestamp when withdrawn |
-| `ip_address` | `INET` | YES | - | - | IP at time of action |
-| `user_agent` | `VARCHAR(500)` | YES | - | - | Browser/client info |
-| `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
+| `user_id` | `BIGINT` | NO | - | FK→users (RESTRICT) | The person |
+| `consent_type` | `VARCHAR(50)` | NO | - | CK | `DATA_PROCESSING` or `ANALYTICS` |
+| `consent_version` | `VARCHAR(20)` | NO | - | - | Privacy notice version in force when the row was written (`app.privacy.notice-version`) |
+| `is_granted` | `BOOLEAN` | NO | - | - | Granted (true) or withdrawn (false) |
+| `granted_at` | `TIMESTAMPTZ` | YES | - | CK | When granted; set on grants |
+| `withdrawn_at` | `TIMESTAMPTZ` | YES | - | CK | When withdrawn; set on withdrawals only |
+| `ip_address` | `INET` | YES | - | - | Client address of the request; never shown in the overview |
+| `user_agent` | `VARCHAR(500)` | YES | - | - | Client user agent of the request |
+| `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp; orders the history |
 
-**Consent Types** (`consent_type`):
+**Consent Types** (`consent_type`, `ck_consent_records_type`):
 | Value | Description | Required |
 |-------|-------------|----------|
-| `DATA_PROCESSING` | General data processing agreement | Yes |
-| `PUBLIC_VISIBILITY` | Allow public display of awards | Yes |
-| `EMAIL_NOTIFICATIONS` | Receive email notifications | No |
-| `SMS_NOTIFICATIONS` | Receive SMS notifications | No |
-| `ANALYTICS` | Allow usage analytics | No |
+| `DATA_PROCESSING` | Acknowledgement of a privacy notice version (registration, or the acknowledgement page after a new version) | Yes |
+| `ANALYTICS` | Naming the person in rankings and comparisons of unit reports; without it the person is counted only in totals (Epic 5) | No |
+
+The types `PUBLIC_VISIBILITY`, `EMAIL_NOTIFICATIONS` and `SMS_NOTIFICATIONS` were removed by V040: visibility is chosen per award (`awards.visibility`, 4.3.1) and e-mail per notification type (`notification_preferences`, 1.3.2).
 
 **Indexes**:
 - `pk_consent_records` - Primary key on `consent_id`
@@ -548,74 +878,184 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 ---
 
-## 5. Notification Domain
+### 4.3 Entity: `legal_holds`
 
-### 5.1 Entity: `notifications`
-
-**Description**: System notifications sent to users about award activities, workflow updates, and system alerts.
+**Description**: Legal holds the GDPR officer places on accounts (V041, 6.1.3). An active hold (`lifted_at` null) blocks the erasure of the account (6.1.5); a lifted hold stays as history.
 
 **Business Rules**:
-- Notifications created by system events (not user-initiated)
-- Unread notifications highlighted in UI
-- Notifications respect user preferences
-- Delivery via multiple channels (in-app, email, SMS)
-- Retention period: 1 year
+- At most one active hold per account (`uk_legal_holds_active`); placing a second gives 409 `legal-hold-active`, placing one on a `DELETED` account 409 `account-erased`
+- `reason` and `lift_reason` are 10 to 500 characters after trimming; a lift sets `lifted_by`, `lifted_at` and `lift_reason` together (`ck_legal_holds_lifted`) and cannot be undone
+- Changes of one account's holds are serialised by a row lock on `users`
+- Audited as `LEGAL_HOLD_PLACED`, `LEGAL_HOLD_LIFTED` (entity type `GDPR`, `user_id` the officer, `entity_id` the account, `reasonLength` without the text); `trg_legal_holds_audit` writes the row changes with `reason` and `lift_reason` left out of the snapshots
+- The person's export (format 1.5 and later) lists `placed_at` and `lifted_at` only
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
-| `notification_id` | `BIGSERIAL` | NO | Auto | PK | Unique notification identifier |
-| `user_id` | `BIGINT` | NO | - | FK→users | Recipient user |
-| `type` | `VARCHAR(50)` | NO | - | CK | Notification type |
-| `title` | `VARCHAR(255)` | NO | - | - | Notification title |
-| `message` | `TEXT` | NO | - | - | Full notification message |
-| `is_read` | `BOOLEAN` | NO | `FALSE` | - | Read status |
-| `channel` | `VARCHAR(20)` | NO | `'IN_APP'` | CK | Delivery channel |
-| `reference_type` | `VARCHAR(50)` | YES | - | - | Related entity type |
-| `reference_id` | `BIGINT` | YES | - | - | Related entity ID |
-| `sent_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Send timestamp |
-| `read_at` | `TIMESTAMPTZ` | YES | - | - | When marked as read |
-| `expires_at` | `TIMESTAMPTZ` | YES | - | - | Notification expiry |
-
-**Notification Types** (`type`):
-| Value | Description | Trigger Event |
-|-------|-------------|---------------|
-| `AWARD_SUBMITTED` | New award submitted | Award submission |
-| `AWARD_APPROVED` | Award approved | Final approval |
-| `AWARD_REJECTED` | Award rejected | Rejection decision |
-| `AWARD_RETURNED` | Award returned for corrections | Return decision |
-| `REVIEW_ASSIGNED` | Assigned as reviewer | Workflow assignment |
-| `DEADLINE_REMINDER` | Approaching deadline | Scheduled job |
-| `SYSTEM_ALERT` | System announcement | Admin action |
-
-**Notification Channels** (`channel`):
-| Value | Description |
-|-------|-------------|
-| `IN_APP` | In-application notification |
-| `EMAIL` | Email delivery |
-| `SMS` | SMS delivery |
-| `PUSH` | Push notification |
+| `hold_id` | `BIGSERIAL` | NO | Auto | PK | Unique hold identifier |
+| `user_id` | `BIGINT` | NO | - | FK→users (RESTRICT) | The account under hold |
+| `reason` | `VARCHAR(500)` | NO | - | - | Why the hold was placed |
+| `placed_by` | `BIGINT` | NO | - | FK→users (RESTRICT) | The GDPR officer who placed it |
+| `placed_at` | `TIMESTAMPTZ` | NO | `now()` | - | When it was placed |
+| `lifted_by` | `BIGINT` | YES | - | FK→users (RESTRICT), CK | The GDPR officer who lifted it |
+| `lifted_at` | `TIMESTAMPTZ` | YES | - | CK | When it was lifted; null while active |
+| `lift_reason` | `VARCHAR(500)` | YES | - | CK | Why it was lifted |
 
 **Indexes**:
-- `pk_notifications` - Primary key on `notification_id`
-- `idx_notifications_user` - B-tree on `user_id`
-- `idx_notifications_user_unread` - Partial for unread notifications
-- `idx_notifications_sent` - B-tree on `sent_at DESC`
-- `idx_notifications_reference` - Composite on `(reference_type, reference_id)`
+- `legal_holds_pkey` - Primary key on `hold_id`
+- `uk_legal_holds_active` - Unique partial on `user_id` where `lifted_at IS NULL`
+- `idx_legal_holds_user` - Composite on `(user_id, placed_at DESC)`
+
+**Relationships**:
+- BELONGS TO `users` (N:1) via `user_id`, `placed_by`, `lifted_by`
+
+### 4.4 Entity: `erasure_requests`
+
+**Description**: Requests of people to erase their account after a grace period (V042, 6.1.4). A request stays `PENDING` until the person cancels it or the erasure job completes it (6.1.5).
+
+**Business Rules**:
+- At most one pending request per account (`uk_erasure_requests_pending`); a second request gives 409 `erasure-pending`
+- `scheduled_for` = `requested_at` + `app.erasure.grace-period` (default 30 days); a `RETENTION` request is due at once (`requested_at` = `scheduled_for`)
+- `RETENTION` requests (6.2.3) are filed by the `pending-accounts` policy (`PENDING` accounts created before `app.retention.pending-accounts`, default `P30D`, without an `EMAIL_VERIFICATION` token created since) and the `former-staff` policy (`RETIRED` or `MEMORIAL` accounts with `status_changed_at` before `app.retention.former-staff`, default `P7Y`), for accounts without a pending request and without an active legal hold. The erasure run sends no mail for them (no request, reminder, postponement or completion mail) and, under the row locks, cancels one whose account no longer meets the condition (audited `ERASURE_CANCELLED` with `origin` `retention`, `reason` `no-longer-applies`)
+- A request needs the current password and is refused under an active legal hold (409 `legal-hold`) and for the only active `SYSTEM_ADMIN` (409 `last-administrator`)
+- `cancelled_at` is set exactly when `CANCELLED`, `completed_at` exactly when `COMPLETED` (`ck_erasure_requests_dates`)
+- The nightly job mails one reminder `app.erasure.warning-before` (default 7 days) before `scheduled_for` and sets `warning_sent_at`; a request made with less time left gets none
+- Requests and cancellations of one account are serialised by a row lock on `users`
+- At the first nightly run after `scheduled_for` the job locks the request (`FOR UPDATE SKIP LOCKED`, erasures serialized by a transaction advisory lock) and erases the account in one transaction, then sets `COMPLETED`; a failure leaves it `PENDING` for the next run (6.1.5)
+- Audited as `ERASURE_REQUESTED` (`requestId`, `scheduledFor`), `ERASURE_CANCELLED` (`requestId`), `ERASURE_POSTPONED`, `ERASURE_COMPLETED`, entity type `GDPR`, `entity_id` the account; `trg_erasure_requests_audit` writes the row changes keyed by `request_id`
+- The person's export (format 1.6) lists every request without `completed_at`
+
+| **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
+|------------|---------------|--------------|-------------|-----------------|-----------------|
+| `request_id` | `BIGSERIAL` | NO | Auto | PK | Unique request identifier |
+| `user_id` | `BIGINT` | NO | - | FK→users (RESTRICT) | The account to erase |
+| `status` | `VARCHAR(20)` | NO | `'PENDING'` | CK: `PENDING`, `CANCELLED`, `COMPLETED` | Request state |
+| `origin` | `VARCHAR(20)` | NO | `'REQUEST'` | CK `ck_erasure_requests_origin`: `REQUEST`, `RETENTION` | Who filed it: the person, or the retention job (V045, 6.2.3) |
+| `requested_at` | `TIMESTAMPTZ` | NO | `now()` | - | When the person asked |
+| `scheduled_for` | `TIMESTAMPTZ` | NO | - | - | When the account is erased |
+| `warning_sent_at` | `TIMESTAMPTZ` | YES | - | - | When the reminder was mailed |
+| `postponed_at` | `TIMESTAMPTZ` | YES | - | - | When the erasure was first postponed: an active legal hold, or the only system administrator (6.1.5) |
+| `cancelled_at` | `TIMESTAMPTZ` | YES | - | CK | When the person cancelled |
+| `completed_at` | `TIMESTAMPTZ` | YES | - | CK | When the account was erased (6.1.5) |
+
+**Indexes**:
+- `erasure_requests_pkey` - Primary key on `request_id`
+- `uk_erasure_requests_pending` - Unique partial on `user_id` where `status = 'PENDING'`
+- `idx_erasure_requests_due` - Partial on `scheduled_for` where `status = 'PENDING'`
 
 **Relationships**:
 - BELONGS TO `users` (N:1) via `user_id`
 
 ---
 
-### 5.2 Entity: `notification_preferences`
+### 4.5 Entity: `retention_runs`
 
-**Description**: User preferences for notification delivery channels by event type.
+**Description**: Runs of the nightly retention job with the counts of every policy (V044, 6.2.1). Kept without a period: the rows hold counts and policy keys only.
 
 **Business Rules**:
-- Default preferences created on user registration
-- Users can modify preferences at any time
-- At least one channel must be enabled for mandatory notifications
-- Preferences respected by notification service
+- The job runs at `app.retention.cron` (default `0 0 4 * * *`, `Europe/Kyiv`) under a session advisory lock (`retention-run`); a start while another run holds it is skipped with a log line and no row
+- Before it starts, the run marks rows still `RUNNING` as `INTERRUPTED` with `finished_at`
+- Policies run in their order (`notifications` 10, `one-time-tokens` 20, `authorizations` 30, `devices` 40, `pending-accounts` 50, `former-staff` 60, `consent-records` 70, `audit-partitions` 80, `audit-logs` 90), each in transactions of at most `app.retention.batch-size` (default 1000) rows; `results` is saved after each policy, so an interrupted run shows what it finished
+- A policy that throws keeps its committed batches, records `failed` and the exception class only (never the message), and the run ends `PARTIAL`; otherwise `COMPLETED`
+- `finished_at` is null exactly while `RUNNING` (`ck_retention_runs_finished`)
+- Audited as `RETENTION_RUN_COMPLETED` (§4.1); a `PARTIAL` or `INTERRUPTED` run mails the active `GDPR_OFFICER` holders after the commit
+
+| **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
+|------------|---------------|--------------|-------------|-----------------|-----------------|
+| `run_id` | `BIGSERIAL` | NO | Auto | PK | Unique run identifier |
+| `started_at` | `TIMESTAMPTZ` | NO | `now()` | - | When the run started |
+| `finished_at` | `TIMESTAMPTZ` | YES | - | CK | When it ended or was found interrupted |
+| `status` | `VARCHAR(20)` | NO | `'RUNNING'` | CK: `RUNNING`, `COMPLETED`, `PARTIAL`, `INTERRUPTED` | Run state |
+| `results` | `JSONB` | NO | `'[]'` | - | Per policy `{policy, affected, held, failed, error}` |
+
+**Indexes**:
+- `pk_retention_runs` - Primary key on `run_id`
+- `idx_retention_runs_started` - On `started_at DESC`
+
+---
+
+## 5. Notification Domain
+
+### 5.1 Entity: `notifications`
+
+**Description**: In-app notifications written from committed events (V038), one row per recipient, and the delivery log of the mails of the notification types (V039, `channel = 'EMAIL'`). The client renders the sentence from `type` and `payload` in the interface language; no text is stored.
+
+**Business Rules**:
+- Written by the `notification` module's listener on the event publication registry, after the business transaction commits and in a transaction of its own (ADR-006 addendum)
+- `dedupe_key` makes a repeated delivery of one event a no-op (`INSERT … ON CONFLICT DO NOTHING`)
+- No row for a recipient that no longer exists, is `DELETED` or has no address
+- `payload` holds only what the sentence needs: never the reviewer's comment or corrected values
+- The notification centre reads `IN_APP` rows of the caller only
+- Delivery log (7.2.3): before a mail of a notification type is sent, its `EMAIL` row is claimed in one statement (`INSERT … ON CONFLICT (dedupe_key) DO UPDATE … WHERE`): a new row, or a `FAILED` one, or a `SENDING` one older than `app.events.retry-after` (10 minutes) becomes `SENDING` with `sent_at` = now; a `SENT` row or a younger `SENDING` one is left alone and no mail goes out, as for a recipient whose account no longer exists. After the send the row becomes `SENT` with `delivered_at`, or `FAILED` when the mail server refused it (the publication is then retried)
+- `ck_notifications_delivery_status`: `IN_APP` rows carry no `delivery_status`, `EMAIL` rows one of `SENDING`, `SENT`, `FAILED`
+- Security and privacy mails (sign-in, password, export notice, erasure) are not logged here
+- Retention period: `app.retention.notifications` (default 365 days) from `sent_at`, written into `expires_at` when the row is created, so a changed period applies to new rows only; the `notifications` retention policy deletes rows whose `expires_at` has passed (6.2.1); the account's deletion removes its rows (`ON DELETE CASCADE`)
+
+| **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
+|------------|---------------|--------------|-------------|-----------------|-----------------|
+| `notification_id` | `BIGSERIAL` | NO | Auto | PK | Unique notification identifier |
+| `user_id` | `BIGINT` | NO | - | FK→users | Recipient user |
+| `type` | `VARCHAR(50)` | NO | - | CK | Notification type |
+| `payload` | `JSONB` | NO | `'{}'` | - | Values of the sentence, by type (below) |
+| `dedupe_key` | `VARCHAR(64)` | NO | - | UK | SHA-256 hex of type, channel, recipient, reference and event time |
+| `is_read` | `BOOLEAN` | NO | `FALSE` | CK | Read status |
+| `channel` | `VARCHAR(20)` | NO | `'IN_APP'` | CK | Delivery channel |
+| `reference_type` | `VARCHAR(50)` | YES | - | - | `AWARD` for award types, null otherwise |
+| `reference_id` | `BIGINT` | YES | - | - | The award, null otherwise |
+| `sent_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | When the in-app row was written, or when the mail was last claimed for sending |
+| `read_at` | `TIMESTAMPTZ` | YES | - | CK | When marked as read; set with `is_read` |
+| `expires_at` | `TIMESTAMPTZ` | YES | - | - | `sent_at` + `app.retention.notifications` (default 365 days) |
+| `delivery_status` | `VARCHAR(20)` | YES | - | CK | `EMAIL` rows: `SENDING`, `SENT`, `FAILED`; null for `IN_APP` (V039) |
+| `delivered_at` | `TIMESTAMPTZ` | YES | - | - | `EMAIL` rows: when the mail server accepted the mail; null otherwise (V039) |
+
+**Notification Types** (`type`, also `notification_preferences.event_type`) and **payload**:
+
+| Value | Trigger Event | Payload |
+|-------|---------------|---------|
+| `AWARD_APPROVED`, `AWARD_REJECTED`, `AWARD_RETURNED`, `AWARD_ESCALATED` | `AwardDecided` (by outcome) | `title`, `titleUk`, `reviewer`, `level` |
+| `AWARD_CORRECTED` | `AwardCorrected` | `title`, `titleUk`, `reviewer`, `fields` (names only) |
+| `REVIEW_OVERDUE` | `OverdueNoticed` | `count`, `oldestDeadline` |
+| `REVIEW_TAKEN_OVER` | `ReviewTakenOver` | `title`, `titleUk`, `reviewer` |
+| `ROLE_ASSIGNED`, `ROLE_REVOKED` | `RoleAssigned`, `RoleRevoked` | `role`, `organization`, `organizationUk`, `validTo` |
+| `DELEGATION_CREATED`, `DELEGATION_REVOKED` | `DelegationCreated`, `DelegationRevoked` (one row per recipient) | `role`, `organization`, `organizationUk`, `otherParty`, `validTo` |
+| `AWARDS_REMINDER` | `UnitReminderRequested` (V053, 9.4.5) | `unitId`, `unit`, `unitUk`, `year`, `sender` |
+
+**Notification Channels** (`channel`):
+| Value | Description |
+|-------|-------------|
+| `IN_APP` | In-application notification (written since 7.2.1) |
+| `EMAIL` | Delivery log of the mails of the notification types (written since 7.2.3) |
+| `SMS` | Allowed by `ck_notifications_channel`, refused by `ck_notifications_delivery_status` since V039 |
+| `PUSH` | Allowed by `ck_notifications_channel`, refused by `ck_notifications_delivery_status` since V039 |
+
+**Indexes**:
+- `pk_notifications` - Primary key on `notification_id`
+- `uk_notifications_dedupe_key` - Unique on `dedupe_key`
+- `idx_notifications_user_channel_sent` - Composite on `(user_id, channel, sent_at DESC)` (notification centre list)
+- `idx_notifications_user` - B-tree on `user_id`
+- `idx_notifications_user_unread` - Partial on `(user_id, sent_at DESC)` for unread notifications
+- `idx_notifications_sent` - B-tree on `sent_at DESC`
+- `idx_notifications_reference` - Composite on `(reference_type, reference_id)`
+- `idx_notifications_expires` - Partial on `expires_at`
+
+**Relationships**:
+- BELONGS TO `users` (N:1) via `user_id`, `ON DELETE CASCADE`
+
+---
+
+### 5.2 Entity: `notification_preferences`
+
+**Description**: A person's e-mail and in-app choice per notification type; the one store of notification
+preferences (the consent type `EMAIL_NOTIFICATIONS` was removed by V040).
+
+**Business Rules**:
+- No rows are created at registration: a type without a row is on for both channels
+- `PUT /api/v1/users/me/notification-preferences` upserts the listed types; unlisted types keep their state
+- Every type keeps at least one channel (`both-off` is refused)
+- The mail and in-app listeners read the row when they send, so a change applies to the next notification
+- An effective change writes one `NOTIFICATION_PREFERENCES_CHANGED` audit row with the old and new channels of the
+  changed types
+- Security and privacy mails (sign-in, password, e-mail change, erasure, export) have no preference
+- `sms_enabled` and `push_enabled` are not used and stay `FALSE`
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
@@ -623,9 +1063,9 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `user_id` | `BIGINT` | NO | - | FK→users | User owning preference |
 | `event_type` | `VARCHAR(50)` | NO | - | CK | Notification event type |
 | `email_enabled` | `BOOLEAN` | NO | `TRUE` | - | Email channel enabled |
-| `sms_enabled` | `BOOLEAN` | NO | `FALSE` | - | SMS channel enabled |
+| `sms_enabled` | `BOOLEAN` | NO | `FALSE` | - | Not used |
 | `in_app_enabled` | `BOOLEAN` | NO | `TRUE` | - | In-app channel enabled |
-| `push_enabled` | `BOOLEAN` | NO | `FALSE` | - | Push notification enabled |
+| `push_enabled` | `BOOLEAN` | NO | `FALSE` | - | Not used |
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
 | `updated_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Last modification timestamp |
 
@@ -639,24 +1079,73 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 ---
 
+### 5.3 Entity: `event_publication`
+
+**Description**: Spring Modulith event publication registry (V036, schema of `spring-modulith-events-jdbc` 1.4).
+One row per after-commit listener of a committed application event; the row is deleted when the listener
+completes (ADR-006, Addendum 2026-10-09).
+
+**Business Rules**:
+- Written in the publishing transaction; a rollback leaves no row
+- Deleted when the listener returns normally (`completion-mode: delete`), so `completion_date` stays `NULL`
+- An incomplete row is retried by `PublicationRetry` from 10 minutes to 24 hours after `publication_date`; older
+  rows are reported, not retried
+- Events carrying a one-time link are transient and never written here
+
+**Personal data**: `serialized_event` holds the recipient's email address and first name, and, depending on the
+event, award titles, reviewer and actor names, a decision comment, or the IP address and browser of a data export.
+Legal basis is that of the change that caused the mail.
+
+**Retention**: deleted on completion; an incomplete row is kept at most 30 days for inspection, then deleted by
+`PublicationRetry` (`app.events.keep-failed`).
+
+| **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
+|------------|---------------|--------------|-------------|-----------------|-----------------|
+| `id` | `UUID` | NO | - | PK | Publication identifier, assigned by the registry |
+| `listener_id` | `TEXT` | NO | - | - | Listener method signature (class, method, parameter type) |
+| `event_type` | `TEXT` | NO | - | - | Fully qualified class name of the event |
+| `serialized_event` | `TEXT` | NO | - | - | The event as JSON |
+| `publication_date` | `TIMESTAMPTZ` | NO | - | - | Time the event was published inside the business transaction |
+| `completion_date` | `TIMESTAMPTZ` | YES | `NULL` | - | Not used: completed rows are deleted |
+
+**Indexes**:
+- `pk_event_publication` - Primary key on `id`
+- `event_publication_serialized_event_hash_idx` - Hash on `serialized_event` (registry lookups by event)
+- `event_publication_by_completion_date_idx` - B-tree on `completion_date` (incomplete rows)
+
+**Relationships**:
+- None (no foreign keys; recipients are stored as addresses inside the event)
+
+---
+
 ## 6. Entity Relationship Summary
 
 ### 6.1 Relationship Matrix
 
 | **Entity** | **Relationships** |
 |------------|-------------------|
-| `users` | → organizations (N:1), ← user_roles (1:N), ← awards (1:N), ← audit_logs (1:N), ← consent_records (1:N), ← notifications (1:N), ← notification_preferences (1:N) |
+| `users` | → organizations (N:1), ← user_roles (1:N), ← one_time_tokens (1:N), ← user_devices (1:N), ← awards (1:N), ← audit_logs (1:N), ← consent_records (1:N), ← legal_holds (1:N), ← erasure_requests (1:N), ← notifications (1:N), ← notification_preferences (1:N) |
 | `user_roles` | → users (N:1), → organizations (N:1) |
-| `organizations` | → organizations (N:1, self), ← organizations (1:N), ← users (1:N), ← user_roles (1:N) |
-| `awards` | → users (N:1), → award_categories (N:1), ← documents (1:N), ← award_requests (1:1) |
+| `organizations` | → organizations (N:1, self), ← organizations (1:N), ← users (1:N), ← user_roles (1:N), ← awards (1:N), ← awards (1:N, as recipient) |
+| `one_time_tokens` | → users (N:1) |
+| `user_devices` | → users (N:1) |
+| `awards` | → users (N:1), → award_categories (N:1), → organizations (N:1), → organizations (N:1, recipient unit, optional), ← documents (1:N), ← award_versions (1:N), ← award_requests (1:1) |
+| `award_versions` | → awards (N:1), → users (N:1, actor) |
 | `award_categories` | → award_categories (N:1, self), ← award_categories (1:N), ← awards (1:N) |
 | `documents` | → awards (N:1), → award_requests (N:1), → users (N:1) |
 | `award_requests` | → awards (1:1), → users (N:1, submitter), → users (N:1, reviewer), ← review_decisions (1:N), ← documents (1:N) |
-| `review_decisions` | → award_requests (N:1), → users (N:1) |
+| `review_decisions` | → award_requests (N:1), → users (N:1), → users (N:1, delegator, optional) |
+| `role_delegations` | → users (N:1, delegator), → users (N:1, delegate), → organizations (N:1) |
+| `dashboard_preferences` | → users (1:1) |
+| `review_templates` | none (reference data) |
 | `audit_logs` | → users (N:1) |
 | `consent_records` | → users (N:1) |
+| `legal_holds` | → users (N:1, held account and officers) |
+| `erasure_requests` | → users (N:1) |
+| `retention_runs` | none (run log) |
 | `notifications` | → users (N:1) |
 | `notification_preferences` | → users (N:1) |
+| `event_publication` | none (event registry) |
 
 ### 6.2 Cardinality Summary
 
@@ -664,6 +1153,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 |------------------|-----------------|-----------|
 | User → Organization | N:1 | Required |
 | User → Awards | 1:N | Employee's awards |
+| Award → Versions | 1:N | One per saved state, deleted with the award |
 | Award → Request | 1:1 | Unique request per award |
 | Request → Decisions | 1:N | Multiple decisions per level |
 | Award → Documents | 1:N | Supporting documents |
@@ -701,17 +1191,38 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `users` | `first_name` | Required, max 100 chars |
 | `users` | `last_name` | Required, max 100 chars |
 | `users` | `password_hash` | BCrypt format |
-| `awards` | `title` | Required, max 500 chars |
-| `awards` | `award_date` | Cannot be future date |
+| `awards` | `title`, `title_uk` | At least one of them, max 500 chars each |
+| `awards` | `description`, `description_uk` | Max 4000 chars |
+| `awards` | `awarding_organization` | Max 255 chars; required outside `DRAFT` |
+| `awards` | `external_url` | `http` or `https` only, max 2048 chars |
+| `awards` | `category_id` | Active category when chosen or submitted; a draft keeps a category deactivated after it was chosen |
+| `awards` | `award_date` | Not after today in Europe/Kyiv and not more than 50 years back (exactly 50 accepted); required outside `DRAFT` |
 | `awards` | `impact_score` | Range 0-100 |
 | `documents` | `file_size` | Max 10,485,760 bytes (10MB) |
-| `documents` | `file_type` | One of: PDF, JPG, PNG, WEBP |
+| `documents` | `file_type` | One of: PDF, JPG, JPEG, PNG, WEBP |
+| `documents` | `document_type` | One of: CERTIFICATE, DIPLOMA, SUPPORTING_DOCUMENT, PHOTO (`ck_documents_document_type`, V025) |
+| `documents` | `award_id`, `checksum_sha256` | Unique together (`uq_documents_award_checksum`, V025) |
 | `documents` | `confidence_score` | Range 0.0000-1.0000 |
 | `consent_records` | `consent_version` | Semver format (e.g., "1.0.0") |
 
 ---
 
-*Document Version: 1.0*  
+## Appendix C: Award Views and Functions
+
+Defined in the repeatable migrations `R__create_views.sql` and `R__create_functions.sql`; not called by the application (the unit analytics of Epic 5 query `awards` directly through `UnitStatistics`). They follow the same rules as the application:
+
+| Object | Rule |
+|--------|------|
+| `vw_active_awards`, `vw_pending_requests` | Organisation columns come from `awards.organization_id`, the department of the submission, not the owner's current department |
+| `search_words(value)` | Search form of a text for the generated `awards.search_vector` and `search_text`: NFC, apostrophes removed, every run of characters other than letters and digits replaced by one space; `IMMUTABLE`, defined in V048 rather than the repeatable migration because the generated columns depend on it, and used by the application only through those columns |
+| `fn_calculate_impact_score(category_id)` | Base score of the category level, equal to `RecognitionLevel` (SPECIALITY 10, DEPARTMENT 20, COLLEGE 30, FACULTY 40, UNIVERSITY 50, LOCAL 60, REGIONAL 70, NATIONAL 80, INTERNATIONAL 100) |
+| `fn_can_user_approve_award(user_id, award_id)` | True when the request is `SUBMITTED`, `IN_REVIEW` or `ESCALATED` and the user holds the role of `current_level`, or a delegation of it in effect whose delegator still holds the role, in the award's organisation or one above it, can sign in (`ACTIVE`, `RETIRED`) and does not own the award; days are Kyiv calendar days |
+
+`vw_award_statistics` was dropped in Feature 5.2 (its `DROP VIEW IF EXISTS` stays in `R__create_views.sql`, so existing databases lose it): it counted drafts and pending awards per single organisation, while the unit analytics count approved awards over a subtree, by the same rule (an award counts for `awards.organization_id`, whatever the owner's current department or account status).
+
+---
+
+*Document Version: 1.1*  
 *Classification: Internal*  
 *Phase: 9 - Data Architecture & Database Design*  
 *Author: Stefan Kostyk*

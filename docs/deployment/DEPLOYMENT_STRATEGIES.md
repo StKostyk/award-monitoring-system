@@ -2,6 +2,9 @@
 
 > **Award Monitoring & Tracking System - Release Management Framework**
 
+> **Not used for the defense.** The demo runs on Docker Compose on a single server (ADR-021); the Kubernetes material below is kept as the
+> alternative described in ADR-018 and is neither deployed nor tested.
+
 ## Overview
 
 This document defines deployment strategies for the Award Monitoring System, ensuring zero-downtime releases, risk mitigation, and reliable rollback capabilities.

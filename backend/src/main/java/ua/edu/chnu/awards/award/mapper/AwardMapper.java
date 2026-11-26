@@ -1,0 +1,105 @@
+package ua.edu.chnu.awards.award.mapper;
+
+import java.util.List;
+
+import org.springframework.stereotype.Component;
+
+import ua.edu.chnu.awards.award.dto.AwardRecipient;
+import ua.edu.chnu.awards.award.dto.AwardResponse;
+import ua.edu.chnu.awards.award.dto.AwardWarning;
+import ua.edu.chnu.awards.award.dto.CategoryRef;
+import ua.edu.chnu.awards.award.dto.RequestSummary;
+import ua.edu.chnu.awards.award.dto.UserRef;
+import ua.edu.chnu.awards.award.entity.Award;
+import ua.edu.chnu.awards.award.entity.AwardCategory;
+import ua.edu.chnu.awards.award.entity.AwardRequest;
+import ua.edu.chnu.awards.award.service.ManagedOwners;
+import ua.edu.chnu.awards.award.service.StatusEstimator;
+import ua.edu.chnu.awards.organization.dto.OrganizationRef;
+import ua.edu.chnu.awards.organization.entity.Organization;
+
+import lombok.RequiredArgsConstructor;
+
+/**
+ * Converts awards to API responses.
+ */
+@Component
+@RequiredArgsConstructor
+public class AwardMapper {
+
+    private final StatusEstimator estimator;
+    private final ManagedOwners managedOwners;
+
+    /**
+     * Builds the response of an award without warnings.
+     *
+     * @param award   the award
+     * @param request its approval request, null for a draft
+     * @return response
+     */
+    public AwardResponse toResponse(Award award, AwardRequest request) {
+        return toResponse(award, request, List.of());
+    }
+
+    /**
+     * Builds the response of an award.
+     *
+     * @param award    the award
+     * @param request  its approval request, null for a draft
+     * @param warnings hints about the award data
+     * @return response
+     */
+    public AwardResponse toResponse(Award award, AwardRequest request, List<AwardWarning> warnings) {
+        return toResponse(award, request, warnings, null);
+    }
+
+    /**
+     * Builds the response of an award returned for changes, with the reviewer's comment.
+     *
+     * @param award         the award
+     * @param request       its approval request, null for a draft never submitted
+     * @param warnings      hints about the award data
+     * @param returnComment the comment of the return, null when the request was not returned
+     * @return response
+     */
+    public AwardResponse toResponse(Award award, AwardRequest request, List<AwardWarning> warnings,
+                                    String returnComment) {
+        return new AwardResponse(award.getId(), award.getTitle(), award.getTitleUk(), award.getDescription(),
+            award.getDescriptionUk(), categoryRef(award.getCategory()), award.getAwardingOrganization(),
+            award.getAwardDate(), award.getExternalUrl(), award.getStatus(), award.getImpactScore(),
+            UserRef.of(award.getOwner()), recipient(award), organizationRef(award.getOrganization()),
+            toSummary(award, request, returnComment), List.copyOf(warnings),
+            award.isUnitAward() ? null : award.getVisibility(), award.getCreatedAt(), award.getUpdatedAt(),
+            award.getVersion(), award.getOwner().isWithoutAccount(), managedOwners.manages(award.getOwner()),
+            award.getSource());
+    }
+
+    static AwardRecipient recipient(Award award) {
+        return award.isUnitAward() ? AwardRecipient.unit(award.getOrganization()) : AwardRecipient.PERSON;
+    }
+
+    /**
+     * The reference of a category.
+     *
+     * @param category the category, null while not chosen
+     * @return reference, null without a category
+     */
+    public static CategoryRef categoryRef(AwardCategory category) {
+        return category == null ? null
+            : new CategoryRef(category.getId(), category.getName(), category.getNameUk(), category.getLevel());
+    }
+
+    static OrganizationRef organizationRef(Organization organization) {
+        return new OrganizationRef(organization.getId(), organization.getName(), organization.getNameUk(),
+            organization.getCode(), organization.getOrgType());
+    }
+
+    private RequestSummary toSummary(Award award, AwardRequest request, String returnComment) {
+        if (request == null) {
+            return null;
+        }
+        StatusEstimator.Timeline timeline = estimator.timeline(award, request);
+        return new RequestSummary(request.getStatus(), request.getCurrentLevel(), request.getSubmittedAt(),
+            timeline.deadline(), timeline.estimatedCompletion(), timeline.overdue(), returnComment);
+    }
+}

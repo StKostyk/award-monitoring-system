@@ -1,0 +1,129 @@
+package ua.edu.chnu.awards.award.service;
+
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import ua.edu.chnu.awards.audit.entity.AuditAction;
+import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
+import ua.edu.chnu.awards.audit.service.AuditService;
+import ua.edu.chnu.awards.award.dto.ReviewDecisionRequest.Decision;
+import ua.edu.chnu.awards.award.entity.ApprovalLevel;
+import ua.edu.chnu.awards.award.entity.Award;
+import ua.edu.chnu.awards.award.entity.AwardRequest;
+import ua.edu.chnu.awards.award.entity.ReviewDecision;
+import ua.edu.chnu.awards.award.entity.ReviewDecisionType;
+import ua.edu.chnu.awards.award.event.AwardDecided;
+import ua.edu.chnu.awards.award.event.ReviewMeasured;
+import ua.edu.chnu.awards.award.repository.ReviewDecisionRepository;
+import ua.edu.chnu.awards.user.entity.User;
+import ua.edu.chnu.awards.user.service.UserAccounts;
+
+import lombok.RequiredArgsConstructor;
+
+/**
+ * Writes the trace of a reviewer decision: the decision row of the deciding level, the audit entry and the event
+ * that tells the owner after the commit.
+ */
+@Component
+@RequiredArgsConstructor
+public class DecisionLog {
+
+    private final ReviewDecisionRepository decisions;
+    private final UserAccounts users;
+    private final AuditService audit;
+    private final ApplicationEventPublisher events;
+    private final Clock clock;
+
+    /**
+     * Publishes the decision for the review metrics, before the decision row is written and the request moves.
+     *
+     * @param request   the request before the decision
+     * @param level     the deciding level
+     * @param type      what the row will record
+     * @param decidedAt when
+     */
+    public void measure(AwardRequest request, ApprovalLevel level, ReviewDecisionType type, Instant decidedAt) {
+        Instant reached = decisions.findByRequestId(request.getId()).stream()
+            .map(ReviewDecision::getDecidedAt)
+            .filter(request.getSubmittedAt()::isBefore)
+            .max(Comparator.naturalOrder())
+            .orElse(request.getSubmittedAt());
+        boolean onTime = request.getDeadline() == null || decidedAt.isBefore(request.getDeadline());
+        events.publishEvent(new ReviewMeasured(level, type, onTime, Duration.between(reached, decidedAt)));
+    }
+
+    /**
+     * Saves the decision row, inside the caller's transaction.
+     *
+     * @param request     the request decided on
+     * @param level       the deciding level
+     * @param type        what the row records
+     * @param reviewer    who decided
+     * @param comment     the reviewer's comment, null when none
+     * @param delegatorId who lent the role the reviewer decided under, null for an own role
+     * @param decidedAt   when
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void write(AwardRequest request, ApprovalLevel level, ReviewDecisionType type, User reviewer,
+                      String comment, Long delegatorId, Instant decidedAt) {
+        decisions.save(ReviewDecision.builder()
+            .requestId(request.getId())
+            .reviewer(reviewer)
+            .decision(type)
+            .level(level)
+            .comments(comment)
+            .delegator(delegatorId == null ? null : users.getReferenceById(delegatorId))
+            .decidedAt(decidedAt)
+            .build());
+    }
+
+    /**
+     * Records the decision in the audit log with the request's new state.
+     *
+     * @param request     the request after the decision
+     * @param decision    what the reviewer decided
+     * @param level       the deciding level
+     * @param reviewerId  who decided
+     * @param delegatorId who lent the role, null for an own role
+     */
+    public void audit(AwardRequest request, Decision decision, ApprovalLevel level, long reviewerId,
+                      Long delegatorId) {
+        Map<String, Object> details = new HashMap<>();
+        details.put("requestId", request.getId());
+        details.put("level", level.name());
+        details.put("decision", decision.name());
+        details.put("requestStatus", request.getStatus().name());
+        details.put("newLevel", request.getCurrentLevel().name());
+        if (delegatorId != null) {
+            details.put("delegatorId", delegatorId);
+        }
+        audit.record(AuditAction.REVIEW_DECISION, AuditEntityConstants.AWARDS, reviewerId,
+            request.getAward().getId(), details);
+    }
+
+    /**
+     * Publishes the decision for the owner's e-mail, sent once the transaction commits; the decision on an award
+     * of an owner without an account goes to the request's submitter.
+     *
+     * @param request  the request after the decision
+     * @param reviewer who decided
+     * @param comment  the reviewer's comment, null when none
+     */
+    public void announce(AwardRequest request, User reviewer, String comment) {
+        Award award = request.getAward();
+        User told = NoticeRecipientHelper.recipient(request);
+        events.publishEvent(new AwardDecided(told.getId(), told.getEmailAddress(), told.getFirstName(),
+            award.getId(), award.titleInEnglish(), award.titleInUkrainian(), request.getStatus(),
+            request.getCurrentLevel(), reviewer.getFullName(), comment, clock.instant(),
+            NoticeRecipientHelper.person(award)));
+    }
+}

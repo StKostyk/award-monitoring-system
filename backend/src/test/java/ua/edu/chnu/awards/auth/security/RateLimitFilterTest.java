@@ -1,0 +1,271 @@
+package ua.edu.chnu.awards.auth.security;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.startsWith;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.List;
+
+import jakarta.servlet.ServletException;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.dao.QueryTimeoutException;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.mock.web.MockFilterChain;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.web.cors.CorsConfiguration;
+
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+
+import ua.edu.chnu.awards.auth.security.RateLimitFilter.Rule;
+import ua.edu.chnu.awards.auth.security.RateLimitFilter.Subject;
+import ua.edu.chnu.awards.common.limit.FixedWindowCounter;
+import ua.edu.chnu.awards.common.limit.RateLimitMetrics;
+
+@ExtendWith(OutputCaptureExtension.class)
+class RateLimitFilterTest {
+
+    private static final Instant NOW = Instant.parse("2026-09-21T10:00:15Z");
+
+    private final StringRedisTemplate redis = mock(StringRedisTemplate.class);
+    @SuppressWarnings("unchecked")
+    private final ValueOperations<String, String> values = mock(ValueOperations.class);
+    private final FixedWindowCounter counter = new FixedWindowCounter(redis, Clock.fixed(NOW, ZoneOffset.UTC));
+    private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
+    private final RateLimitFilter filter = limit(new Rule(RateLimitMetrics.AUTH_ADDRESS, RateLimitFilter.KEY_PREFIX,
+        20, Subject.ADDRESS));
+
+    @BeforeEach
+    void setUp() {
+        when(redis.opsForValue()).thenReturn(values);
+    }
+
+    @Test
+    void ac42_requestsWithinTheLimitPassAndTheWindowKeyExpires() throws ServletException, IOException {
+        String key = "auth:rate:203.0.113.7:" + NOW.getEpochSecond() / 60;
+        when(values.increment(key)).thenReturn(1L);
+        MockFilterChain chain = new MockFilterChain();
+
+        filter.doFilter(request("application/json"), new MockHttpServletResponse(), chain);
+
+        assertThat(chain.getRequest()).isNotNull();
+        verify(redis).expire(key, Duration.ofSeconds(120));
+    }
+
+    @Test
+    void ac42_theTwentyFirstRequestIsRefusedWithRetryAfter() throws ServletException, IOException {
+        when(values.increment(anyString())).thenReturn(21L);
+        MockHttpServletResponse api = new MockHttpServletResponse();
+        MockHttpServletResponse browser = new MockHttpServletResponse();
+
+        filter.doFilter(request("application/json"), api, new MockFilterChain());
+        filter.doFilter(request("text/html,application/xhtml+xml"), browser, new MockFilterChain());
+
+        assertThat(api.getStatus()).isEqualTo(429);
+        assertThat(api.getHeader("Retry-After")).isEqualTo("45");
+        assertThat(api.getContentType()).isEqualTo("application/problem+json");
+        assertThat(api.getContentAsString()).contains("urn:awards:problem:too-many-requests")
+            .contains("\"retryAfter\":45");
+        assertThat(browser.getStatus()).isEqualTo(429);
+        assertThat(browser.getHeader("Retry-After")).isEqualTo("45");
+    }
+
+    @Test
+    void ac42_theRefusalCarriesCorsHeadersSoTheBrowserApplicationCanReadIt() throws ServletException, IOException {
+        when(values.increment(anyString())).thenReturn(21L);
+        MockHttpServletRequest request = request("application/json");
+        request.addHeader("Origin", "http://localhost:4200");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, new MockFilterChain());
+
+        assertThat(response.getStatus()).isEqualTo(429);
+        assertThat(response.getHeader("Access-Control-Allow-Origin")).isEqualTo("http://localhost:4200");
+    }
+
+    @Test
+    void ac42_aForeignOriginIsRefusedByCorsBeforeTheLimitAnswers() throws ServletException, IOException {
+        when(values.increment(anyString())).thenReturn(21L);
+        MockHttpServletRequest request = request("application/json");
+        request.addHeader("Origin", "http://evil.example");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, new MockFilterChain());
+
+        assertThat(response.getStatus()).isEqualTo(403);
+        assertThat(response.getHeader("Retry-After")).isNull();
+    }
+
+    private static CorsConfiguration allowedOrigins() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:4200"));
+        configuration.setAllowedMethods(List.of("POST"));
+        return configuration;
+    }
+
+    @Test
+    void ac42_preflightRequestsAreNotCounted() throws ServletException, IOException {
+        MockHttpServletRequest preflight = request("*/*");
+        preflight.setMethod("OPTIONS");
+        MockFilterChain chain = new MockFilterChain();
+
+        filter.doFilter(preflight, new MockHttpServletResponse(), chain);
+
+        assertThat(chain.getRequest()).isNotNull();
+        verify(values, never()).increment(anyString());
+    }
+
+    @Test
+    void ac2_3_thePublicApiCountsInItsOwnWindowWithItsOwnBudget() throws ServletException, IOException {
+        RateLimitFilter publicLimit = limit(new Rule(RateLimitMetrics.PUBLIC, RateLimitFilter.PUBLIC_KEY_PREFIX, 120,
+            Subject.ADDRESS));
+        String key = "public:rate:203.0.113.7:" + NOW.getEpochSecond() / 60;
+        when(values.increment(key)).thenReturn(120L, 121L);
+        MockFilterChain within = new MockFilterChain();
+        MockHttpServletResponse refused = new MockHttpServletResponse();
+
+        publicLimit.doFilter(request("application/json"), new MockHttpServletResponse(), within);
+        publicLimit.doFilter(request("application/json"), refused, new MockFilterChain());
+
+        assertThat(within.getRequest()).isNotNull();
+        assertThat(refused.getStatus()).isEqualTo(429);
+        assertThat(refused.getHeader("Retry-After")).isEqualTo("45");
+        verify(values, never()).increment(startsWith(RateLimitFilter.KEY_PREFIX));
+    }
+
+    @Test
+    void redisOutageDoesNotLimit() throws ServletException, IOException {
+        when(values.increment(anyString())).thenThrow(new QueryTimeoutException("down"));
+        MockFilterChain chain = new MockFilterChain();
+
+        filter.doFilter(request("application/json"), new MockHttpServletResponse(), chain);
+
+        assertThat(chain.getRequest()).isNotNull();
+    }
+
+    @Test
+    void ac2_3_aRedisOutageKeepsThePublicApiReadable() throws ServletException, IOException {
+        RateLimitFilter publicLimit = limit(new Rule(RateLimitMetrics.PUBLIC, RateLimitFilter.PUBLIC_KEY_PREFIX, 120,
+            Subject.ADDRESS));
+        when(values.increment(anyString())).thenThrow(new QueryTimeoutException("down"));
+        MockFilterChain chain = new MockFilterChain();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        publicLimit.doFilter(request("application/json"), response, chain);
+
+        assertThat(chain.getRequest()).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+    }
+
+    @Test
+    void ac2_anAnonymousOnlyLimitSkipsBearerCallsAndCountsTheRest() throws ServletException, IOException {
+        RateLimitFilter anonymousLimit = limit(new Rule(RateLimitMetrics.PUBLIC, RateLimitFilter.PUBLIC_KEY_PREFIX, 120,
+            Subject.ANONYMOUS_ADDRESS));
+        String key = "public:rate:203.0.113.7:" + NOW.getEpochSecond() / 60;
+        when(values.increment(key)).thenReturn(121L);
+        MockHttpServletRequest signedIn = request("application/json");
+        signedIn.addHeader("Authorization", "Bearer some.access.token");
+        MockFilterChain passed = new MockFilterChain();
+        MockHttpServletResponse refused = new MockHttpServletResponse();
+
+        anonymousLimit.doFilter(signedIn, new MockHttpServletResponse(), passed);
+        anonymousLimit.doFilter(request("application/json"), refused, new MockFilterChain());
+
+        assertThat(passed.getRequest()).isNotNull();
+        assertThat(refused.getStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS.value());
+        verify(values).increment(key);
+    }
+
+    @Test
+    void ac2_2_signInPostsAreCountedByTheNormalisedAccountWhateverTheAddress() throws ServletException, IOException {
+        RateLimitFilter accountLimit = limit(new Rule(RateLimitMetrics.AUTH_ACCOUNT,
+            RateLimitFilter.ACCOUNT_KEY_PREFIX, 10, Subject.ACCOUNT));
+        String key = "auth:account:target@chnu.edu.ua:" + NOW.getEpochSecond() / 60;
+        when(values.increment(key)).thenReturn(10L, 11L);
+        MockHttpServletRequest within = signIn("  Target@CHNU.edu.ua ", "198.51.100.1");
+        MockFilterChain passed = new MockFilterChain();
+        MockFilterChain stopped = new MockFilterChain();
+        MockHttpServletResponse refused = new MockHttpServletResponse();
+
+        accountLimit.doFilter(within, new MockHttpServletResponse(), passed);
+        accountLimit.doFilter(signIn("target@chnu.edu.ua", "198.51.100.2"), refused, stopped);
+
+        assertThat(passed.getRequest()).isNotNull();
+        assertThat(stopped.getRequest()).isNull();
+        assertThat(refused.getStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS.value());
+        assertThat(refused.getHeader("Retry-After")).isEqualTo("45");
+    }
+
+    @Test
+    void ac2_2_theSignInFormPageAndPostsWithoutAUsernameAreNotCountedByAccount()
+            throws ServletException, IOException {
+        RateLimitFilter accountLimit = limit(new Rule(RateLimitMetrics.AUTH_ACCOUNT,
+            RateLimitFilter.ACCOUNT_KEY_PREFIX, 10, Subject.ACCOUNT));
+        MockHttpServletRequest page = request("text/html");
+        page.setMethod("GET");
+        page.setParameter("username", "target@chnu.edu.ua");
+        MockFilterChain pageChain = new MockFilterChain();
+        MockFilterChain blankChain = new MockFilterChain();
+
+        accountLimit.doFilter(page, new MockHttpServletResponse(), pageChain);
+        accountLimit.doFilter(signIn(" ", "198.51.100.1"), new MockHttpServletResponse(), blankChain);
+
+        assertThat(pageChain.getRequest()).isNotNull();
+        assertThat(blankChain.getRequest()).isNotNull();
+        verify(values, never()).increment(anyString());
+    }
+
+    @Test
+    void ac2_8_aRefusalIsCountedByLimitAndLoggedWithoutAddressOrAccount(CapturedOutput output)
+            throws ServletException, IOException {
+        RateLimitFilter accountLimit = limit(new Rule(RateLimitMetrics.AUTH_ACCOUNT,
+            RateLimitFilter.ACCOUNT_KEY_PREFIX, 10, Subject.ACCOUNT));
+        when(values.increment(anyString())).thenReturn(21L);
+
+        filter.doFilter(request("application/json"), new MockHttpServletResponse(), new MockFilterChain());
+        accountLimit.doFilter(signIn("target@chnu.edu.ua", "198.51.100.1"), new MockHttpServletResponse(),
+            new MockFilterChain());
+
+        assertThat(registry.get("award.rate.limited").tag("limit", "auth-address").counter().count()).isEqualTo(1);
+        assertThat(registry.get("award.rate.limited").tag("limit", "auth-account").counter().count()).isEqualTo(1);
+        assertThat(output.getOut()).contains("Rate limit auth-account refused /login")
+            .doesNotContain("target@chnu.edu.ua").doesNotContain("198.51.100.1").doesNotContain("203.0.113.7");
+    }
+
+    private static MockHttpServletRequest signIn(String username, String address) {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/login");
+        request.setRemoteAddr(address);
+        request.addHeader("Accept", "text/html");
+        request.setParameter("username", username);
+        return request;
+    }
+
+    private RateLimitFilter limit(Rule rule) {
+        return new RateLimitFilter(counter, new RateLimitMetrics(registry), rule, request -> allowedOrigins(),
+            Jackson2ObjectMapperBuilder.json().build());
+    }
+
+    private static MockHttpServletRequest request(String accept) {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/login");
+        request.setRemoteAddr("203.0.113.7");
+        request.addHeader("Accept", accept);
+        return request;
+    }
+}

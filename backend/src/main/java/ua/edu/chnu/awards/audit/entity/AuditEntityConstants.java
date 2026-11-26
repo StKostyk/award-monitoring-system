@@ -1,0 +1,30 @@
+package ua.edu.chnu.awards.audit.entity;
+
+/**
+ * Values of {@code audit_logs.entity_type} written by the application.
+ */
+@SuppressWarnings("PMD.DataClass")
+public final class AuditEntityConstants {
+
+    /** Analytics reports of a faculty or department. */
+    public static final String ANALYTICS = "ANALYTICS";
+    /** Sign-in, sign-out, lockout and one-time links. */
+    public static final String AUTHENTICATION = "AUTHENTICATION";
+    /** Roles, delegations and refused access. */
+    public static final String AUTHORIZATION = "AUTHORIZATION";
+    /** Award records. */
+    public static final String AWARDS = "awards";
+    /** Documents attached to awards. */
+    public static final String DOCUMENTS = "documents";
+    /** Data-subject rights such as the data export. */
+    public static final String GDPR = "GDPR";
+    /** Runs of the retention job. */
+    public static final String RETENTION = "RETENTION";
+    /** Organisation settings such as a faculty's review period. */
+    public static final String ORGANIZATIONS = "organizations";
+    /** A person's own account: names and sign-in address. */
+    public static final String USER = "USER";
+
+    private AuditEntityConstants() {
+    }
+}

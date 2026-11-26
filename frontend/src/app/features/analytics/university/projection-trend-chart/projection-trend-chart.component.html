@@ -1,0 +1,62 @@
+@if (table()) {
+  <app-year-grid
+    [caption]="'universityAnalytics.sections.trend' | transloco"
+    [rowHeader]="'unitAnalytics.comparison.unit' | transloco"
+    [years]="years()"
+    [rows]="gridRows()"
+    [running]="analytics().partialYear"
+    testId="projection-table"
+  >
+    @if (projected(); as row) {
+      <p class="analytics-note" data-testid="projection-row">
+        {{ row.year }}:
+        {{ 'universityAnalytics.projection.projectedValue' | transloco: { count: row.projected } }}
+      </p>
+    }
+  </app-year-grid>
+} @else {
+  <ol class="years" data-testid="projection-columns">
+    @for (column of columns(); track column.year; let last = $last) {
+      <li
+        class="years__item"
+        [class.years__item--last]="last"
+        [attr.data-testid]="column.running ? 'projection-column-running' : 'projection-column'"
+      >
+        <b class="years__count">{{ column.total ?? '—' }}</b>
+        <span class="years__stack" aria-hidden="true">
+          @if (column.restShare > 0) {
+            <span class="years__rest" [style.height.%]="column.restShare">
+              <span class="years__running">{{
+                'universityAnalytics.projection.inProgress' | transloco
+              }}</span>
+            </span>
+          }
+          <span class="years__bar" [style.height.%]="column.approvedShare">
+            @if (column.running && column.restShare === 0) {
+              <span class="years__running">{{
+                'universityAnalytics.projection.inProgress' | transloco
+              }}</span>
+            }
+          </span>
+        </span>
+        <span class="years__year">{{ column.year }}</span>
+        @if (column.projected !== null) {
+          <span class="cdk-visually-hidden">
+            {{
+              'universityAnalytics.projection.projectedValue'
+                | transloco: { count: column.projected }
+            }}
+          </span>
+        }
+      </li>
+    }
+  </ol>
+  @if (hatched()) {
+    <p class="years__key" aria-hidden="true">
+      <span class="years__swatch"></span>{{ 'universityAnalytics.projection.approved' | transloco }}
+      <span class="years__swatch years__swatch--rest"></span
+      >{{ 'universityAnalytics.projection.projected' | transloco }}
+    </p>
+  }
+}
+<p class="projection__sentence" data-testid="university-projection">{{ sentence() }}</p>

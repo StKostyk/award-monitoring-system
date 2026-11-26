@@ -1,0 +1,266 @@
+<app-page-header [heading]="'titles.profile' | transloco" />
+
+@if (loadFailed()) {
+  <p class="profile__problem" role="alert" data-testid="profile-load-error">
+    {{ 'profile.errors.load' | transloco }}
+  </p>
+}
+
+@if (profile(); as profile) {
+  <div class="profile__banner" data-testid="profile-data">
+    <span class="profile__initials" aria-hidden="true">{{ initials() }}</span>
+    <div class="profile__who">
+      <strong class="profile__name" data-testid="profile-name"
+        >{{ profile.firstName }} {{ profile.lastName }}</strong
+      >
+      <span class="profile__role" data-testid="profile-role-line">{{ roleLine(profile) }}</span>
+      <span
+        class="profile__chip"
+        [class.profile__chip--ok]="profile.membershipConfirmed"
+        data-testid="profile-membership"
+      >
+        @if (profile.membershipConfirmed) {
+          <app-icon name="circle-check" />
+        }
+        {{
+          (profile.membershipConfirmed
+            ? 'profile.membershipConfirmed'
+            : 'profile.membershipPending'
+          ) | transloco
+        }}
+      </span>
+    </div>
+    <dl class="profile__facts">
+      <div>
+        <dt>{{ 'profile.email' | transloco }}</dt>
+        <dd data-testid="profile-email">{{ profile.email }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'profile.created' | transloco }}</dt>
+        <dd data-testid="profile-created">{{ profile.createdAt | date: 'dd.MM.yyyy' }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'profile.lastLogin' | transloco }}</dt>
+        <dd data-testid="profile-last-login">
+          @if (profile.lastLoginAt) {
+            {{ profile.lastLoginAt | date: 'dd.MM.yyyy HH:mm' }}
+          } @else {
+            {{ 'profile.never' | transloco }}
+          }
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <app-split class="profile__split" mode="detail" [detailOpen]="chosen() !== null">
+    <div splitSide>
+      <app-pane flush data-testid="profile-sections">
+        <nav appListRows [attr.aria-label]="'profile.sections.label' | transloco">
+          @for (section of sections; track section.id) {
+            <a
+              appListRow
+              [icon]="section.icon"
+              [rowTitle]="'profile.sections.' + section.id | transloco"
+              [meta]="summary(section.id, profile)"
+              [selected]="shown() === section.id"
+              routerLink="."
+              [queryParams]="{ section: section.id }"
+              queryParamsHandling="merge"
+              [attr.data-testid]="'profile-section-' + section.id"
+            ></a>
+          }
+        </nav>
+      </app-pane>
+    </div>
+
+    <div splitMain class="profile__main">
+      @if (chosen() !== null) {
+        <button
+          mat-button
+          type="button"
+          class="profile__back"
+          (click)="select(null)"
+          data-testid="profile-back"
+        >
+          <app-icon matButtonIcon name="arrow-left" />
+          {{ 'profile.sections.back' | transloco }}
+        </button>
+      }
+      @switch (shown()) {
+        @case ('names') {
+          <app-pane [heading]="'profile.namesTitle' | transloco" data-testid="profile-names">
+            <form
+              [formGroup]="names"
+              (submit)="$event.preventDefault(); save()"
+              class="profile__form"
+              novalidate
+            >
+              <div class="profile__fields">
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'profile.firstName' | transloco }}</mat-label>
+                  <input
+                    matInput
+                    formControlName="firstName"
+                    autocomplete="given-name"
+                    data-testid="profile-first-name"
+                  />
+                  @if (firstError('firstName'); as error) {
+                    <mat-error data-testid="profile-first-name-error">
+                      {{ 'profile.validation.' + error | transloco }}
+                    </mat-error>
+                  }
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'profile.lastName' | transloco }}</mat-label>
+                  <input
+                    matInput
+                    formControlName="lastName"
+                    autocomplete="family-name"
+                    data-testid="profile-last-name"
+                  />
+                  @if (firstError('lastName'); as error) {
+                    <mat-error data-testid="profile-last-name-error">
+                      {{ 'profile.validation.' + error | transloco }}
+                    </mat-error>
+                  }
+                </mat-form-field>
+              </div>
+              @if (message(); as message) {
+                <p role="status" data-testid="profile-saved">{{ message | transloco }}</p>
+              }
+              @if (problem(); as problem) {
+                <p class="profile__problem" role="alert" data-testid="profile-error">
+                  {{ problem | transloco }}
+                </p>
+              }
+              <div class="profile__actions">
+                <button
+                  mat-flat-button
+                  type="submit"
+                  [disabled]="names.pristine || names.invalid || saving()"
+                  data-testid="profile-save"
+                >
+                  {{ 'profile.save' | transloco }}
+                </button>
+              </div>
+            </form>
+          </app-pane>
+        }
+        @case ('address') {
+          <app-pane [heading]="'profile.addressTitle' | transloco" data-testid="profile-address">
+            <p class="profile__hint">{{ 'profile.addressHint' | transloco }}</p>
+            @if (sentTo(); as sentTo) {
+              <p role="status" data-testid="profile-link-sent">
+                {{ 'emailChange.sent' | transloco: { email: sentTo } }}
+              </p>
+            }
+            <div class="profile__actions">
+              <button
+                mat-stroked-button
+                type="button"
+                (click)="changeAddress()"
+                data-testid="profile-change-address"
+              >
+                {{ 'profile.changeAddress' | transloco }}
+              </button>
+            </div>
+          </app-pane>
+        }
+        @case ('notifications') {
+          <app-pane
+            id="notifications"
+            [heading]="'notifications.preferences.title' | transloco"
+            data-testid="profile-notifications"
+          >
+            <span paneMeta class="profile__meta">{{
+              'profile.sections.savedAtOnce' | transloco
+            }}</span>
+            @if (preferencesCard(); as card) {
+              <ng-container *ngComponentOutlet="card" />
+            } @else {
+              <div class="profile__placeholder"></div>
+            }
+          </app-pane>
+        }
+        @case ('privacy') {
+          <app-pane
+            [heading]="'profile.sections.privacy' | transloco"
+            flush
+            data-testid="profile-my-data"
+          >
+            <nav class="profile__links" [attr.aria-label]="'profile.sections.privacy' | transloco">
+              @for (link of privacyLinks; track link) {
+                <a
+                  routerLink="/privacy"
+                  class="profile__link"
+                  [attr.data-testid]="'profile-privacy-' + link"
+                >
+                  <span>{{ 'profile.privacy.' + link | transloco }}</span>
+                  <small>{{ 'profile.privacy.' + link + 'Hint' | transloco }}</small>
+                </a>
+              }
+            </nav>
+          </app-pane>
+        }
+        @case ('roles') {
+          <app-pane [heading]="'profile.roles' | transloco" data-testid="profile-roles">
+            <dl class="profile__unit">
+              <dt>{{ 'profile.department' | transloco }}</dt>
+              <dd data-testid="profile-department">{{ name(profile.organization) }}</dd>
+              @if (profile.faculty; as faculty) {
+                <dt>{{ 'profile.faculty' | transloco }}</dt>
+                <dd data-testid="profile-faculty">{{ name(faculty) }}</dd>
+              }
+            </dl>
+            @if (profile.roles.length === 0) {
+              <p class="profile__hint" data-testid="profile-no-roles">
+                {{ 'profile.noRoles' | transloco }}
+              </p>
+            }
+            <ul class="profile__list">
+              @for (role of profile.roles; track role.id) {
+                <li data-testid="profile-role">
+                  <strong>{{ 'roles.' + role.role | transloco }}</strong> ·
+                  {{ name(role.organization) }}
+                  <span class="profile__hint">
+                    {{
+                      'profile.validity'
+                        | transloco: { from: (role.validFrom | date: 'dd.MM.yyyy') }
+                    }}
+                    @if (role.validTo) {
+                      — {{ role.validTo | date: 'dd.MM.yyyy' }}
+                    }
+                  </span>
+                </li>
+              }
+            </ul>
+            @if (received().length > 0) {
+              <h3 class="profile__subtitle">{{ 'profile.delegations' | transloco }}</h3>
+              <ul class="profile__list">
+                @for (delegation of received(); track delegation.id) {
+                  <li data-testid="profile-delegation">
+                    <strong>{{ 'roles.' + delegation.role | transloco }}</strong> ·
+                    {{ name(delegation.organization) }}
+                    <span class="profile__hint">
+                      {{
+                        'profile.delegatedBy'
+                          | transloco
+                            : {
+                                name:
+                                  delegation.delegator.firstName +
+                                  ' ' +
+                                  delegation.delegator.lastName,
+                              }
+                      }}, {{ delegation.validFrom | date: 'dd.MM.yyyy' }} —
+                      {{ delegation.validTo | date: 'dd.MM.yyyy' }}
+                    </span>
+                  </li>
+                }
+              </ul>
+            }
+          </app-pane>
+        }
+      }
+    </div>
+  </app-split>
+}

@@ -1,0 +1,272 @@
+# Product Backlog
+## Award Monitoring & Tracking System
+
+> **Last Updated**: October 2026  
+> **Story Points**: about 312 delivered (Epics 1 to 4, 6 and 7); stories of later epics are sized at their epic kickoff  
+> **GitHub Issues**: [Project Board](https://github.com/users/StKostyk/projects/1/views/1)  
+> **Jira**: project `SCRUM`, Epic 1 = SCRUM-5, Epic 2 = SCRUM-20, Epic 3 = SCRUM-34, Epic 4 = SCRUM-47, Epic 5 = SCRUM-97, Epic 6 = SCRUM-85, Epic 7 = SCRUM-63
+
+Every story is tracked twice: a Jira issue for the sprint board and a GitHub issue that the pull request closes.
+
+## Sprint 3 (2026-09-28 – 2026-10-04) — Award creation, closed ([summary](sprints/SPRINT-03.md))
+
+| ID | Story | Points | Status | Jira | Issue |
+|----|-------|--------|--------|------|-------|
+| 1.2.4 | Fixes from the Feature 1.2 validation | 5 | ✅ Done | SCRUM-19 | [#73](https://github.com/StKostyk/award-monitoring-system/issues/73) |
+| 2.1.0 | Award domain model and category catalogue | 3 | ✅ Done | SCRUM-21 | [#43](https://github.com/StKostyk/award-monitoring-system/issues/43) |
+| 2.1.1 | Award draft and submission (US-003) | 8 | ✅ Done | SCRUM-22 | [#44](https://github.com/StKostyk/award-monitoring-system/issues/44) |
+| 2.1.2 | Award date and duplicate validation | 3 | ✅ Done | SCRUM-23 | [#76](https://github.com/StKostyk/award-monitoring-system/issues/76) |
+| 2.1.3 | Award category suggestion | 3 | ✅ Done | SCRUM-24 | [#77](https://github.com/StKostyk/award-monitoring-system/issues/77) |
+| 2.1.4 | Fixes from the Feature 2.1 validation | 5 | ✅ Done | SCRUM-28 | [#85](https://github.com/StKostyk/award-monitoring-system/issues/85) |
+| 1.3.1 | Profile information update | 5 | ✅ Done | SCRUM-15 | [#38](https://github.com/StKostyk/award-monitoring-system/issues/38) |
+| 1.3.3 | GDPR data portability (US-011, partial) | 5 | ✅ Done | SCRUM-17 | [#40](https://github.com/StKostyk/award-monitoring-system/issues/40) |
+| 1.3.4 | Fixes from the Feature 1.3 validation | 3 | ✅ Done | SCRUM-29 | [#92](https://github.com/StKostyk/award-monitoring-system/issues/92) |
+| 2.2.1 | Award version recording | 5 | ✅ Done | SCRUM-25 | [#78](https://github.com/StKostyk/award-monitoring-system/issues/78) |
+| 2.2.2 | Version history view and audit export | 5 | ✅ Done | SCRUM-26 | [#79](https://github.com/StKostyk/award-monitoring-system/issues/79) |
+| 2.2.3 | Fixes from the Feature 2.2 validation | 3 | ✅ Done | SCRUM-30 | [#97](https://github.com/StKostyk/award-monitoring-system/issues/97) |
+| 2.3.1 | Award status tracking (US-005) | 5 | ✅ Done | SCRUM-27 | [#80](https://github.com/StKostyk/award-monitoring-system/issues/80) |
+| 2.3.2 | Fixes from the Feature 2.3 validation | 2 | ✅ Done | SCRUM-31 | [#101](https://github.com/StKostyk/award-monitoring-system/issues/101) |
+| 2.1.5 | Database views and functions follow the award model | 2 | ✅ Done | SCRUM-32 | [#103](https://github.com/StKostyk/award-monitoring-system/issues/103) |
+| 2.1.6 | Fixes from the manual run of Feature 2.1 | 2 | ✅ Done | SCRUM-38 | [#117](https://github.com/StKostyk/award-monitoring-system/issues/117) |
+| 2.1.7 | Fixes from the manual runs of Features 2.1 and 2.2 | 3 | ✅ Done (Sprint 4) | SCRUM-42 | [#127](https://github.com/StKostyk/award-monitoring-system/issues/127) |
+| 2.1.8 | Review decisions: approval levels, working-day review period, role assignment, GDPR and audit fixes | 8 | ✅ Done (Sprint 4) | SCRUM-43 | [#130](https://github.com/StKostyk/award-monitoring-system/issues/130) |
+| 3.0.1 | Production configuration and local production run | 3 | ✅ Done | SCRUM-33 | [#109](https://github.com/StKostyk/award-monitoring-system/issues/109) |
+
+Sprint Goal: an employee creates, checks, submits and tracks an award (Features 2.1–2.3).  
+Completed Points: 91 (these stories plus 3.0.2–3.0.4, 3.1.1 and 3.1.2 from Epic 3, listed under the epic below)
+
+---
+
+## Backlog (Prioritized)
+
+### Epic 1 — User Management fixes (Jira epic SCRUM-5)
+Features 1.1–1.3 done (Sprints 2–3); this table holds the fixes found in their later manual runs. Tracker: [EPIC-01-USER-MANAGEMENT-STATUS.md](../epics/EPIC-01-USER-MANAGEMENT-STATUS.md).
+
+| ID | Story | Points | Status | Jira | Issue |
+|----|-------|--------|--------|------|-------|
+| 1.1.7 | Forgot-password 429 shows a raw translation key | 1 | ✅ Done | SCRUM-80 | [#207](https://github.com/StKostyk/award-monitoring-system/issues/207) |
+| 1.2.5 | Repeated department move answers role-already-assigned | 1 | ✅ Done | SCRUM-81 | [#209](https://github.com/StKostyk/award-monitoring-system/issues/209) |
+| 1.2.6 | Role revocation: last-holder guard for GDPR_OFFICER and SYSTEM_ADMIN | 2 | ✅ Done | SCRUM-110 | [#310](https://github.com/StKostyk/award-monitoring-system/issues/310) |
+
+### Epic 2 — Award Lifecycle (Jira epic SCRUM-20)
+Feature 2.5 (awards of people without an account) planned 2026-11-16: [feature-2.5-people-without-account.md](../features/epic-02/feature-2.5-people-without-account.md); 2.5.1 to 2.5.4 in sprints 10 and 11, 2.5.5 after Feature 9.4 once a sample spreadsheet is in; fix 2.5.6 from the manual run; Feature 2.5 done 2026-11-19. Features 2.1, 2.2 and 2.3 done (Sprint 3): [feature-2.1-award-creation-validation.md](../features/epic-02/feature-2.1-award-creation-validation.md), [feature-2.2-award-version-history.md](../features/epic-02/feature-2.2-award-version-history.md), [feature-2.3-award-status-tracking.md](../features/epic-02/feature-2.3-award-status-tracking.md). Feature 2.4 stories are tracked with Epics 4 and 6. The database views and functions that disagreed with the award model (documentation sync of 2026-10-01) were fixed in 2.1.5 (Sprint 3). Features 2.1 to 2.3 done 2026-10-01.
+
+| ID | Story | Points | Sprint | Jira | Issue |
+|----|-------|--------|--------|------|-------|
+| 2.5.1 | People without an account: add, change, invite, remove | 8 | ✅ Done | SCRUM-150 | [#420](https://github.com/StKostyk/award-monitoring-system/issues/420) |
+| 2.5.2 | Awards for a person without an account | 8 | ✅ Done | SCRUM-151 | [#421](https://github.com/StKostyk/award-monitoring-system/issues/421) |
+| 2.5.3 | Claim at registration | 5 | ✅ Done | SCRUM-152 | [#422](https://github.com/StKostyk/award-monitoring-system/issues/422) |
+| 2.5.4 | Link at membership confirmation | 3 | ✅ Done | SCRUM-153 | [#423](https://github.com/StKostyk/award-monitoring-system/issues/423) |
+| 2.5.5 | Import people and past awards from a spreadsheet | 8 | ✅ Done | SCRUM-154 | [#424](https://github.com/StKostyk/award-monitoring-system/issues/424) |
+| 2.5.6 | Normalise imported text to NFC | 2 | ✅ Done | SCRUM-160 | [#444](https://github.com/StKostyk/award-monitoring-system/issues/444) |
+
+### Epic 3 — Document Processing (Jira epic SCRUM-34)
+Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCESSING-STATUS.md). Upload only in this delivery; OCR and confidence scoring (US-006, US-007) are deferred until after Epic 8. Feature 3.1 PRD approved 2026-10-02: [feature-3.1-document-upload-storage.md](../features/epic-03/feature-3.1-document-upload-storage.md). Feature 3.1 validated 2026-10-05 and its fixes merged (3.1.5); documentation synced with the code on 2026-10-05; the epic closes after the manual run of 2026-10-11.
+
+| ID | Story | Points | Status | Jira | Issue |
+|----|-------|--------|--------|------|-------|
+| 3.1.1 | Document storage and upload API | 8 | ✅ Done | SCRUM-35 | [#111](https://github.com/StKostyk/award-monitoring-system/issues/111) |
+| 3.1.2 | Certificate upload in the award form and award page | 5 | ✅ Done | SCRUM-36 | [#112](https://github.com/StKostyk/award-monitoring-system/issues/112) |
+| 3.1.3 | Malware scanning of uploads and per-user upload limits | 3 | ✅ Done (Sprint 4) | SCRUM-37 | [#113](https://github.com/StKostyk/award-monitoring-system/issues/113) |
+| 3.0.2 | Brand theming, dark mode and side-nav shell | 5 | ✅ Done | SCRUM-39 | [#121](https://github.com/StKostyk/award-monitoring-system/issues/121) |
+| 3.0.3 | Login and error pages in the university brand | 3 | ✅ Done | SCRUM-40 | [#123](https://github.com/StKostyk/award-monitoring-system/issues/123) |
+| 3.0.4 | Blocking lint and Playwright in CI | 3 | ✅ Done | SCRUM-41 | [#124](https://github.com/StKostyk/award-monitoring-system/issues/124) |
+| 3.1.4 | CI fixes after SCRUM-37 | 1 | ✅ Done (Sprint 4) | SCRUM-44 | [#133](https://github.com/StKostyk/award-monitoring-system/issues/133) |
+| 3.1.5 | Fixes and refactor sweep from the Feature 3.1 validation | 3 | ✅ Done (Sprint 4) | SCRUM-45 | [#135](https://github.com/StKostyk/award-monitoring-system/issues/135) |
+| 3.1.6 | CI fixes: nginx proxy snippet and Kyiv dates | 1 | ✅ Done (Sprint 4) | SCRUM-46 | [#140](https://github.com/StKostyk/award-monitoring-system/issues/140) |
+
+### Epic 4 — Approval Workflow Engine (Jira epic SCRUM-47)
+Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLOW-STATUS.md). Kickoff 2026-10-06; the organisational award model comes first, the achievement pages last. Story 2.4.1 from Epic 2 belongs here. Feature 4.1 PRD approved 2026-10-06: [feature-4.1-workflow-engine-core.md](../features/epic-04/feature-4.1-workflow-engine-core.md). Feature 4.2 PRD approved 2026-10-08: [feature-4.2-review-period-escalation.md](../features/epic-04/feature-4.2-review-period-escalation.md).
+
+| ID | Story | Points | Status | Jira | Issue |
+|----|-------|--------|--------|------|-------|
+| 4.1.0 | Organisational awards: unit recipients and submitter | 5 | ✅ Done | SCRUM-48 | [#142](https://github.com/StKostyk/award-monitoring-system/issues/142) |
+| 4.1.1 | Reviewer queue with claim, release and hand-over | 8 | ✅ Done | SCRUM-49 | [#143](https://github.com/StKostyk/award-monitoring-system/issues/143) |
+| 4.1.2 | Review decisions: approve, reject, return, escalate to the dean | 8 | ✅ Done | SCRUM-50 | [#144](https://github.com/StKostyk/award-monitoring-system/issues/144) |
+| 4.1.3 | Withdraw an unclaimed request and resubmit a returned award | 3 | ✅ Done | SCRUM-51 | [#145](https://github.com/StKostyk/award-monitoring-system/issues/145) |
+| 4.1.4 | Batch review with template responses (US-004) | 5 | ✅ Done | SCRUM-52 | [#146](https://github.com/StKostyk/award-monitoring-system/issues/146) |
+| 4.1.5 | Fixes from the Feature 4.1 validation | 3 | ✅ Done | SCRUM-58 | [#160](https://github.com/StKostyk/award-monitoring-system/issues/160) |
+| 4.1.6 | Take over a request whose holder lost the role | 3 | ✅ Done | SCRUM-77 | [#200](https://github.com/StKostyk/award-monitoring-system/issues/200) |
+| 4.1.7 | Hide delete on the edit form of a returned draft | 1 | ✅ Done | SCRUM-76 | [#199](https://github.com/StKostyk/award-monitoring-system/issues/199) |
+| 4.2.1 | Per-faculty review period set by the dean | 3 | ✅ Done | SCRUM-53 | [#147](https://github.com/StKostyk/award-monitoring-system/issues/147) |
+| 4.2.2 | Overdue detection, escalation notice and SLA metrics | 5 | ✅ Done | SCRUM-54 | [#148](https://github.com/StKostyk/award-monitoring-system/issues/148) |
+| 2.4.1 | Award correction by reviewers | 5 | ✅ Done | SCRUM-55 | [#149](https://github.com/StKostyk/award-monitoring-system/issues/149) |
+| 4.2.3 | Keep the decision dialog open until the answer | 2 | ✅ Done | SCRUM-59 | [#162](https://github.com/StKostyk/award-monitoring-system/issues/162) |
+| 4.2.4 | Fixes from the Feature 4.2 walk | 2 | ✅ Done | SCRUM-60 | [#169](https://github.com/StKostyk/award-monitoring-system/issues/169) |
+| 4.2.5 | Refactor from the Feature 4.2 sweep | 3 | ✅ Done | SCRUM-61 | [#171](https://github.com/StKostyk/award-monitoring-system/issues/171) |
+| 4.2.6 | Review list: overdue notice chip clipped at 1280 px | 1 | ✅ Done | SCRUM-78 | [#202](https://github.com/StKostyk/award-monitoring-system/issues/202) |
+| 4.2.7 | Stabilise failing and flaky e2e specs | 3 | ✅ Done | SCRUM-111 | [#312](https://github.com/StKostyk/award-monitoring-system/issues/312) |
+| 4.3.1 | Colleague visibility and the achievements page | 5 | ✅ Done | SCRUM-56 | [#150](https://github.com/StKostyk/award-monitoring-system/issues/150) |
+| 4.3.2 | Unit achievement pages and public achievements | 5 | ✅ Done | SCRUM-57 | [#151](https://github.com/StKostyk/award-monitoring-system/issues/151) |
+| 4.3.3 | Fixes from the Feature 4.3 validation | 2 | ✅ Done | SCRUM-62 | [#176](https://github.com/StKostyk/award-monitoring-system/issues/176) |
+| 4.3.6 | Public rate limit for the organisation list | 1 | ✅ Done | SCRUM-72 | [#192](https://github.com/StKostyk/award-monitoring-system/issues/192) |
+| 4.3.7 | Peer take-over of overdue requests and no self-escalation for deans | 3 | ✅ Done | SCRUM-73 | [#193](https://github.com/StKostyk/award-monitoring-system/issues/193) |
+| 4.3.9 | Achievement card names do not follow a language switch | 1 | ✅ Done | SCRUM-79 | [#204](https://github.com/StKostyk/award-monitoring-system/issues/204) |
+| 4.3.4 | Review decisions in the personal data export | 3 | ✅ Done | SCRUM-70 | [#190](https://github.com/StKostyk/award-monitoring-system/issues/190) |
+| 4.3.5 | Wire the business metrics to the award workflow | 2 | ✅ Done | SCRUM-71 | [#191](https://github.com/StKostyk/award-monitoring-system/issues/191) |
+| 4.3.8 | Documents shown to colleagues on a shared award | 5 | ✅ Done | SCRUM-74 | [#194](https://github.com/StKostyk/award-monitoring-system/issues/194) |
+
+### Epic 7 — Notification & Communication System (Jira epic SCRUM-63)
+Tracker: [EPIC-07-NOTIFICATIONS-STATUS.md](../epics/EPIC-07-NOTIFICATIONS-STATUS.md). Kickoff 2026-10-09; Spring events on the Spring Modulith publication registry (no Kafka), e-mail and in-app channels (SMS out of scope, push with Epic 8). Story 1.3.2 from Epic 1 belongs here.
+
+| ID | Story | Points | Status | Jira | Issue |
+|----|-------|--------|--------|------|-------|
+| 7.1.1 | Event publication registry for the after-commit mails | 5 | ✅ Done | SCRUM-64 | [#181](https://github.com/StKostyk/award-monitoring-system/issues/181) |
+| 7.1.2 | Module boundaries checked by Spring Modulith | 8 | ✅ Done | SCRUM-65 | [#182](https://github.com/StKostyk/award-monitoring-system/issues/182) |
+| 7.1.3 | Drop the duplicate async error log for undelivered mails | 1 | ✅ Done | SCRUM-75 | [#197](https://github.com/StKostyk/award-monitoring-system/issues/197) |
+| 7.2.1 | In-app notifications from award and review events | 5 | ✅ Done | SCRUM-66 | [#183](https://github.com/StKostyk/award-monitoring-system/issues/183) |
+| 7.2.2 | Notification centre in the toolbar | 5 | ✅ Done | SCRUM-67 | [#184](https://github.com/StKostyk/award-monitoring-system/issues/184) |
+| 1.3.2 | Notification preferences | 3 | ✅ Done | SCRUM-16 | [#39](https://github.com/StKostyk/award-monitoring-system/issues/39) |
+| 7.2.3 | Delivery log and notifications in the personal data export | 3 | ✅ Done | SCRUM-68 | [#185](https://github.com/StKostyk/award-monitoring-system/issues/185) |
+| 7.2.4 | HTML e-mail templates in the university brand | 3 | ✅ Done | SCRUM-69 | [#186](https://github.com/StKostyk/award-monitoring-system/issues/186) |
+| 7.2.5 | Name the target level in the passed-on notification text | 1 | ✅ Done | SCRUM-82 | [#239](https://github.com/StKostyk/award-monitoring-system/issues/239) |
+| 7.2.6 | Save only the changed notification preferences | 1 | ✅ Done | SCRUM-83 | [#242](https://github.com/StKostyk/award-monitoring-system/issues/242) |
+| 7.2.7 | Out-of-range notification page shows the empty state | 1 | ✅ Done | SCRUM-84 | [#245](https://github.com/StKostyk/award-monitoring-system/issues/245) |
+
+### Epic 6 — Compliance & Audit System (Jira epic SCRUM-85)
+Tracker: [EPIC-06-COMPLIANCE-AUDIT-STATUS.md](../epics/EPIC-06-COMPLIANCE-AUDIT-STATUS.md). Kickoff 2026-10-15; versioned privacy notice and consent records, privacy centre, legal hold, erasure after a 30-day grace period, nightly retention job. Story 6.1.5 replaces 2.4.2. Feature 6.1 PRD approved 2026-10-15: [feature-6.1-consent-data-subject-rights.md](../features/epic-06/feature-6.1-consent-data-subject-rights.md). Feature 6.2 PRD approved 2026-10-18: [feature-6.2-automated-data-retention.md](../features/epic-06/feature-6.2-automated-data-retention.md). Both features done 2026-10-18.
+
+| ID | Story | Points | Status | Jira | Issue |
+|----|-------|--------|--------|------|-------|
+| 6.1.1 | Versioned privacy notice and consent records | 5 | ✅ Done | SCRUM-86 | [#252](https://github.com/StKostyk/award-monitoring-system/issues/252) |
+| 6.1.2 | Privacy centre in the profile | 5 | ✅ Done | SCRUM-87 | [#253](https://github.com/StKostyk/award-monitoring-system/issues/253) |
+| 6.1.3 | Legal hold on accounts | 3 | ✅ Done | SCRUM-88 | [#254](https://github.com/StKostyk/award-monitoring-system/issues/254) |
+| 6.1.4 | Account erasure request with a 30-day grace period | 5 | ✅ Done | SCRUM-89 | [#255](https://github.com/StKostyk/award-monitoring-system/issues/255) |
+| 6.1.5 | Erasure across modules with anonymised awards | 8 | ✅ Done | SCRUM-90 | [#256](https://github.com/StKostyk/award-monitoring-system/issues/256) |
+| 6.1.6 | Mails without a reverse DNS lookup per message | 2 | ✅ Done | SCRUM-93 | [#266](https://github.com/StKostyk/award-monitoring-system/issues/266) |
+| 6.1.7 | Shared erasure guard, postponement enum and consent append helper | 2 | ✅ Done | SCRUM-94 | [#268](https://github.com/StKostyk/award-monitoring-system/issues/268) |
+| 6.2.1 | Nightly retention job with configurable policies | 5 | ✅ Done | SCRUM-91 | [#257](https://github.com/StKostyk/award-monitoring-system/issues/257) |
+| 6.2.2 | Compliance page for retention runs, erasures and legal holds | 5 | ✅ Done | SCRUM-92 | [#258](https://github.com/StKostyk/award-monitoring-system/issues/258) |
+| 6.2.3 | Retention of accounts, consent records and audit partitions | 5 | ✅ Done | SCRUM-95 | [#272](https://github.com/StKostyk/award-monitoring-system/issues/272) |
+| 6.2.4 | Nightly erasure run outside the clock-change hour | 1 | ✅ Done | SCRUM-96 | [#277](https://github.com/StKostyk/award-monitoring-system/issues/277) |
+
+### Epic 5 — Analytics & Reporting Dashboard (Jira epic SCRUM-97)
+Tracker: [EPIC-05-ANALYTICS-REPORTING-STATUS.md](../epics/EPIC-05-ANALYTICS-REPORTING-STATUS.md). Kickoff 2026-10-19; personal, faculty and executive dashboards over approved awards, report exports, full-text award search on PostgreSQL (ADR-007). Feature 5.1 Done 2026-10-23 (manual run 37/37). Feature 5.2 Done 2026-10-24 (manual run 35/35). Feature 5.3 Done 2026-10-25 (manual run 39/39). Feature 5.4 Done 2026-10-26 (manual run 26/26).
+
+| ID | Story | Points | Status | Jira | Issue |
+|----|-------|--------|--------|------|-------|
+| 5.1.1 | Personal analytics API with a consented department rank | 5 | ✅ Done | SCRUM-98 | [#285](https://github.com/StKostyk/award-monitoring-system/issues/285) |
+| 5.1.2 | Personal dashboard with charts and widget choice | 8 | ✅ Done | SCRUM-99 | [#286](https://github.com/StKostyk/award-monitoring-system/issues/286) |
+| 5.1.3 | Shareable achievement summary | 3 | ✅ Done | SCRUM-100 | [#287](https://github.com/StKostyk/award-monitoring-system/issues/287) |
+| 5.1.4 | Dashboard period and failure states | 5 | ✅ Done | SCRUM-108 | [#300](https://github.com/StKostyk/award-monitoring-system/issues/300) |
+| 5.2.1 | Unit analytics API for departments and faculties with period comparison | 8 | ✅ Done | SCRUM-101 | [#288](https://github.com/StKostyk/award-monitoring-system/issues/288) |
+| 5.2.2 | Faculty analytics page with department comparison and top performers | 5 | ✅ Done | SCRUM-102 | [#289](https://github.com/StKostyk/award-monitoring-system/issues/289) |
+| 5.2.3 | Analytics report export to CSV, Excel and PDF | 5 | ✅ Done | SCRUM-103 | [#290](https://github.com/StKostyk/award-monitoring-system/issues/290) |
+| 5.2.4 | Unit analytics: retry after a failed unit-list load, export the displayed period, single-year export header | 2 | ✅ Done | SCRUM-109 | [#308](https://github.com/StKostyk/award-monitoring-system/issues/308) |
+| 5.3.1 | University analytics API with trends and a compliance summary | 8 | ✅ Done | SCRUM-104 | [#291](https://github.com/StKostyk/award-monitoring-system/issues/291) |
+| 5.3.2 | Executive dashboard | 5 | ✅ Done | SCRUM-105 | [#292](https://github.com/StKostyk/award-monitoring-system/issues/292) |
+| 5.3.3 | Presentation-ready board report | 3 | ✅ Done | SCRUM-106 | [#293](https://github.com/StKostyk/award-monitoring-system/issues/293) |
+| 5.3.4 | Analytics pages show translation keys after the language switch | 2 | ✅ Done | SCRUM-112 | [#319](https://github.com/StKostyk/award-monitoring-system/issues/319) |
+| 5.4.1 | Full-text award search on PostgreSQL | 5 | ✅ Done | SCRUM-107 | [#294](https://github.com/StKostyk/award-monitoring-system/issues/294) |
+| 5.4.2 | Search words and names in every typed form | 3 | ✅ Done | SCRUM-113 | [#325](https://github.com/StKostyk/award-monitoring-system/issues/325) |
+
+### Epic 8 — Mobile Optimization & Accessibility (Jira epic SCRUM-114)
+Tracker: [EPIC-08-MOBILE-ACCESSIBILITY-STATUS.md](../epics/EPIC-08-MOBILE-ACCESSIBILITY-STATUS.md). Kickoff 2026-10-26; installable PWA with an application-shell cache only (no personal data cached), offline award draft saved on reconnect, touch layouts at 360 px, page language, titles, skip link and focus plus an automated WCAG 2.1 AA sweep of every route. Browser push notifications, 8.2.2 and an accessibility statement in the icebox. Feature 8.1 PRD approved 2026-10-26: [feature-8.1-mobile-pwa.md](../features/epic-08/feature-8.1-mobile-pwa.md).
+
+| ID | Story | Points | Status | Jira | Issue |
+|----|-------|--------|--------|------|-------|
+| 8.1.1 | Installable app with an offline application shell | 5 | ✅ Done | SCRUM-115 | [#331](https://github.com/StKostyk/award-monitoring-system/issues/331) |
+| 8.1.2 | Award draft kept offline and saved on reconnect | 5 | ✅ Done | SCRUM-116 | [#332](https://github.com/StKostyk/award-monitoring-system/issues/332) |
+| 8.1.3 | Touch-ready layouts at 360 px and camera capture | 5 | ✅ Done | SCRUM-117 | [#333](https://github.com/StKostyk/award-monitoring-system/issues/333) |
+| 8.1.4 | New award created once when the save answer is lost | 3 | ✅ Done | SCRUM-121 | [#346](https://github.com/StKostyk/award-monitoring-system/issues/346) |
+| 8.1.5 | Offline sign-out drops the form copy before the leave question | 2 | ✅ Done | SCRUM-122 | [#352](https://github.com/StKostyk/award-monitoring-system/issues/352) |
+| 8.1.6 | Offline reload of a draft opens an empty form without Try again | 2 | ✅ Done | SCRUM-123 | [#353](https://github.com/StKostyk/award-monitoring-system/issues/353) |
+| 8.1.7 | Restored unit-recipient copy cannot be saved after the role is revoked | 2 | ✅ Done | SCRUM-124 | [#354](https://github.com/StKostyk/award-monitoring-system/issues/354) |
+| 8.1.8 | A late answer after the connection dropped keeps the app offline | 1 | ✅ Done | SCRUM-126 | [#363](https://github.com/StKostyk/award-monitoring-system/issues/363) |
+| 8.1.9 | Unit picker names a unit the person can no longer choose | 1 | ✅ Done | SCRUM-127 | [#365](https://github.com/StKostyk/award-monitoring-system/issues/365) |
+| 8.2.1 | Page language, titles, skip link and focus management | 5 | ✅ Done | SCRUM-118 | [#334](https://github.com/StKostyk/award-monitoring-system/issues/334) |
+| 8.2.3 | Automated WCAG 2.1 AA sweep of every route | 3 | ✅ Done | SCRUM-120 | [#336](https://github.com/StKostyk/award-monitoring-system/issues/336) |
+| 8.2.4 | Show a not-found page for unknown paths | 1 | ✅ Done | SCRUM-125 | [#361](https://github.com/StKostyk/award-monitoring-system/issues/361) |
+
+### Epic 9 — Production Hardening (Jira epic SCRUM-128)
+Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HARDENING-STATUS.md). Kickoff 2026-10-29; token values hashed at rest, rate limits by account and address, Lighthouse 90 on the signed-in pages, nightly backups with a restore drill, a CI deploy job and the demo server on AWS EC2 (mid-November). Backend-for-frontend with an HttpOnly cookie as a stretch; Spring Session on Redis and ShedLock out (one backend instance). Feature 9.1 PRD approved 2026-10-29: [feature-9.1-security-hardening.md](../features/epic-09/feature-9.1-security-hardening.md). Feature 9.2 PRD approved 2026-11-10: [feature-9.2-demo-deployment.md](../features/epic-09/feature-9.2-demo-deployment.md). Feature 9.3 PRD approved 2026-11-14, Done 2026-11-16 (41 points with five fixes): [feature-9.3-new-look.md](../features/epic-09/feature-9.3-new-look.md). Feature 9.4 PRD approved 2026-11-17 (23 points): [feature-9.4-dashboards.md](../features/epic-09/feature-9.4-dashboards.md). Feature 9.5 PRD approved 2026-11-20, Done 2026-11-22 (36 points with three fixes): [feature-9.5-page-layouts.md](../features/epic-09/feature-9.5-page-layouts.md). Feature 9.6 PRD approved 2026-11-23, Done 2026-11-26 (29 points; step 25 of the manual run accepted on a unit spec): [feature-9.6-widget-redesign.md](../features/epic-09/feature-9.6-widget-redesign.md). Feature 9.7 PRD approved 2026-11-24, Done 2026-11-25 (42 points with fix 9.7.13): [feature-9.7-preship-polish.md](../features/epic-09/feature-9.7-preship-polish.md).
+
+| ID | Story | Points | Sprint | Jira | Issue |
+|----|-------|--------|--------|------|-------|
+| 9.1.1 | Refresh tokens and authorization codes hashed at rest | 5 | ✅ Done | SCRUM-129 | [#370](https://github.com/StKostyk/award-monitoring-system/issues/370) |
+| 9.1.2 | Rate limits keyed by account and address | 5 | ✅ Done | SCRUM-130 | [#371](https://github.com/StKostyk/award-monitoring-system/issues/371) |
+| 9.1.3 | Backend-for-frontend with an HttpOnly session cookie (stretch) | 8 | 9 | SCRUM-135 | [#376](https://github.com/StKostyk/award-monitoring-system/issues/376) |
+| 9.2.1 | Signed-in pages reach Lighthouse mobile performance 90 | 3 | ✅ Done | SCRUM-131 | [#372](https://github.com/StKostyk/award-monitoring-system/issues/372) |
+| 9.2.2 | Nightly backups with a restore drill | 5 | ✅ Done | SCRUM-132 | [#373](https://github.com/StKostyk/award-monitoring-system/issues/373) |
+| 9.2.3 | Deploy job and production server settings | 3 | ✅ Done | SCRUM-133 | [#374](https://github.com/StKostyk/award-monitoring-system/issues/374) |
+| 9.2.4 | Demo server on AWS EC2 with a smoke test | 3 | 👀 In review (9) | SCRUM-134 | [#375](https://github.com/StKostyk/award-monitoring-system/issues/375) |
+| 9.2.6 | Dependency upgrade for critical CVEs | 2 | ✅ Done | SCRUM-137 | [#387](https://github.com/StKostyk/award-monitoring-system/issues/387) |
+| 9.3.1 | Theme tokens, fonts and icons | 5 | ✅ Done | SCRUM-138 | [#391](https://github.com/StKostyk/award-monitoring-system/issues/391) |
+| 9.3.2 | Effect components, motion and chart theme | 3 | ✅ Done | SCRUM-139 | [#392](https://github.com/StKostyk/award-monitoring-system/issues/392) |
+| 9.3.3 | Shell, navigation and command palette | 5 | ✅ Done | SCRUM-140 | [#393](https://github.com/StKostyk/award-monitoring-system/issues/393) |
+| 9.3.4 | Sign-in and account pages | 3 | ✅ Done | SCRUM-141 | [#394](https://github.com/StKostyk/award-monitoring-system/issues/394) |
+| 9.3.5 | Award list, award page and new award | 5 | ✅ Done | SCRUM-142 | [#395](https://github.com/StKostyk/award-monitoring-system/issues/395) |
+| 9.3.6 | Review queue with checklist, shortcuts and undo | 5 | ✅ Done | SCRUM-143 | [#396](https://github.com/StKostyk/award-monitoring-system/issues/396) |
+| 9.3.7 | Remaining screens in the new look | 5 | ✅ Done | SCRUM-144 | [#397](https://github.com/StKostyk/award-monitoring-system/issues/397) |
+| 9.3.8 | Stable review-queue and award-mobile e2e | 2 | ✅ Done | SCRUM-145 | [#407](https://github.com/StKostyk/award-monitoring-system/issues/407) |
+| 9.3.9 | Not-found card on record pages and palette text normalisation | 2 | ✅ Done | SCRUM-146 | [#409](https://github.com/StKostyk/award-monitoring-system/issues/409) |
+| 9.3.14 | Review queue shortcuts stop after ticking a checklist item | 1 | ✅ Done | SCRUM-147 | [#412](https://github.com/StKostyk/award-monitoring-system/issues/412) |
+| 9.3.21 | Lighthouse performance below 90 on the signed-in pages | 3 | ✅ Done | SCRUM-148 | [#413](https://github.com/StKostyk/award-monitoring-system/issues/413) |
+| 9.3.22 | Held decision after a revoked role ends at sign-in and the request is orphaned | 2 | ✅ Done | SCRUM-149 | [#414](https://github.com/StKostyk/award-monitoring-system/issues/414) |
+| 9.4.1 | Scheme and dashboard layout on the account | 5 | ✅ Done | SCRUM-155 | [#430](https://github.com/StKostyk/award-monitoring-system/issues/430) |
+| 9.4.2 | Widget kit, generated facts and monthly counts | 5 | ✅ Done | SCRUM-156 | [#431](https://github.com/StKostyk/award-monitoring-system/issues/431) |
+| 9.4.3 | Hall of Fame for the rector and the dean, role home | 3 | ✅ Done | SCRUM-157 | [#432](https://github.com/StKostyk/award-monitoring-system/issues/432) |
+| 9.4.4 | My awards with the CV export | 5 | ✅ Done | SCRUM-158 | [#433](https://github.com/StKostyk/award-monitoring-system/issues/433) |
+| 9.4.5 | Command centre with the department reminder | 5 | ✅ Done | SCRUM-159 | [#434](https://github.com/StKostyk/award-monitoring-system/issues/434) |
+| 9.4.6 | Role-aware navigation, personal tabs and dashboard facts | 3 | ✅ Done | SCRUM-161 | [#450](https://github.com/StKostyk/award-monitoring-system/issues/450) |
+| 9.4.7 | KPI card names the compared months | 1 | ✅ Done | SCRUM-162 | [#453](https://github.com/StKostyk/award-monitoring-system/issues/453) |
+| 9.4.8 | Logo opens the home of a signed-in person | 1 | ✅ Done | SCRUM-170 | [#471](https://github.com/StKostyk/award-monitoring-system/issues/471) |
+| 9.5.1 | Page kit and shell fixes | 3 | ✅ Done | SCRUM-163 | [#456](https://github.com/StKostyk/award-monitoring-system/issues/456) |
+| 9.5.2 | My dashboard in the split layout | 5 | ✅ Done | SCRUM-164 | [#457](https://github.com/StKostyk/award-monitoring-system/issues/457) |
+| 9.5.3 | Achievements as a story feed | 3 | ✅ Done | SCRUM-165 | [#458](https://github.com/StKostyk/award-monitoring-system/issues/458) |
+| 9.5.4 | Users with the person beside the list | 5 | ✅ Done | SCRUM-166 | [#459](https://github.com/StKostyk/award-monitoring-system/issues/459) |
+| 9.5.5 | Reviews with the request beside the queue | 5 | ✅ Done | SCRUM-167 | [#460](https://github.com/StKostyk/award-monitoring-system/issues/460) |
+| 9.5.6 | Unit analytics split and university bento | 5 | ✅ Done | SCRUM-168 | [#461](https://github.com/StKostyk/award-monitoring-system/issues/461) |
+| 9.5.7 | Compliance and delegations in the split layout | 5 | ✅ Done | SCRUM-169 | [#462](https://github.com/StKostyk/award-monitoring-system/issues/462) |
+| 9.5.8 | Dashboard header without context line, actions wrap | 1 | ✅ Done | SCRUM-171 | [#477](https://github.com/StKostyk/award-monitoring-system/issues/477) |
+| 9.5.9 | Selection that left the list stays in Reviews and Users | 2 | ✅ Done | SCRUM-172 | [#478](https://github.com/StKostyk/award-monitoring-system/issues/478) |
+| 9.5.10 | Back from a pane at 360 px loses the list scroll | 2 | ✅ Done | SCRUM-173 | [#479](https://github.com/StKostyk/award-monitoring-system/issues/479) |
+| 9.6.1 | Canvas look, sidebar tools and widget header | 5 | ✅ Done | SCRUM-174 | [#485](https://github.com/StKostyk/award-monitoring-system/issues/485) |
+| 9.6.2 | My dashboard widgets | 3 | ✅ Done | SCRUM-175 | [#486](https://github.com/StKostyk/award-monitoring-system/issues/486) |
+| 9.6.3 | Unit analytics widgets | 5 | ✅ Done | SCRUM-176 | [#487](https://github.com/StKostyk/award-monitoring-system/issues/487) |
+| 9.6.4 | University bento with the faculty comparison | 5 | ✅ Done | SCRUM-177 | [#488](https://github.com/StKostyk/award-monitoring-system/issues/488) |
+| 9.6.5 | Hall of Fame widgets | 5 | ✅ Done | SCRUM-178 | [#489](https://github.com/StKostyk/award-monitoring-system/issues/489) |
+| 9.6.6 | Profile with sections | 3 | ✅ Done | SCRUM-179 | [#490](https://github.com/StKostyk/award-monitoring-system/issues/490) |
+| 9.6.7 | Remaining pages of the all-pages canvas | 3 | ✅ Done | SCRUM-180 | [#491](https://github.com/StKostyk/award-monitoring-system/issues/491) |
+| 9.7.1 | Sign-in themes, quote of the day and logo mark 9 | 5 | ✅ Done | SCRUM-181 | [#499](https://github.com/StKostyk/award-monitoring-system/issues/499) |
+| 9.7.2 | Spreadsheet tables in widgets | 3 | ✅ Done | SCRUM-182 | [#500](https://github.com/StKostyk/award-monitoring-system/issues/500) |
+| 9.7.3 | Timeline as a journey road and a dated feed | 3 | ✅ Done | SCRUM-183 | [#501](https://github.com/StKostyk/award-monitoring-system/issues/501) |
+| 9.7.4 | Unit analytics rail and clickable top performers | 3 | ✅ Done | SCRUM-184 | [#502](https://github.com/StKostyk/award-monitoring-system/issues/502) |
+| 9.7.5 | Users list that splits on select | 3 | ✅ Done | SCRUM-185 | [#503](https://github.com/StKostyk/award-monitoring-system/issues/503) |
+| 9.7.6 | Delegations status board | 2 | ✅ Done | SCRUM-186 | [#504](https://github.com/StKostyk/award-monitoring-system/issues/504) |
+| 9.7.7 | Notifications inbox with a reading pane | 3 | ✅ Done | SCRUM-187 | [#505](https://github.com/StKostyk/award-monitoring-system/issues/505) |
+| 9.7.8 | Privacy control panel | 3 | ✅ Done | SCRUM-188 | [#506](https://github.com/StKostyk/award-monitoring-system/issues/506) |
+| 9.7.9 | First sign-in checklist and spotlight tour | 5 | ✅ Done | SCRUM-189 | [#507](https://github.com/StKostyk/award-monitoring-system/issues/507) |
+| 9.7.10 | Privacy notice storage section, terms of use and List-Unsubscribe | 3 | ✅ Done | SCRUM-190 | [#509](https://github.com/StKostyk/award-monitoring-system/issues/509) |
+| 9.7.11 | UI review fixes: logo mark 9, checklist card, unit switch in place | 3 | ✅ Done | SCRUM-191 | [#513](https://github.com/StKostyk/award-monitoring-system/issues/513) |
+| 9.7.12 | One analytics page | 5 | ✅ Done | SCRUM-192 | [#514](https://github.com/StKostyk/award-monitoring-system/issues/514) |
+| 9.7.13 | Users search matches names typed in decomposed Unicode | 1 | ✅ Done | SCRUM-193 | [#526](https://github.com/StKostyk/award-monitoring-system/issues/526) |
+
+### Later epics
+| ID | Story | Points | Epic |
+|----|-------|--------|------|
+| US-006 | AI-Powered Document Parsing (deferred) | 21 | Documents |
+| US-007 | Confidence Score Display (deferred) | 8 | Documents |
+
+---
+
+## Completed
+
+| Sprint | Stories | Points |
+|--------|---------|--------|
+| Sprint 1 | Setup (7 tasks) | 14 |
+| Sprint 2 | Feature 1.1 Core Authentication (1.1.0–1.1.6), Feature 1.2 RBAC (1.2.1–1.2.3) | 46 |
+| Sprint 3 | Feature 1.2 fixes (1.2.4), Feature 2.1 Award Creation & Validation (2.1.0–2.1.6), Feature 1.3 User Profile Management (1.3.1, 1.3.3, 1.3.4), Feature 2.2 Award Version History & Audit Trail (2.2.1–2.2.3), Feature 2.3 Award Status Tracking (2.3.1, 2.3.2), Feature 3.0 deployment preparation (3.0.1–3.0.4), document upload (3.1.1, 3.1.2) | 91 |
+
+From Sprint 4 on, completed stories are not summed here: the epic trackers and the sprint summaries hold the points per story, and the rows above carry the status.
+
+---
+
+## Icebox (Deferred)
+
+| ID | Story | Reason | Issue |
+|----|-------|--------|-------|
+| 1.3.5 | MFA (TOTP, SMS, WebAuthn) | Not needed for the demo; design kept in the auth document | [#41](https://github.com/StKostyk/award-monitoring-system/issues/41) |
+| — | HR validation endpoint | No HR system available; replaced by domain check and department selection at registration | [#47](https://github.com/StKostyk/award-monitoring-system/issues/47) |
+| — | Browser push notifications (Epic 8 PWA) | Needs VAPID keys, a subscription table, a preference channel and export/erasure; e-mail and in-app channels cover the events | — |
+| 8.2.2 | Described forms, tables and announced changes; public accessibility statement | Slim accessibility scope (Epic 8 kickoff): automated WCAG 2.1 AA checks only | [#335](https://github.com/StKostyk/award-monitoring-system/issues/335) |

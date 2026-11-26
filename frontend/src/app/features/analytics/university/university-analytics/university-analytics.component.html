@@ -1,0 +1,172 @@
+<app-page-header [heading]="'universityAnalytics.title' | transloco">
+  @if (!invalid()) {
+    <app-period-chips
+      pageChips
+      [period]="period()"
+      (choose)="choose($event)"
+      (allYears)="allYears()"
+    />
+  }
+  <app-board-report-button pageActions [period]="shownPeriod()" [disabled]="reportDisabled()" />
+</app-page-header>
+
+@if (invalid()) {
+  <section class="university__problem" role="alert" data-testid="university-analytics-invalid">
+    <p>{{ 'analytics.report.invalidPeriod' | transloco }}</p>
+    <button mat-stroked-button type="button" (click)="allYears()">
+      {{ 'analytics.period.allYears' | transloco }}
+    </button>
+  </section>
+} @else {
+  <app-split mode="stack" stickySide data-testid="university-analytics-body">
+    <div splitSide>
+      @if (analytics(); as data) {
+        <app-pane
+          icon="layout-dashboard"
+          [heading]="'unitAnalytics.sections.totals' | transloco"
+          flush
+          data-testid="section-totals"
+        >
+          <app-delta-tiles [totals]="data.totals" [previousPeriod]="data.previousPeriod" />
+        </app-pane>
+      }
+      @if (units().length > 0) {
+        <app-pane
+          icon="building"
+          [heading]="'unitAnalytics.sections.units' | transloco"
+          flush
+          data-testid="section-units"
+        >
+          <app-analytics-rail [units]="units()" universityPage />
+        </app-pane>
+      }
+    </div>
+
+    <div splitMain>
+      <div class="university__period">
+        <app-period-select [period]="period()" (choose)="choose($event)" (allYears)="allYears()" />
+        @if (loading()) {
+          <mat-progress-bar
+            mode="indeterminate"
+            [attr.aria-label]="'app.loading' | transloco"
+            data-testid="university-analytics-loading"
+          />
+        }
+      </div>
+
+      @if (problem()) {
+        <div class="university__problem" role="alert" data-testid="university-analytics-error">
+          <p>{{ 'universityAnalytics.failed' | transloco }}</p>
+          <button mat-stroked-button type="button" (click)="retry()">
+            {{ 'analytics.retry' | transloco }}
+          </button>
+        </div>
+      } @else if (analytics(); as data) {
+        <p class="university__compared" data-testid="university-analytics-compared">
+          {{ comparedWith() }}
+          @if (data.partialYear) {
+            {{ 'unitAnalytics.partialYear' | transloco: { year: data.period.to } }}
+          }
+        </p>
+
+        <app-pane
+          icon="landmark"
+          [heading]="'universityAnalytics.sections.faculties' | transloco"
+          data-testid="section-faculties"
+        >
+          <app-faculty-bars
+            [rows]="data.units"
+            [period]="shownPeriod()"
+            [shown]="data.period"
+            [previous]="data.previousPeriod"
+          />
+        </app-pane>
+
+        <app-pane
+          icon="sparkles"
+          [heading]="'unitAnalytics.sections.highlights' | transloco"
+          tone="ink"
+          data-testid="section-highlights"
+        >
+          <app-highlights
+            [highlights]="data.highlights"
+            sentenceKeys="universityAnalytics.highlights"
+            [limit]="highlightLimit"
+          />
+        </app-pane>
+
+        <app-pane
+          icon="chart-line"
+          [heading]="'universityAnalytics.sections.trend' | transloco"
+          tableable
+          data-testid="section-trend"
+        >
+          <app-projection-trend-chart [analytics]="data" />
+        </app-pane>
+
+        <div class="university__pair">
+          <app-pane
+            icon="layout-grid"
+            [heading]="'unitAnalytics.sections.byCategory' | transloco"
+            data-testid="section-by-category"
+          >
+            @if (byCategory().length > 0) {
+              <app-comparison-bars
+                [rows]="byCategory()"
+                [caption]="'unitAnalytics.sections.byCategory' | transloco"
+                [labelHeader]="'analytics.table.category' | transloco"
+                tableId="university-category-table"
+              />
+            } @else {
+              <p class="analytics-note">{{ 'unitAnalytics.noAwards' | transloco }}</p>
+            }
+          </app-pane>
+
+          <app-pane
+            icon="chart-bar"
+            [heading]="'unitAnalytics.sections.byLevel' | transloco"
+            data-testid="section-by-level"
+          >
+            @if (byLevel().length > 0) {
+              <app-comparison-bars
+                [rows]="byLevel()"
+                [caption]="'unitAnalytics.sections.byLevel' | transloco"
+                [labelHeader]="'analytics.table.level' | transloco"
+                tableId="university-level-table"
+              />
+            } @else {
+              <p class="analytics-note">{{ 'unitAnalytics.noAwards' | transloco }}</p>
+            }
+          </app-pane>
+        </div>
+
+        <app-pane
+          icon="chart-column"
+          [heading]="'unitAnalytics.sections.bySource' | transloco"
+          data-testid="section-by-source"
+        >
+          @if (data.bySource.sources.length > 0) {
+            <app-source-chart [bySource]="data.bySource" />
+          } @else {
+            <p class="analytics-note">{{ 'unitAnalytics.noAwards' | transloco }}</p>
+          }
+        </app-pane>
+
+        <app-pane
+          icon="arrow-left-right"
+          [heading]="'universityAnalytics.sections.comparison' | transloco"
+          chartLabel="charts.ranking"
+          data-testid="section-comparison"
+        >
+          <app-unit-comparison
+            [rows]="data.units"
+            [period]="shownPeriod()"
+            [totals]="data.totals"
+            [labels]="labels"
+            [linkable]="linkable"
+          />
+        </app-pane>
+      }
+    </div>
+  </app-split>
+}

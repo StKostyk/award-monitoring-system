@@ -1,0 +1,11 @@
+<app-status-page
+  icon="cloud-off"
+  [title]="'offline.title' | transloco"
+  [text]="'offline.text' | transloco"
+  data-testid="offline-card"
+>
+  <button mat-flat-button type="button" (click)="retry()" data-testid="offline-retry">
+    <app-icon name="refresh-cw" matButtonIcon />
+    {{ 'offline.retry' | transloco }}
+  </button>
+</app-status-page>

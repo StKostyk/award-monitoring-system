@@ -105,30 +105,21 @@ choco install maven
 
 ### 3.3 Docker-сервіси
 
-Запустіть необхідні сервіси розробки:
+Інфраструктурні сервіси описано в `docker-compose.yaml`:
 
 ```bash
-# Створити мережу
-docker network create award-network
-
-# PostgreSQL 16
-docker run -d \
-    --name postgres-dev \
-    --network award-network \
-    -e POSTGRES_USER=award_dev \
-    -e POSTGRES_PASSWORD=dev_password \
-    -e POSTGRES_DB=award_monitoring \
-    -p 5432:5432 \
-    -v postgres-dev-data:/var/lib/postgresql/data \
-    postgres:16-alpine
-
-# Redis 7
-docker run -d \
-    --name redis-dev \
-    --network award-network \
-    -p 6379:6379 \
-    redis:7-alpine --appendonly yes
+docker compose up -d postgres redis mailpit minio clamav
 ```
+
+| Сервіс | Призначення | Локальний порт |
+|--------|-------------|----------------|
+| `postgres` | PostgreSQL 17 | 5432 |
+| `redis` | Redis 7 (лічильники безпеки) | 6379 |
+| `mailpit` | Перехоплювач пошти, вебінтерфейс | 1025, 8025 |
+| `minio` | S3-сумісне сховище документів (`minio-init` створює бакет і обліковий запис бекенду) | 9000, 9001 |
+| `clamav` | Антивірусний сканер; поки він не здоровий, завантаження отримують 503 (перший запуск завантажує сигнатури) | 3310 |
+
+`docker compose up -d --build` також збирає й запускає `app` (бекенд) і `frontend` (nginx на http://localhost).
 
 ### 3.4 Node.js та Angular
 
@@ -379,7 +370,9 @@ mvn site
 mvn spring-boot:run
 
 # Доступ до Swagger UI
-# http://localhost:8080/swagger-ui.html
+# http://localhost:8080/swagger-ui.html (бекенд запущено напряму)
+# http://localhost/swagger-ui/index.html (стек Compose, те саме походження, що й сторінка входу)
+# Після Logout у Swagger UI оновіть сторінку перед Authorize: інакше він повторно надсилає перший код
 
 # OpenAPI JSON
 # http://localhost:8080/v3/api-docs

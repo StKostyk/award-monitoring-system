@@ -1,0 +1,14 @@
+<app-status-page
+  icon="search-x"
+  code="404"
+  [title]="'notFound.title' | transloco"
+  [text]="'notFound.text' | transloco"
+  data-testid="not-found-card"
+>
+  <a mat-flat-button routerLink="/" data-testid="not-found-home">
+    {{ 'notFound.home' | transloco }}
+  </a>
+  <a mat-stroked-button routerLink="/public/achievements" data-testid="not-found-public">
+    {{ 'notFound.publicAchievements' | transloco }}
+  </a>
+</app-status-page>

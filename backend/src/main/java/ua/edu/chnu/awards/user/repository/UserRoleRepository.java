@@ -1,0 +1,212 @@
+package ua.edu.chnu.awards.user.repository;
+
+import java.time.LocalDate;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import ua.edu.chnu.awards.authz.RoleType;
+import ua.edu.chnu.awards.common.erasure.ErasureLockConstants;
+import ua.edu.chnu.awards.user.entity.AccountStatus;
+import ua.edu.chnu.awards.user.entity.User;
+import ua.edu.chnu.awards.user.entity.UserRole;
+
+/**
+ * Access to {@link UserRole} assignments.
+ */
+public interface UserRoleRepository extends JpaRepository<UserRole, Long> {
+
+    /**
+     * Roles of a user that are in effect on the given day, with their organisation loaded.
+     *
+     * @param userId the user
+     * @param day    the day the roles must be valid on
+     * @return matching assignments
+     */
+    @Query("""
+        select r from UserRole r join fetch r.organization
+        where r.user.id = :userId
+          and r.validFrom <= :day
+          and (r.validTo is null or r.validTo >= :day)
+        """)
+    List<UserRole> findCurrentByUserId(@Param("userId") Long userId, @Param("day") LocalDate day);
+
+    /**
+     * Every assignment of a user, newest first, with the organisation loaded.
+     *
+     * @param userId the user
+     * @return assignments past, present and future
+     */
+    @Query("""
+        select r from UserRole r join fetch r.organization
+        where r.user.id = :userId
+        order by r.validFrom desc, r.id desc
+        """)
+    List<UserRole> findHistoryByUserId(@Param("userId") Long userId);
+
+    /**
+     * Current assignments of several users at once, with the organisation loaded.
+     *
+     * @param userIds the users
+     * @param day     the day the roles must be valid on
+     * @return matching assignments
+     */
+    @Query("""
+        select r from UserRole r join fetch r.organization
+        where r.user.id in :userIds
+          and r.validFrom <= :day
+          and (r.validTo is null or r.validTo >= :day)
+        """)
+    List<UserRole> findCurrentByUserIds(@Param("userIds") Collection<Long> userIds, @Param("day") LocalDate day);
+
+    /**
+     * Users among the given ones who have ever held a role.
+     *
+     * @param userIds the users
+     * @return ids with at least one assignment
+     */
+    @Query("select distinct r.user.id from UserRole r where r.user.id in :userIds")
+    Set<Long> findEverAssignedUserIds(@Param("userIds") Collection<Long> userIds);
+
+    /**
+     * One assignment of a user, with the organisation loaded.
+     *
+     * @param id     the assignment
+     * @param userId the user it must belong to
+     * @return the assignment when it belongs to that user
+     */
+    @Query("select r from UserRole r join fetch r.organization where r.id = :id and r.user.id = :userId")
+    Optional<UserRole> findByIdAndUserId(@Param("id") Long id, @Param("userId") Long userId);
+
+    /**
+     * The role of one assignment of a user, read without loading the assignment.
+     *
+     * @param id     the assignment
+     * @param userId the user it must belong to
+     * @return the role when the assignment belongs to that user
+     */
+    @Query("select r.roleType from UserRole r where r.id = :id and r.user.id = :userId")
+    Optional<RoleType> findRoleTypeByIdAndUserId(@Param("id") Long id, @Param("userId") Long userId);
+
+    /**
+     * Whether an active account holds the role on the given day through an assignment other than the given one.
+     *
+     * @param role         the role
+     * @param assignmentId the assignment that does not count
+     * @param day          the day the assignment must be valid on
+     * @return true when another current holder exists
+     */
+    @Query("""
+        select count(r) > 0 from UserRole r
+        where r.roleType = :role
+          and r.id <> :assignmentId
+          and r.user.accountStatus = ua.edu.chnu.awards.user.entity.AccountStatus.ACTIVE
+          and r.validFrom <= :day
+          and (r.validTo is null or r.validTo >= :day)
+        """)
+    boolean existsOtherActiveHolder(@Param("role") RoleType role, @Param("assignmentId") long assignmentId,
+                                    @Param("day") LocalDate day);
+
+    /**
+     * Takes the erasure lock until the transaction ends.
+     *
+     * @return always 1
+     */
+    @Query(value = "select count(*) from (" + ErasureLockConstants.LOCK + ") l", nativeQuery = true)
+    long lockAgainstErasures();
+
+    /**
+     * Whether the user has ever been granted a role.
+     *
+     * @param userId the user
+     * @return true when at least one assignment exists
+     */
+    boolean existsByUserId(Long userId);
+
+    /**
+     * Assignments of the same role in the same organisation whose validity overlaps the given period.
+     *
+     * @param userId         the user
+     * @param role           the role
+     * @param organizationId where the role would apply
+     * @param from           first day of the new period
+     * @param to             last day of the new period; {@link LocalDate#MAX} for an open-ended one
+     * @return overlapping assignments
+     */
+    @Query("""
+        select r from UserRole r
+        where r.user.id = :userId
+          and r.roleType = :role
+          and r.organization.id = :organizationId
+          and r.validFrom <= :to
+          and (r.validTo is null or r.validTo >= :from)
+        """)
+    List<UserRole> findOverlapping(@Param("userId") Long userId, @Param("role") RoleType role,
+                                   @Param("organizationId") Long organizationId, @Param("from") LocalDate from,
+                                   @Param("to") LocalDate to);
+
+    /**
+     * Addresses of the users holding a role on the given day.
+     *
+     * @param role the role
+     * @param day  the day the assignment must be valid on
+     * @return distinct email addresses
+     */
+    @Query("""
+        select distinct r.user.emailAddress from UserRole r
+        where r.roleType = :role
+          and r.validFrom <= :day
+          and (r.validTo is null or r.validTo >= :day)
+        """)
+    List<String> findCurrentEmailsByRole(@Param("role") RoleType role, @Param("day") LocalDate day);
+
+    /**
+     * Whether anyone other than the given user, with an account in one of the given states, holds a role on the
+     * given day in one of the given organisations.
+     *
+     * @param role            the role
+     * @param organizationIds organisations whose holders count
+     * @param statuses        account states whose holders count
+     * @param excludedUserId  the user who does not count, such as the owner of the award under review
+     * @param day             the day the assignment must be valid on
+     * @return true when at least one assignment matches
+     */
+    @Query("""
+        select count(r) > 0 from UserRole r
+        where r.roleType = :role
+          and r.organization.id in :organizationIds
+          and r.user.accountStatus in :statuses
+          and r.user.id <> :excludedUserId
+          and r.validFrom <= :day
+          and (r.validTo is null or r.validTo >= :day)
+        """)
+    boolean existsHolder(@Param("role") RoleType role, @Param("organizationIds") Collection<Long> organizationIds,
+                         @Param("statuses") Collection<AccountStatus> statuses,
+                         @Param("excludedUserId") long excludedUserId, @Param("day") LocalDate day);
+
+    /**
+     * People with an account in one of the given states who hold a role on the given day in one of the given
+     * organisations.
+     *
+     * @param role            the role
+     * @param organizationIds organisations whose holders count
+     * @param statuses        account states whose holders count
+     * @param day             the day the assignment must be valid on
+     * @return distinct holders
+     */
+    @Query("""
+        select distinct r.user from UserRole r
+        where r.roleType = :role
+          and r.organization.id in :organizationIds
+          and r.user.accountStatus in :statuses
+          and r.validFrom <= :day
+          and (r.validTo is null or r.validTo >= :day)
+        """)
+    List<User> findHolders(@Param("role") RoleType role, @Param("organizationIds") Collection<Long> organizationIds,
+                           @Param("statuses") Collection<AccountStatus> statuses, @Param("day") LocalDate day);
+}

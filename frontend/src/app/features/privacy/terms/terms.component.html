@@ -1,0 +1,23 @@
+<mat-card class="notice" data-testid="terms">
+  <mat-card-content>
+    <header class="notice__header">
+      <h1 class="notice__title">{{ 'terms.title' | transloco }}</h1>
+    </header>
+
+    @if (failed()) {
+      <p class="notice__error" role="alert" data-testid="terms-failed">
+        {{ 'terms.loadFailed' | transloco }}
+      </p>
+    } @else if (text(); as text) {
+      <article class="notice__text" [innerHTML]="text" data-testid="terms-text"></article>
+    } @else {
+      <p>{{ 'app.loading' | transloco }}</p>
+    }
+
+    <p class="notice__related">
+      <a routerLink="/privacy-notice" data-testid="terms-privacy-link">{{
+        'privacy.notice.title' | transloco
+      }}</a>
+    </p>
+  </mat-card-content>
+</mat-card>

@@ -1,0 +1,262 @@
+package ua.edu.chnu.awards.common.event;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.after;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
+
+import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
+
+import jakarta.mail.internet.MimeMessage;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatcher;
+import org.mockito.ArgumentMatchers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mail.MailSendException;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
+import ua.edu.chnu.awards.authz.RoleType;
+import ua.edu.chnu.awards.award.entity.ApprovalLevel;
+import ua.edu.chnu.awards.award.entity.RequestStatus;
+import ua.edu.chnu.awards.award.entity.ReviewDecisionType;
+import ua.edu.chnu.awards.award.event.AwardDecided;
+import ua.edu.chnu.awards.award.event.ReviewMeasured;
+import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
+import ua.edu.chnu.awards.support.AbstractIntegrationTest;
+import ua.edu.chnu.awards.support.Eventually;
+import ua.edu.chnu.awards.support.TestEvents;
+import ua.edu.chnu.awards.support.TestMails;
+
+@ExtendWith(OutputCaptureExtension.class)
+class EventPublicationRegistryIT extends AbstractIntegrationTest {
+
+    private static final long MAIL_WAIT_MS = 30_000;
+    private static final long FAILED_SEND_MS = 20_000;
+    private static final long QUIET_MS = 2_000;
+    private static final String RESET_LINK = "http://localhost:4200/reset-password?token=secret-one-time-token";
+
+    @MockitoSpyBean
+    private JavaMailSender mailSender;
+
+    @Autowired
+    private ApplicationEventPublisher events;
+
+    @Autowired
+    private AfterCommit afterCommit;
+
+    @Autowired
+    private PublicationRetry retry;
+
+    @Autowired
+    private TransactionTemplate transactions;
+
+    @Autowired
+    private JdbcTemplate jdbc;
+
+    @AfterEach
+    void clearRegistry() {
+        jdbc.update("DELETE FROM event_publication");
+    }
+
+    @Test
+    void ac1_1_aCommittedEventIsRecordedInTheTransactionAndDeletedOnceTheMailIsSent() {
+        String to = "it.registry.commit@chnu.edu.ua";
+
+        long inTransaction = Objects.requireNonNull(transactions.execute(status -> {
+            events.publishEvent(decided(to));
+            return incomplete();
+        }));
+
+        assertThat(inTransaction).isEqualTo(2);
+        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
+        assertThat(Eventually.equalTo(this::incomplete, 0L)).isZero();
+    }
+
+    @Test
+    void ac1_1_aSynchronousListenerCompletesItsPublicationToo() {
+        transactions.executeWithoutResult(status -> events.publishEvent(
+            new ReviewMeasured(ApprovalLevel.DEAN, ReviewDecisionType.APPROVED, true, Duration.ofHours(2))));
+
+        assertThat(Eventually.equalTo(this::incomplete, 0L)).isZero();
+    }
+
+    @Test
+    void ac2_5_roleAndDelegationMailsOfTheNotificationModuleStayRegistryBacked() {
+        String holder = "it.registry.role@chnu.edu.ua";
+        String delegate = "it.registry.delegation@chnu.edu.ua";
+
+        List<String> listeners = Objects.requireNonNull(transactions.execute(status -> {
+            events.publishEvent(TestEvents.roleAssigned().to(null, holder, "Олена")
+                .role(RoleType.FACULTY_SECRETARY, "Faculty", "Факультет").by("Admin").build());
+            events.publishEvent(TestEvents.delegationRevoked(DelegationRevoked.Recipient.of(delegate))
+                .role(RoleType.DEAN, "Faculty", "Факультет").of("Delegate", "Admin").build());
+            return jdbc.queryForList("SELECT listener_id FROM event_publication WHERE listener_id LIKE ?",
+                String.class, "%Mails%");
+        }));
+
+        assertThat(listeners).hasSize(2).allMatch(id -> id.contains("notification.AuthorityChangeMails"));
+        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<MimeMessage>argThat(sentTo(holder)));
+        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<MimeMessage>argThat(sentTo(delegate)));
+        assertThat(Eventually.equalTo(this::incomplete, 0L)).isZero();
+    }
+
+    @Test
+    void ac1_2_aRolledBackEventLeavesNoRowAndSendsNoMail() {
+        String to = "it.registry.rollback@chnu.edu.ua";
+
+        transactions.executeWithoutResult(status -> {
+            events.publishEvent(decided(to));
+            status.setRollbackOnly();
+        });
+
+        assertThat(incomplete()).isZero();
+        verify(mailSender, after(QUIET_MS).never())
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
+    }
+
+    @Test
+    void ac1_3_ac1_4_aRefusedMailStaysIncompleteAndTheRetryJobSendsIt() {
+        String to = "it.registry.retry@chnu.edu.ua";
+        doThrow(new MailSendException("down")).when(mailSender)
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
+
+        transactions.executeWithoutResult(status -> events.publishEvent(decided(to)));
+
+        verify(mailSender, timeout(FAILED_SEND_MS).times(3))
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
+        assertThat(Eventually.equalTo(this::incomplete, 1L)).isEqualTo(1);
+
+        reset(mailSender);
+        age(Duration.ofMinutes(5));
+        retry.run();
+        verify(mailSender, after(QUIET_MS).never()).send(any(MimeMessage.class));
+        assertThat(incomplete()).isEqualTo(1);
+
+        age(Duration.ofMinutes(15));
+        retry.run();
+        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
+        assertThat(Eventually.equalTo(this::incomplete, 0L)).isZero();
+    }
+
+    @Test
+    void ac1_4_aPublicationThatCannotBeReadDoesNotStopTheOthers() {
+        String to = "it.registry.poison@chnu.edu.ua";
+        doThrow(new MailSendException("down")).when(mailSender)
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
+        transactions.executeWithoutResult(status -> events.publishEvent(decided(to)));
+        verify(mailSender, timeout(FAILED_SEND_MS).times(3))
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
+        assertThat(Eventually.equalTo(this::incomplete, 1L)).isEqualTo(1);
+        reset(mailSender);
+        age(Duration.ofMinutes(15));
+        jdbc.update("INSERT INTO event_publication (id, listener_id, event_type, serialized_event, publication_date)"
+                + " VALUES (gen_random_uuid(), 'gone.Listener.method', 'ua.edu.chnu.awards.Gone', '{}', ?)",
+            Timestamp.from(Instant.now().minus(Duration.ofMinutes(20))));
+
+        retry.run();
+
+        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
+        assertThat(Eventually.equalTo(this::incomplete, 1L)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT event_type FROM event_publication WHERE completion_date IS NULL",
+            String.class)).isEqualTo("ua.edu.chnu.awards.Gone");
+    }
+
+    @Test
+    void scrum75_ac1_anUndeliveredMailIsLoggedOnceWithoutTheAsyncStackTrace(CapturedOutput output)
+            throws InterruptedException {
+        String to = "it.registry.quiet@chnu.edu.ua";
+        doThrow(new MailSendException("down")).when(mailSender)
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
+
+        transactions.executeWithoutResult(status -> events.publishEvent(decided(to)));
+
+        verify(mailSender, timeout(FAILED_SEND_MS).times(3))
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
+        assertThat(Eventually.equalTo(() -> output.getAll().contains(to + "] was not delivered"), true)).isTrue();
+        Thread.sleep(QUIET_MS);
+        assertThat(output.getAll()).doesNotContain("SimpleAsyncUncaughtExceptionHandler");
+        assertThat(incomplete()).isEqualTo(1);
+    }
+
+    @Test
+    void ac1_5_aDayOldPublicationIsNoLongerRetriedAndAMonthOldOneIsDeleted() {
+        insertIncomplete(Duration.ofHours(25));
+        insertIncomplete(Duration.ofDays(31));
+
+        retry.run();
+
+        verify(mailSender, after(QUIET_MS).never()).send(any(MimeMessage.class));
+        assertThat(incomplete()).isEqualTo(1);
+    }
+
+    @Test
+    void ac1_7_aTransientEventIsNeverStoredAndIsSentAfterTheCommit() {
+        String to = "it.registry.transient@chnu.edu.ua";
+
+        long inTransaction = Objects.requireNonNull(transactions.execute(status -> {
+            afterCommit.publish(new PasswordResetRequested(to, "Олена", RESET_LINK));
+            return incomplete();
+        }));
+
+        assertThat(inTransaction).isZero();
+        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM event_publication WHERE serialized_event LIKE ?",
+            Long.class, "%token=%")).isZero();
+    }
+
+    @Test
+    void ac1_7_aTransientEventIsDroppedOnRollback() {
+        String to = "it.registry.transient.rollback@chnu.edu.ua";
+
+        transactions.executeWithoutResult(status -> {
+            afterCommit.publish(new PasswordResetRequested(to, "Олена", RESET_LINK));
+            status.setRollbackOnly();
+        });
+
+        verify(mailSender, after(QUIET_MS).never())
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
+        assertThat(incomplete()).isZero();
+    }
+
+    private static AwardDecided decided(String to) {
+        return TestEvents.decided().to(null, to, "Олена").award(999_001L, "Certificate", "Грамота")
+            .outcome(RequestStatus.APPROVED, ApprovalLevel.FACULTY_SECRETARY).build();
+    }
+
+    private static ArgumentMatcher<MimeMessage> sentTo(String to) {
+        return message -> message != null && TestMails.recipients(message).contains(to);
+    }
+
+    private long incomplete() {
+        return Objects.requireNonNull(jdbc.queryForObject(
+            "SELECT count(*) FROM event_publication WHERE completion_date IS NULL", Long.class));
+    }
+
+    private void age(Duration age) {
+        jdbc.update("UPDATE event_publication SET publication_date = ?",
+            Timestamp.from(Instant.now().minus(age)));
+    }
+
+    private void insertIncomplete(Duration age) {
+        jdbc.update("INSERT INTO event_publication (id, listener_id, event_type, serialized_event, publication_date)"
+                + " VALUES (gen_random_uuid(), 'listener', ?, '{}', ?)", AwardDecided.class.getName(),
+            Timestamp.from(Instant.now().minus(age)));
+    }
+}

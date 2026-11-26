@@ -1,0 +1,144 @@
+# ADR-023: Approval Workflow Transitions and Review Claims
+
+**Status**: Accepted  
+**Date**: 2026-10-06  
+**Author**: Stefan Kostyk  
+**Stakeholders**: Faculty secretaries, deans, rector's office, Thesis Supervisor
+
+---
+
+## Context
+
+A submitted award travels through up to four review levels (faculty secretary, dean, rector's secretary, rector).
+The request has eight statuses (`award_requests.status`, `EXPIRED` unused) and the award five of its own
+(`ARCHIVED` unused until Epic 6). The original state machine
+diagram included states the university does not use (appeal window, automatic expiry during review, a document/OCR
+branch) and gave no rule for two reviewers of the same level opening the same request at the same time.
+
+### Background
+- A faculty usually has more than one secretary; each sees the same requests of the faculty.
+- Higher levels cover a vacancy or an absent secretary below them (`award:approve:level1` is held by every approver).
+- Decisions are made one by one and in batches (US-004), so a decision must not depend on a separate claim step.
+
+### Assumptions
+- One request per award (ids in workflow paths are award ids; the request version travels as `requestVersion`).
+- Who may review a request is decided by the reviewer rule of Feature 4.1 (role and delegation scopes, owner and
+  submitter excluded).
+
+---
+
+## Decision
+
+### Chosen Approach
+1. **One transition table** in the `award` module, no state-machine library. Rows of 4.1.1 (claims):
+
+   | From (request) | Action | To (request) | Level | Award |
+   |----------------|--------|--------------|-------|-------|
+   | — | submit | `SUBMITTED` | start level (AC-0.6) | `PENDING` |
+   | `SUBMITTED`, `ESCALATED` | claim | `IN_REVIEW` | = | = |
+   | `IN_REVIEW` | release | `ESCALATED` when a lower level decided, else `SUBMITTED` | = | = |
+   | `IN_REVIEW` | hand-over, take-over | `IN_REVIEW` | = | = |
+
+   Rows of 4.1.2 (decisions, `POST /awards/{id}/decisions`; an unclaimed request is claimed by the decision):
+
+   | From (request) | Action | To (request) | Level | Award |
+   |----------------|--------|--------------|-------|-------|
+   | `SUBMITTED`, `ESCALATED`, `IN_REVIEW` | approve, level ≥ category minimum | `APPROVED` | = | `APPROVED` |
+   | same | approve, level < category minimum | `ESCALATED` | next not passed over | = |
+   | same | escalate (level < `RECTOR`) | `ESCALATED` | next not passed over | = |
+   | same | return (comment required) | `RETURNED` | = | `DRAFT` |
+   | same | reject (comment required) | `REJECTED` | = | `REJECTED` |
+
+   Rows of 4.1.3 (owner actions, `POST /awards/{id}/withdraw` and `POST /awards/{id}/submit`; the request row is
+   reused, so its decisions stay on the timeline):
+
+   | From (request) | Action | To (request) | Level | Award |
+   |----------------|--------|--------------|-------|-------|
+   | `SUBMITTED`, `ESCALATED` (no reviewer) | withdraw | `WITHDRAWN` | = | `DRAFT` |
+   | `RETURNED` | resubmit | `SUBMITTED` | = (or next not passed over) | `PENDING` |
+   | `WITHDRAWN` | resubmit | `SUBMITTED` | start level | `PENDING` |
+
+   `APPROVED` and `REJECTED` are final; `EXPIRED` stays in the check constraint, unused. A withdrawal locks the
+   request row before the award, as a claim and a decision do, and a submission does the same, so the owner's and the
+   reviewer's actions on one request run one after the other: a late withdrawal answers 409 `request-claimed`, a late
+   claim 404 (the request left the queue). A returned or withdrawn draft cannot be deleted (409 `award-has-request`).
+2. **Claim = reviewer + version + row lock.** `current_reviewer_id` names the holder; the request row is locked
+   (`SELECT … FOR UPDATE`) and `award_requests.version` is checked, so of two claims at once exactly one succeeds and
+   the other answers 409 `request-claimed` with the holder. A stale version answers 409 `request-stale`.
+3. **No lapse.** A claim is never taken away silently. It ends by release, hand-over to an eligible colleague, a
+   decision, or a take-over by a higher level (or by a peer once the holder may no longer review: role ended,
+   delegation over, account blocked; or by a peer once the request is past its deadline, 4.3.7). The previous
+   holder gets an e-mail after the commit. Every change is audited (`REVIEW_CLAIMED`, `REVIEW_RELEASED`,
+   `REVIEW_HANDED_OVER`, `REVIEW_TAKEN_OVER`).
+4. **Higher levels may review lower levels** through the `level` filter of the queue and take-over; the default queue
+   shows the caller's own levels.
+5. **Decisions.** Every decision writes one `review_decisions` row at the level it was taken (`APPROVED` for an
+   approval that only passes the request on), stamped with `delegator_id` when the reviewer acts under a delegated
+   role, an `audit_logs` row `REVIEW_DECISION` and an award version `DECIDED`. A level passed over without a decision
+   shows as `SKIPPED` in the status path. The owner's e-mail is sent after the commit, so a rollback sends nothing
+   and a mail failure does not undo the decision. `verified: true` (approve only, award with documents) sets the
+   verification badge.
+6. **404 over 403.** A request the caller may not review, an unknown id and the caller's own award all answer 404;
+   a decided request answers 409 `request-closed`.
+
+### Rationale
+- Seven states and four levels fit one table that the tests walk row by row; a library would add configuration
+  without removing a rule.
+- Optimistic version plus a row lock gives a definite winner without a distributed lock; Redis is not involved.
+- Secretaries share the queue of a faculty, so an explicit claim tells colleagues who works on what.
+
+---
+
+## Consequences
+
+### Positive Consequences
+- Two reviewers never work on the same request unknowingly; the panel names the holder on a conflict.
+- Every move of a request is visible in the audit trail and on the award page.
+
+### Negative Consequences
+- A holder who leaves a request untouched keeps it until someone above takes it over; the overdue chip and the
+  deadline order of the queue make that visible.
+- The client must send the version it read with every change.
+
+---
+
+## Alternatives Considered
+
+- **Spring Statemachine**: heavy configuration for seven states, persisted machine context not needed.
+- **Claim with a time-out**: silently moves work away from a reviewer who is reading the documents.
+- **No claim, last decision wins**: two secretaries could reach different decisions on the same award.
+
+---
+
+## Related Decisions
+- ADR-004 (PostgreSQL row locks), ADR-009 (permissions and scopes).
+- Feature 4.1 PRD §7 (D-1 to D-4, D-12, D-13).
+
+---
+
+## Addendum 2026-10-09: Features 4.2 and 4.3 as built
+
+Accepted with Epic 4; the transition table of Feature 4.1 shipped unchanged. Three later decisions sit next to it
+without adding transitions:
+
+- **Overdue is a mark, not a move.** The hourly job (`OverdueJob`, `OverdueNotices`) sets
+  `award_requests.overdue_noticed_at` and `overdue_noticed_level` once per level and e-mails the next level; status,
+  level and reviewer stay, and every new deadline clears the mark. A review period set per faculty
+  (`organizations.review_working_days`) applies to deadlines set from then on.
+- **A correction is not a transition.** A reviewer corrects a pending award with a reason; the request keeps its
+  status, level and deadline, an unclaimed request is claimed by the correction, and the change is a `CORRECTED`
+  award version.
+- **Withdrawal** returns an unclaimed request to a draft (`WITHDRAWN`, audit `AWARD_WITHDRAWN`); batch decisions run
+  the single decision per item in its own transaction (audit `REVIEW_BATCH`).
+
+## Addendum 2026-11-18: Imported past awards (Feature 2.5, story 2.5.5)
+
+- **One path around the transitions.** A faculty secretary or dean imports past awards from a faculty
+  spreadsheet: each row is stored directly as `APPROVED` with `awards.source` = `IMPORT`, no `award_requests` row
+  and no review decision. The importer is the reviewer of record (`AWARD_IMPORTED` audit row with the file and
+  the row, first award version `CREATED` by the importer). The rule that only a decision approves an award holds
+  for everything entered through the form (`source` = `FORM`).
+- **Scope instead of a decision.** The import is limited to the departments of the caller's faculty secretary or
+  dean scope; a row outside it blocks the whole file.
+- **Afterwards like any approved award.** The owner sees the award marked «Імпортовано» and asks a reviewer for a
+  correction (4.4) like for any approved award; awards of people without an account stay private (AC-2.6).

@@ -1,0 +1,136 @@
+package ua.edu.chnu.awards.support;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.time.Instant;
+import java.util.Optional;
+
+import ua.edu.chnu.awards.authz.AccessScope;
+import ua.edu.chnu.awards.award.entity.ApprovalLevel;
+import ua.edu.chnu.awards.award.entity.Award;
+import ua.edu.chnu.awards.award.entity.AwardRequest;
+import ua.edu.chnu.awards.award.entity.AwardStatus;
+import ua.edu.chnu.awards.award.entity.RequestStatus;
+import ua.edu.chnu.awards.award.entity.ReviewDecision;
+import ua.edu.chnu.awards.award.entity.ReviewDecisionType;
+import ua.edu.chnu.awards.award.mapper.AwardMapper;
+import ua.edu.chnu.awards.award.repository.AwardRepository;
+import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
+import ua.edu.chnu.awards.award.repository.AwardSpecifications;
+import ua.edu.chnu.awards.award.repository.ReviewDecisionRepository;
+import ua.edu.chnu.awards.award.service.AwardOwnership;
+import ua.edu.chnu.awards.award.service.AwardSearch;
+import ua.edu.chnu.awards.award.service.ManagedOwners;
+import ua.edu.chnu.awards.award.service.RequestLookup;
+import ua.edu.chnu.awards.award.service.StatusEstimator;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
+import ua.edu.chnu.awards.organization.service.OrganizationLookup;
+import ua.edu.chnu.awards.user.entity.User;
+import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
+
+/**
+ * Award, request and decision entities for unit tests, with defaults that callers override through the builder.
+ */
+public final class TestAwards {
+
+    public static final long AWARD_ID = 5L;
+    public static final long REQUEST_ID = 40L;
+    public static final long VERSION = 4L;
+    public static final Instant SUBMITTED_AT = Instant.parse("2026-09-28T09:00:00Z");
+
+    private TestAwards() {
+    }
+
+    /**
+     * A draft titled "Letter" with id {@link #AWARD_ID} and version {@link #VERSION}.
+     *
+     * @param owner        the owner
+     * @param organization the organisation of the award
+     * @return the builder
+     */
+    public static Award.AwardBuilder award(User owner, Organization organization) {
+        return Award.builder().id(AWARD_ID).owner(owner).organization(organization).title("Letter")
+            .status(AwardStatus.DRAFT).version(VERSION);
+    }
+
+    /**
+     * A request with id {@link #REQUEST_ID}, submitted by the award's owner at {@link #SUBMITTED_AT} and waiting
+     * for the faculty secretary.
+     *
+     * @param award the award
+     * @return the builder
+     */
+    public static AwardRequest.AwardRequestBuilder request(Award award) {
+        return AwardRequest.builder().id(REQUEST_ID).award(award).submitter(award.getOwner())
+            .status(RequestStatus.SUBMITTED).currentLevel(ApprovalLevel.FACULTY_SECRETARY).submittedAt(SUBMITTED_AT);
+    }
+
+    /**
+     * A decision on request {@link #REQUEST_ID} with the comment "comment" plus its id.
+     *
+     * @param id        the decision id
+     * @param type      the decision
+     * @param level     the level it was taken at
+     * @param reviewer  the reviewer
+     * @param decidedAt when it was taken
+     * @return the decision
+     */
+    public static ReviewDecision decision(long id, ReviewDecisionType type, ApprovalLevel level, User reviewer,
+                                          Instant decidedAt) {
+        return ReviewDecision.builder().id(id).requestId(REQUEST_ID).decision(type).level(level).reviewer(reviewer)
+            .comments("comment " + id).decidedAt(decidedAt).build();
+    }
+
+    /**
+     * Award list pages over a repository.
+     *
+     * @param awards         the award repository
+     * @param specifications the list rules
+     * @return the list pages
+     */
+    public static AwardSearch search(AwardRepository awards, AwardSpecifications specifications) {
+        return new AwardSearch(awards, specifications);
+    }
+
+    /**
+     * Ownership checks over mocked repositories that know the given units.
+     *
+     * @param awards the award repository
+     * @param users  the user repository
+     * @param access the caller
+     * @param units  organisations a unit award may be entered for
+     * @return the ownership checks
+     */
+    public static AwardOwnership ownership(AwardRepository awards, UserRepository users, AccessScope access,
+                                           Organization... units) {
+        OrganizationRepository organizations = mock(OrganizationRepository.class);
+        for (Organization unit : units) {
+            when(organizations.findById(unit.getId())).thenReturn(Optional.of(unit));
+        }
+        return new AwardOwnership(awards, new UserAccounts(users), new OrganizationLookup(organizations), access,
+            mock(ManagedOwners.class));
+    }
+
+    /**
+     * The award mapper for a caller who manages no award of another person.
+     *
+     * @param estimator the status estimator
+     * @return the mapper
+     */
+    public static AwardMapper mapper(StatusEstimator estimator) {
+        return new AwardMapper(estimator, mock(ManagedOwners.class));
+    }
+
+    /**
+     * Request reads over a mocked repository, with no reviewer decisions.
+     *
+     * @param requests the request repository
+     * @return the lookup
+     */
+    public static RequestLookup requestLookup(AwardRequestRepository requests) {
+        return new RequestLookup(requests, mock(ReviewDecisionRepository.class));
+    }
+}

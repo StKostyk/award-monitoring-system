@@ -180,7 +180,7 @@ public record UserRegistrationRequest(
 |-------------|----------------|----------|---------------------|-------------------|
 | P001 | Управління Нагородами | Створення, відстеження та відображення нагород | Профіль користувача, Дані нагороди | 7 років |
 | P002 | Автентифікація | Вхід та управління сесією | Облікові дані, Дані сесії | Сесія + 30 днів |
-| P003 | Сповіщення | Email/SMS сповіщення про нагороди | Контактна інформація, Налаштування | Час життя акаунту |
+| P003 | Сповіщення | Сповіщення електронною поштою та в застосунку про нагороди, розгляд, ролі й делегування (без SMS) | Адреса електронної пошти, дані сповіщень, журнал доставки, налаштування | Сповіщення 1 рік (`expires_at`), налаштування впродовж існування акаунту |
 | P004 | Аналітика | Використання системи та продуктивність | Анонімізовані дані використання | 3 роки |
 | P005 | Відповідність | Аудит сліди та відповідність GDPR | Аудит логи, Записи згоди | 7 років |
 
@@ -325,149 +325,27 @@ public class NotificationService {
 
 ### 4.2 Типи Згоди
 
-| **Тип Згоди** | **Мета** | **Обов'язкова** | **Гранулярність** | **Вплив Відкликання** |
-|---------------|----------|-----------------|-------------------|----------------------|
-| `DATA_PROCESSING` | Базове використання системи | Так | Бінарна | Видалення акаунту |
-| `PUBLIC_VISIBILITY` | Публічне відображення нагород | Так | Бінарна | Нагороди приховані |
-| `EMAIL_NOTIFICATIONS` | Email сповіщення | Ні | За типом | Не надсилаються emails |
-| `SMS_NOTIFICATIONS` | SMS сповіщення | Ні | Бінарна | Не надсилаються SMS |
-| `DOCUMENT_AI_PROCESSING` | AI витяг метаданих | Ні | За документом | Лише ручне введення |
-| `ANALYTICS` | Аналітика використання | Ні | Бінарна | Виключено з аналітики |
+Обробка даних, потрібних для роботи системи, ґрунтується на законному інтересі (DATA_GOVERNANCE §2.1), тому про неї не питають як про згоду: згода, без якої системою неможливо користуватися, не була б вільною (ст. 7(4)). Натомість людина підтверджує ознайомлення з повідомленням про конфіденційність, і підтвердження записується для кожної версії повідомлення.
+
+| **Запис** | **Мета** | **Правова підстава** | **Обов'язковий** | **Гранулярність** | **Вплив Відкликання** |
+|-----------|----------|----------------------|------------------|-------------------|----------------------|
+| `DATA_PROCESSING` | Підтвердження ознайомлення з версією повідомлення, при реєстрації та після кожної нової версії | Законний інтерес (фіксує ознайомлення) | Так | За версією повідомлення | Не відкликається; обробку припиняє видалення акаунта (§5) |
+| `ANALYTICS` | Згадування людини на ім'я в рейтингах і порівняннях звітів підрозділу (Епік 5) | Згода | Ні | Бінарна | Лише в підсумках |
+| Видимість нагороди (`awards.visibility`) | Показ затвердженої особистої нагороди поза підрозділом людини (4.3.1) | Згода | Ні | За нагородою | Нагорода одразу повертається до `PRIVATE` |
+| Документ, показаний колегам (`documents.shown_to_colleagues`) | Вибраний документ спільної нагороди, який відкривають колеги, що увійшли в систему | Згода | Ні | За документом | Документ одразу прихований |
+| E-mail за типом сповіщення (`notification_preferences`) | E-mail і сповіщення в застосунку обираються для кожного типу (1.3.2); листи безпеки та конфіденційності надсилаються завжди | Законний інтерес | Ні | За типом сповіщення | Немає листів цього типу |
+| Колірна схема та макети дашбордів (`dashboard_preferences`) | Колірна схема; для кожного дашборду порядок віджетів і приховані віджети (5.1.2, 9.4.1); вибір відображення, не аудитується, експортується й видаляється | Законний інтерес | Ні | За дашбордом і віджетом | Системна схема, типові макети |
+
+Колишні типи згоди `PUBLIC_VISIBILITY`, `EMAIL_NOTIFICATIONS` і `SMS_NOTIFICATIONS` вилучено (V040): перші два обираються для кожної нагороди й кожного типу сповіщень, а каналу SMS немає. Витяг метаданих з документів (`DOCUMENT_AI_PROCESSING`) не реалізовано; перед реалізацією він потребуватиме окремого типу згоди.
 
 ### 4.3 Технічне Впровадження
 
-```java
-// Сервіс Управління Згодою
-@Service
-@Transactional
-public class ConsentManagementService {
-    
-    private final ConsentRepository consentRepository;
-    private final ConsentEventPublisher eventPublisher;
-    private final AuditService auditService;
-    
-    /**
-     * Надання згоди з повним аудит слідом
-     */
-    public ConsentRecord grantConsent(ConsentRequest request) {
-        validateConsentRequest(request);
-        
-        ConsentRecord consent = ConsentRecord.builder()
-            .userId(request.getUserId())
-            .consentType(request.getConsentType())
-            .consentVersion(getCurrentPolicyVersion(request.getConsentType()))
-            .isGranted(true)
-            .grantedAt(Instant.now())
-            .ipAddress(request.getIpAddress())
-            .userAgent(request.getUserAgent())
-            .build();
-        
-        ConsentRecord saved = consentRepository.save(consent);
-        
-        // Публікація події для downstream систем
-        eventPublisher.publish(new ConsentGrantedEvent(saved));
-        
-        // Аудит лог
-        auditService.logConsentChange(
-            AuditAction.CONSENT_GRANTED,
-            saved.getUserId(),
-            saved.getConsentType(),
-            request.getIpAddress()
-        );
-        
-        return saved;
-    }
-    
-    /**
-     * Відкликання згоди з каскадними ефектами
-     */
-    public ConsentRecord withdrawConsent(Long userId, ConsentType consentType, 
-                                          WithdrawalRequest request) {
-        ConsentRecord current = consentRepository
-            .findCurrentConsent(userId, consentType)
-            .orElseThrow(() -> new ConsentNotFoundException("Активну згоду не знайдено"));
-        
-        // Оновлення запису згоди
-        current.setIsGranted(false);
-        current.setWithdrawnAt(Instant.now());
-        ConsentRecord saved = consentRepository.save(current);
-        
-        // Публікація події для каскадних ефектів
-        eventPublisher.publish(new ConsentWithdrawnEvent(saved));
-        
-        // Запуск негайної обробки даних на основі типу згоди
-        handleConsentWithdrawal(userId, consentType);
-        
-        // Аудит лог
-        auditService.logConsentChange(
-            AuditAction.CONSENT_WITHDRAWN,
-            userId,
-            consentType,
-            request.getIpAddress()
-        );
-        
-        return saved;
-    }
-    
-    /**
-     * Перевірка чи користувач має валідну згоду для операції
-     */
-    public boolean hasValidConsent(Long userId, ConsentType consentType) {
-        return consentRepository.findCurrentConsent(userId, consentType)
-            .map(consent -> consent.getIsGranted() && 
-                           consent.getConsentVersion().equals(getCurrentPolicyVersion(consentType)))
-            .orElse(false);
-    }
-    
-    /**
-     * Обробка каскадних ефектів відкликання згоди
-     */
-    private void handleConsentWithdrawal(Long userId, ConsentType consentType) {
-        switch (consentType) {
-            case PUBLIC_VISIBILITY -> awardService.hideUserAwards(userId);
-            case EMAIL_NOTIFICATIONS -> notificationService.disableEmail(userId);
-            case SMS_NOTIFICATIONS -> notificationService.disableSms(userId);
-            case DOCUMENT_AI_PROCESSING -> documentService.disableAiProcessing(userId);
-            case ANALYTICS -> analyticsService.excludeUser(userId);
-            case DATA_PROCESSING -> initiateAccountDeletion(userId);
-        }
-    }
-}
-
-// Анотація Забезпечення Згоди
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface RequiresConsent {
-    ConsentType value();
-    boolean failSilently() default false;
-}
-
-// Аспект Забезпечення Згоди
-@Aspect
-@Component
-public class ConsentEnforcementAspect {
-    
-    @Around("@annotation(requiresConsent)")
-    public Object enforceConsent(ProceedingJoinPoint joinPoint, 
-                                  RequiresConsent requiresConsent) throws Throwable {
-        Long userId = extractUserId(joinPoint);
-        ConsentType requiredConsent = requiresConsent.value();
-        
-        if (!consentService.hasValidConsent(userId, requiredConsent)) {
-            if (requiresConsent.failSilently()) {
-                return null; // Тихе пропускання
-            }
-            throw new ConsentRequiredException(
-                "Потрібна валідна згода для " + requiredConsent
-            );
-        }
-        
-        return joinPoint.proceed();
-    }
-}
-```
-
----
+- `consent_records` допускає лише додавання записів (V040, `trg_consent_records_guard`): рядки ніколи не видаляються й не змінюються, крім очищення `ip_address` і `user_agent` при видаленні акаунта. Найновіший рядок для типу задає поточний стан; колонки описано в DATA_DICTIONARY §4.2.
+- Тексти повідомлення — статичні сторінки вебклієнта для кожної версії та мови (`/privacy/<version>/<lang>.html`); `app.privacy.notice-version` задає чинну версію, а `GET /api/v1/public/privacy-notice` публікує її разом із попередніми.
+- Реєстрація вимагає поточної версії (`privacyNoticeVersion`, інакше 422 `outdated` і акаунт не створюється) і записує рядок `DATA_PROCESSING` у транзакції реєстрації. `PrivacyNoticeVersions` (спільний модуль `common`) перевіряє версію й публікує `PrivacyNoticeAcknowledged`; `ConsentService` (`gdpr`) додає рядок, тож `auth` не залежить від `gdpr`.
+- `GET /users/me/consents`, `POST /users/me/consents/notice-acknowledgement` і `PUT /users/me/consents/ANALYTICS` читають і змінюють власні записи викликача. Зміна, яка не змінює стан, нічого не додає; одночасні зміни однієї людини впорядковуються блокуванням рядка акаунта. Огляд ніколи не показує IP-адрес і user agent.
+- Після нової версії повідомлення вебклієнт спрямовує людину, що увійшла, на сторінку підтвердження перед будь-яким іншим екраном; API не відхиляє запитів людини, яка ще не підтвердила (PRD 6.1, рішення 2).
+- Кожен доданий рядок потрапляє в аудит (`PRIVACY_NOTICE_ACKNOWLEDGED`, `CONSENT_GRANTED`, `CONSENT_WITHDRAWN`, тип сутності `GDPR`), а експорт персональних даних містить усі рядки в `consent_history`.
 
 ## 5. Впровадження Права на Видалення
 
@@ -517,16 +395,29 @@ public class ConsentEnforcementAspect {
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
+**Запит і пільговий період (Функція 6.1, 6.1.4)**
+
+1. У центрі конфіденційності особа читає, що буде видалено і що збережеться (затверджені нагороди під псевдонімом, знеособлені записи аудиту, записи згод протягом семи років), ставить позначку підтвердження і вводить поточний пароль (`POST /api/v1/users/me/erasure-request`). Хибний пароль зараховується як невдалий вхід; п'ять таких блокують обліковий запис.
+2. Запит відхиляється без жодного запису, поки інший запит очікує (`erasure-pending`), поки діє юридичне утримання (`legal-hold`; причина не розкривається) і для єдиного активного системного адміністратора (`last-administrator`).
+3. Прийнятий запит зберігається як `PENDING` в `erasure_requests` зі `scheduled_for` через 30 днів (`app.erasure.grace-period`), записується в аудит як `ERASURE_REQUESTED` і підтверджується листом про конфіденційність із датою та посиланням для скасування. Оболонка показує банер із датою на кожній сторінці.
+4. До цієї дати особа може скасувати запит (`POST /api/v1/users/me/erasure-request/cancel`): `CANCELLED`, `ERASURE_CANCELLED`, лист-підтвердження.
+5. Нічне завдання (02:30 за київським часом) надсилає одне нагадування за сім днів до дати (`app.erasure.warning-before`).
+6. У визначену дату завдання видаляє обліковий запис, якщо юридичне утримання не відкладає видалення (6.1.5). Уповноважений із захисту даних бачить очікувану дату поруч із юридичними утриманнями облікового запису.
+
 ### 5.2 Категорії Видалення Даних
 
 | **Категорія** | **Стратегія Видалення** | **Таймлайн** | **Винятки** |
 |---------------|-------------------------|--------------|-------------|
-| **Профіль Користувача** | Повне видалення | 30 днів | Юридичні утримання |
-| **Нагороди** | Анонімізація | 30 днів | Збереження публічного запису |
-| **Документи** | Повне видалення | 30 днів | Немає |
-| **Аудит Логи** | Анонімізація | 30 днів | 7-річне зберігання для відповідності |
-| **Резервні Копії** | Позначення для виключення | Наступний цикл резервування | Вимоги відповідності |
+| **Профіль Користувача** | Скраб: псевдонім `Erased #<id>`, адреса `erased-<id>@erased.invalid`, статус `DELETED`; матеріал для входу видалено | 30 днів | Юридичні утримання відкладають |
+| **Нагороди** | Схвалені: зберігаються `PRIVATE` під псевдонімом; всі інші видалені з запитами, рішеннями й версіями | 30 днів | Збереження публічного запису |
+| **Документи** | Повне видалення, об'єкти сховища після коміту | 30 днів | Немає |
+| **Сповіщення** | Власні видалені; імена людини в пов'язаних сповіщеннях інших замінені псевдонімом | 30 днів | Немає |
+| **Записи Згоди** | Зберігаються без IP-адреси та user agent; видаляються сім років після видалення (`fn_purge_consent_records`, 6.2.3) | 30 днів | 7-річне зберігання (доказ підтвердження) |
+| **Журнали Аудиту** | Охоронювана редакція значень (`fn_redact_audit_subject`, ADR-024): особисті ключі `"[erased]"`, снімки видалених записів `{"erased": true}`, власна IP-адреса й user agent видалені; рядки, дії й часи збережені; `AUDIT_REDACTED` записує кількості | 30 днів | 7-річне зберігання для відповідності |
+| **Резервні Копії** | Зашифровані, видаляються через 14 днів; відновлення запускає завдання стирання та зберігання до наступної ночі | 14 днів після стирання | Немає (DEMO_DEPLOYMENT §4) |
 | **Аналітика** | Анонімізація | Негайно | Вже анонімізовано |
+
+Те саме видалення запускається без запиту людини, коли фонова робота утримання подає запит (`erasure_requests.origin` `RETENTION`, 6.2.3): непідтверджена реєстрація за 30 днів від останнього посилання верифікації, обліковий запис зі статусом `RETIRED` або `MEMORIAL` за сім років від зміни статусу. Такий запит терміновий й виконується при наступному запуску о 02:30 з тими самими утриманнями, перевіркою останнього адміністратора й редакцією аудиту, але без листування (непідтверджена адреса ніколи не була підтверджена, адреса колишнього працівника зазвичай мінула); `ERASURE_COMPLETED` і `ERASURE_POSTPONED` мають `origin: retention`, і запит, чий обліковий запис був верифікований, поновлений чи повернутий у службу тим часом, скасовується під блокуванням рядків.
 
 ### 5.3 Технічне Впровадження
 
@@ -588,9 +479,7 @@ public class DataErasureService {
         // Видалення профілю користувача (останній крок)
         tasks.add(userService.deleteUser(userId));
         
-        // Запит на виключення з резервних копій
-        backupService.markUserForExclusion(userId);
-        
+        // Резервні копії не редагуються: стертий запис зникає разом із ними через 14 днів
         // Агрегація результатів
         return ErasureResult.completed(tasks);
     }
@@ -678,64 +567,93 @@ public class AnonymizationService {
 
 ### 6.2 Структура Даних Експорту
 
+Для JSON реалізовано через `GET /api/v1/users/me/export` (функція 1.3, версія формату `1.1` з 2.1.8 (SCRUM-43): додано `award_versions`; `1.2` з 4.3.4 (SCRUM-70): додано `review_decisions` і `decisions_made`; `1.3` з 4.3.8 (SCRUM-74): `shown_to_colleagues` для кожного документа; `1.4` з 7.2.3 (SCRUM-68): додано `notifications` і `notification_preferences`; `1.5`: `legal_holds`; `1.6`: `erasure_requests`; `1.7` з 5.1.2 (SCRUM-99): `dashboard_preferences`, приховані віджети панелі з часом вибору; `1.8` з 9.4.1 (SCRUM-155): `dashboard_preferences` містить `color_scheme` і `layouts` замість `hidden_widgets`). Назви властивостей — у snake_case; кожен розділ присутній, розділи-списки можуть бути порожніми. IP-адреси є власними ідентифікаторами особи (ст. 15 і 20) і експортуються без приховування; журнал активності зберігає адресу лише для дій, які особа виконує сама (вхід, вихід, підтвердження адреси, скидання пароля, відкликання «це був не я», зміни профілю й адреси, відхилені запити, експорти); події, які будь-хто може спричинити щодо облікового запису (невдалі входи, запити на скидання, блокування), і події, спричинені іншою особою (ролі, делегування), мають `null`, тож адреса стороннього чи адміністратора до файлу не потрапляє.
+
 ```json
 {
   "export_metadata": {
-    "export_date": "2025-12-16T10:30:00Z",
-    "user_id": "USR-12345",
-    "format_version": "1.0",
-    "gdpr_article": "Стаття 20 - Право на Портативність Даних"
+    "export_date": "2026-09-30T09:00:00Z",
+    "user_id": 5,
+    "format_version": "1.4",
+    "gdpr_article": "Article 20 - Right to Data Portability"
   },
   "personal_data": {
     "profile": {
-      "email": "user@example.com",
-      "first_name": "Іван",
+      "email": "employee.fmi@chnu.edu.ua",
+      "first_name": "Анастасія",
       "last_name": "Петренко",
-      "organization": "Факультет Комп'ютерних Наук",
-      "registration_date": "2024-01-15"
-    },
-    "preferences": {
-      "notification_email": true,
-      "notification_sms": false,
-      "language": "uk"
+      "department": { "id": 64, "name": "Department of Algebra and Informatics", "name_uk": "Кафедра алгебри та інформатики" },
+      "faculty": { "id": 9, "name": "Faculty of Mathematics and Informatics", "name_uk": "Факультет математики та інформатики" },
+      "account_status": "ACTIVE",
+      "created_at": "2026-09-01T08:00:00Z",
+      "last_login_at": "2026-09-30T08:55:00Z"
     }
   },
+  "roles": [
+    { "role": "EMPLOYEE", "organization": { "id": 64, "name": "…", "name_uk": "…" },
+      "valid_from": "2026-09-01", "valid_to": null, "current": true }
+  ],
+  "delegations": [
+    { "direction": "RECEIVED", "other_party": "Петро Мартинюк", "role": "DEAN", "organization": { "id": 9, "name": "…", "name_uk": "…" },
+      "valid_from": "2026-09-30", "valid_to": "2026-10-05", "state": "active", "reason": null,
+      "created_at": "2026-09-29T10:00:00Z", "revoked_at": null }
+  ],
   "awards": [
-    {
-      "award_id": "AWD-001",
-      "title": "Найкраща Дослідницька Робота 2024",
-      "date": "2024-06-15",
-      "category": "Академічні Досягнення",
-      "status": "ЗАТВЕРДЖЕНО",
-      "awarding_organization": "Міністерство Освіти"
-    }
+    { "award_id": 21, "title": "Letter of gratitude", "title_uk": "Подяка", "description": null, "description_uk": null,
+      "category": { "id": 13, "name": "Ministry", "name_uk": "Міністерство" }, "awarding_organization": "МОН України",
+      "award_date": "2025-05-01", "status": "DRAFT", "external_url": null, "organization": { "id": 64, "name": "…", "name_uk": "…" },
+      "recipient_unit": null, "created_at": "2026-09-20T09:00:00Z", "updated_at": "2026-09-20T09:00:00Z" }
+  ],
+  "award_versions": [
+    { "award_id": 21, "version": 1, "action": "CREATED", "changed_fields": [], "created_at": "2026-09-20T09:00:00Z",
+      "snapshot": { "title": "Letter of gratitude", "title_uk": "Подяка", "description": null, "description_uk": null,
+        "awarding_organization": "МОН України", "award_date": "2025-05-01", "category_id": 13, "status": "DRAFT",
+        "impact_score": null, "external_url": null, "organization_id": 64 } }
   ],
   "documents": [
-    {
-      "document_id": "DOC-001",
-      "filename": "certificate.pdf",
-      "upload_date": "2024-06-16",
-      "download_url": "/api/export/documents/DOC-001"
-    }
+    { "document_id": 7, "award_id": 21, "file_name": "certificate.pdf", "file_type": "PDF", "mime_type": "application/pdf",
+      "file_size": 184320, "uploaded_at": "2026-09-20T09:05:00Z", "api_path": "/api/v1/documents/7",
+      "shown_to_colleagues": false }
+  ],
+  "review_decisions": [
+    { "award_id": 21, "award_title": "Letter of gratitude", "award_title_uk": "Подяка", "decision": "RETURNED",
+      "level": "FACULTY_SECRETARY", "decided_at": "2026-10-01T09:00:00Z", "comments": "Додайте наказ",
+      "reviewer": "Оксана Коваль", "delegator": null }
+  ],
+  "decisions_made": [
+    { "award_id": 40, "award_title": "Diploma", "award_title_uk": "Диплом", "decision": "APPROVED", "level": "DEAN",
+      "decided_at": "2026-10-02T10:00:00Z", "comments": "Погоджено", "reviewer": "Анастасія Петренко",
+      "delegator": "Петро Мартинюк" }
   ],
   "consent_history": [
-    {
-      "consent_type": "DATA_PROCESSING",
-      "granted_at": "2024-01-15T09:00:00Z",
-      "version": "1.0"
-    }
+    { "consent_type": "DATA_PROCESSING", "consent_version": "1.0", "granted": true, "granted_at": "2026-09-01T08:00:00Z",
+      "withdrawn_at": null, "ip_address": "10.0.0.7", "created_at": "2026-09-01T08:00:00Z" }
+  ],
+  "devices": [
+    { "browser": "Firefox", "operating_system": "Windows", "last_ip_address": "10.0.0.7",
+      "first_seen_at": "2026-09-01T08:01:00Z", "last_used_at": "2026-09-30T08:55:00Z" }
   ],
   "activity_log": [
-    {
-      "action": "LOGIN",
-      "timestamp": "2024-12-15T08:30:00Z",
-      "ip_address": "[ПРИХОВАНА]"
-    }
+    { "action": "LOGIN_SUCCESS", "timestamp": "2026-09-30T08:55:00Z", "ip_address": "10.0.0.7" },
+    { "action": "ROLE_ASSIGNED", "timestamp": "2026-09-02T12:00:00Z", "ip_address": null }
+  ],
+  "notifications": [
+    { "type": "AWARD_RETURNED", "channel": "EMAIL", "payload": { "title": "Certificate", "titleUk": "Грамота", "reviewer": "Ірина Бойко", "level": "FACULTY_SECRETARY" },
+      "read": false, "sent_at": "2026-09-30T08:40:00Z", "read_at": null, "delivered_at": "2026-09-30T08:40:02Z", "delivery_status": "SENT" },
+    { "type": "AWARD_RETURNED", "channel": "IN_APP", "payload": { "title": "Certificate", "titleUk": "Грамота", "reviewer": "Ірина Бойко", "level": "FACULTY_SECRETARY" },
+      "read": true, "sent_at": "2026-09-30T08:40:00Z", "read_at": "2026-09-30T08:50:00Z", "delivered_at": null, "delivery_status": null }
+  ],
+  "notification_preferences": [
+    { "type": "ROLE_ASSIGNED", "email": false, "in_app": true }
   ]
 }
 ```
 
+Версії нагород не вказують, хто їх зберіг, бо пізніший рецензент — інша особа. Рішення рецензентів, від найстарішого, подано двічі: `review_decisions` містить рішення щодо власних нагород особи з коментарем і повним іменем рецензента (і делегатора, якщо рецензент діяв за дорученням); `decisions_made` містить рішення, які особа ухвалила як рецензент, і рішення, ухвалені делегатом за переданою нею роллю, з коментарем, назвами нагород та іменами рецензента й делегатора; від нагороди подано лише назви (вільний текст, який може називати власника), нічого іншого про нагороду чи її власника. `notifications` містить усі сповіщення в застосунку та журнал доставки листів типів сповіщень, від найновішого, з даними, з яких будується речення (ніколи не коментар рецензента чи виправлені значення); `notification_preferences` містить лише типи, які особа змінила, бо тип без рядка увімкнено для обох каналів. Файл ніколи не містить хешу пароля, одноразових токенів чи їхніх хешів, записів сервера авторизації, знімків рядків тригерів аудиту, відбитків пристроїв, ключів сховища або даних інших людей, окрім імен другої сторони делегування, рецензентів і делегаторів.
+
 ### 6.3 Технічне Впровадження
+
+У реалізації (функція 1.3) файл збирається синхронно з іменованих стовпців (`PersonalDataAssembler`), повертається як вкладення з `Cache-Control: no-store` і завантажується браузером як Blob, тож bearer-токен ніколи не з'являється в URL. Тимчасовий файл у сховищі та 24-годинне посилання для завантаження з ескізу нижче не використовуються: дані однієї особи займають десятки кілобайтів, а посилання без bearer-токена було б ще одним секретом для захисту. Експорт обмежено одним на хвилину, він фіксується в аудиті як `DATA_EXPORT` (`entity_type` `GDPR`, кількості записів у розділах) і супроводжується листом із часом, IP та браузером. CSV і PDF з'являться разом із механізмом звітів (епік 6).
 
 ```java
 // Сервіс Портативності Даних
@@ -1029,12 +947,13 @@ public class BreachNotificationService {
 
 | **Право** | **Стаття** | **Функція** | **Статус** |
 |-----------|------------|-------------|------------|
-| Доступ | Ст. 15 | Дашборд Переглянути Мої Дані | ✅ Спроектовано |
-| Виправлення | Ст. 16 | Редагування профілю, запит виправлення даних | ✅ Спроектовано |
-| Видалення | Ст. 17 | Видалення акаунту, анонімізація даних | ✅ Спроектовано |
-| Портативність | Ст. 20 | Експорт JSON/CSV/PDF | ✅ Спроектовано |
-| Обмеження | Ст. 18 | Налаштування конфіденційності, контролі видимості | ✅ Спроектовано |
-| Заперечення | Ст. 21 | Відкликання згоди, відмова | ✅ Спроектовано |
+| Доступ | Ст. 15 | Центр конфіденційності з журналом власних дій, експорт JSON | ✅ Реалізовано (функції 1.3, 6.1) |
+| Виправлення | Ст. 16 | Редагування профілю | ✅ Реалізовано (функція 1.3); окремого запиту виправлення немає |
+| Видалення | Ст. 17 | Запит на видалення з 30-денним пільговим періодом, видалення в усіх модулях, юридичне блокування | ✅ Реалізовано (функція 6.1) |
+| Портативність | Ст. 20 | Експорт JSON | ✅ Реалізовано (функція 1.3); CSV і PDF не створювалися, файл JSON відповідає ст. 20 (відхилення 6 епіку 6) |
+| Обмеження | Ст. 18 | Видимість нагород, спільний доступ до документів і вибір сповіщень у центрі конфіденційності | ✅ Реалізовано як вибір (функції 2.x, 6.1); окремого процесу обмеження обробки немає |
+| Заперечення | Ст. 21 | Відкликання згоди | ✅ Реалізовано для необов'язкової згоди `ANALYTICS` (функція 6.1) |
+| Обмеження зберігання | Ст. 5(1)(e) | Нічна задача зберігання з настроюваними політиками | ✅ Реалізовано (функція 6.2) |
 
 ---
 

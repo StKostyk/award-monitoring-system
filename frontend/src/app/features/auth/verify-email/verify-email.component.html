@@ -1,0 +1,74 @@
+<app-auth-layout>
+  <mat-card class="auth-card">
+    <mat-card-header>
+      <mat-card-title>{{ 'verify.title' | transloco }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      @switch (state()) {
+        @case ('form') {
+          <p class="auth-card__hint" data-testid="verify-hint">
+            {{ 'verify.passwordHint' | transloco }}
+          </p>
+          <form (submit)="$event.preventDefault(); submit()" class="auth-form" novalidate>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'verify.password' | transloco }}</mat-label>
+              <input
+                matInput
+                [formControl]="password"
+                type="password"
+                autocomplete="current-password"
+                data-testid="verify-password"
+              />
+              @if (password.invalid) {
+                <mat-error>{{ 'register.validation.required' | transloco }}</mat-error>
+              }
+            </mat-form-field>
+            @if (error(); as error) {
+              <p class="auth-form__error" role="alert" data-testid="verify-error">
+                {{ error | transloco }}
+              </p>
+            }
+            <button
+              mat-flat-button
+              type="submit"
+              [disabled]="submitting()"
+              data-testid="verify-submit"
+            >
+              {{ 'verify.submit' | transloco }}
+            </button>
+          </form>
+        }
+        @case ('verified') {
+          <p role="status" data-testid="verify-success">
+            @if (waitingAwards() > 0) {
+              {{ 'verify.successWaiting' | transloco: { email: email(), count: waitingAwards() } }}
+            } @else {
+              {{ 'verify.success' | transloco: { email: email() } }}
+            }
+          </p>
+          <div class="auth-actions">
+            <button mat-flat-button type="button" (click)="signIn()" data-testid="verify-sign-in">
+              {{ 'verify.signIn' | transloco }}
+            </button>
+          </div>
+        }
+        @case ('invalid') {
+          <p role="alert" data-testid="verify-invalid">{{ 'verify.invalid' | transloco }}</p>
+          <p class="auth-card__hint">{{ 'verify.resendHint' | transloco }}</p>
+          <div class="auth-actions">
+            <a
+              mat-stroked-button
+              routerLink="/registration-pending"
+              data-testid="verify-go-pending"
+            >
+              {{ 'verify.resend' | transloco }}
+            </a>
+          </div>
+        }
+        @case ('failed') {
+          <p role="alert" data-testid="verify-failed">{{ 'verify.failed' | transloco }}</p>
+        }
+      }
+    </mat-card-content>
+  </mat-card>
+</app-auth-layout>

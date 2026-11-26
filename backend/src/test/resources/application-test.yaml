@@ -1,0 +1,46 @@
+app:
+  auth:
+    protection:
+      requests-per-minute: 200
+      public-requests-per-minute: 60
+      account-requests-per-minute: 50
+  rate-limit:
+    api-requests-per-minute: 1000
+    export-requests-per-minute: 100
+  workflow:
+    overdue-cron: "-"
+  erasure:
+    cron: "-"
+  events:
+    first-run: PT24H
+  documents:
+    upload-rate: 200
+    scan:
+      enabled: false
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  flyway:
+    enabled: true
+
+management:
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+  tracing:
+    enabled: false
+
+otel:
+  sdk:
+    disabled: true
+
+logging:
+  level:
+    org.springframework: WARN
+    org.hibernate: WARN
+    org.testcontainers: INFO
+    ua.edu.chnu: DEBUG

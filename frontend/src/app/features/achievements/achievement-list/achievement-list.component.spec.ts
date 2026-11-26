@@ -1,0 +1,478 @@
+import { HttpErrorResponse } from '@angular/common/http';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import {
+  ActivatedRoute,
+  ParamMap,
+  Router,
+  convertToParamMap,
+  provideRouter,
+} from '@angular/router';
+import { signal } from '@angular/core';
+import { TranslocoTestingModule } from '@jsverse/transloco';
+import { BehaviorSubject, Subject, of, throwError } from 'rxjs';
+import { MockInstance, vi } from 'vitest';
+
+import { AuthService } from '../../../core/auth/auth.service';
+import { LanguageService } from '../../../core/i18n/language.service';
+import { OrganizationsService } from '../../../core/organizations/organizations.service';
+import { kyivToday } from '../../../shared/date-format';
+import { Page } from '../../awards/awards.service';
+import { Achievement, AchievementsService, NO_ACHIEVEMENT_FILTERS } from '../achievements.service';
+import { AchievementListComponent } from './achievement-list.component';
+
+const achievement: Achievement = {
+  awardId: 7,
+  title: 'Ministry letter',
+  titleUk: 'Грамота МОН',
+  description: null,
+  descriptionUk: null,
+  category: { id: 13, name: 'Ministry Recognition', nameUk: null, level: 'NATIONAL' },
+  awardingOrganization: 'МОН України',
+  awardDate: '2025-05-01',
+  externalUrl: null,
+  verified: false,
+  recipient: {
+    type: 'PERSON',
+    personName: 'Анастасія Коваль',
+    unit: { id: 64, name: 'Algebra', nameUk: null, type: 'DEPARTMENT' },
+  },
+};
+
+function page(content: Achievement[]): Page<Achievement> {
+  return { content, totalElements: content.length, totalPages: 1, size: 20, number: 0 };
+}
+
+const translations = {
+  uk: {
+    achievements: {
+      empty: 'Поки що немає досягнень за цими умовами.',
+      filters: { search: 'Пошук досягнень' },
+      problems: { failed: 'Не вдалося завантажити досягнення.', gone: 'Такого підрозділу немає.' },
+      title: 'Досягнення',
+      publicTitle: 'Досягнення університету',
+      personTitle: 'Досягнення: {{name}}',
+      publicPage: 'Публічна сторінка',
+      viewAsStaff: 'Переглянути як співробітник',
+      count: { one: '{{count}} досягнення', many: '{{count}} досягнень' },
+    },
+  },
+};
+
+describe('AchievementListComponent', () => {
+  const service = { list: vi.fn(), units: vi.fn(), highlightCandidates: vi.fn() };
+  const signedIn = signal(true);
+  let params: BehaviorSubject<ParamMap>;
+  let unitId: BehaviorSubject<ParamMap>;
+  let navigate: MockInstance<Router['navigate']>;
+
+  async function open(
+    scope: 'signed-in' | 'public' = 'signed-in',
+  ): Promise<ComponentFixture<AchievementListComponent>> {
+    await TestBed.configureTestingModule({
+      imports: [
+        AchievementListComponent,
+        TranslocoTestingModule.forRoot({
+          langs: translations,
+          translocoConfig: { availableLangs: ['uk'], defaultLang: 'uk' },
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: { queryParamMap: params, paramMap: unitId, snapshot: { data: { scope } } },
+        },
+        { provide: AchievementsService, useValue: service },
+        { provide: LanguageService, useValue: { current: () => 'uk' } },
+        { provide: AuthService, useValue: { isAuthenticated: signedIn } },
+        { provide: OrganizationsService, useValue: { ofType: () => of([]) } },
+      ],
+    }).compileComponents();
+    navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const fixture = TestBed.createComponent(AchievementListComponent);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  const element = (fixture: ComponentFixture<unknown>, id: string): Element | null =>
+    (fixture.nativeElement as HTMLElement).querySelector(`[data-testid="${id}"]`);
+
+  beforeEach(() => {
+    params = new BehaviorSubject(convertToParamMap({}));
+    unitId = new BehaviorSubject(convertToParamMap({}));
+    signedIn.set(true);
+    service.list.mockReset().mockReturnValue(of(page([achievement])));
+    service.units.mockReset().mockReturnValue(of([]));
+    service.highlightCandidates.mockReset().mockReturnValue(of([]));
+  });
+
+  it('ac1_8_shows_the_shared_awards_as_cards', async () => {
+    const fixture = await open();
+
+    expect(service.list).toHaveBeenCalledWith(
+      {
+        filters: NO_ACHIEVEMENT_FILTERS,
+        page: 0,
+        size: 20,
+      },
+      'signed-in',
+    );
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('[data-testid="achievement-card"]'),
+    ).toHaveLength(1);
+  });
+
+  it('ac1_8_loads_the_filters_from_the_address_bar_and_follows_its_changes', async () => {
+    params.next(convertToParamMap({ unit: '9', year: '2025' }));
+    await open();
+
+    expect(service.list).toHaveBeenLastCalledWith(
+      { filters: { ...NO_ACHIEVEMENT_FILTERS, unit: 9, year: 2025 }, page: 0, size: 20 },
+      'signed-in',
+    );
+
+    params.next(convertToParamMap({ recipient: 'UNIT' }));
+
+    expect(service.list).toHaveBeenLastCalledWith(
+      { filters: { ...NO_ACHIEVEMENT_FILTERS, recipient: 'UNIT' }, page: 0, size: 20 },
+      'signed-in',
+    );
+  });
+
+  it('ac1_8_a_changed_filter_goes_into_the_address_bar_on_the_first_page', async () => {
+    params.next(convertToParamMap({ unit: '9', page: '3' }));
+    const fixture = await open();
+
+    fixture.componentInstance.filter({ recipient: 'UNIT' });
+
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { unit: 9, recipient: 'UNIT' } }),
+    );
+  });
+
+  it('ac1_8_a_page_change_goes_into_the_address_bar', async () => {
+    const fixture = await open();
+
+    fixture.componentInstance.page({ pageIndex: 1, pageSize: 50, length: 120 });
+
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { page: 1, size: 50 } }),
+    );
+  });
+
+  it('ac1_8_an_empty_result_says_so', async () => {
+    service.list.mockReturnValue(of(page([])));
+    const fixture = await open();
+
+    expect(element(fixture, 'achievements-empty')?.textContent).toContain(
+      'Поки що немає досягнень за цими умовами.',
+    );
+  });
+
+  it('ac1_11_the_search_comes_from_the_address_bar', async () => {
+    params.next(convertToParamMap({ q: 'шевченко', year: '2025' }));
+    const fixture = await open();
+    await fixture.whenStable();
+
+    expect(service.list).toHaveBeenLastCalledWith(
+      { filters: { ...NO_ACHIEVEMENT_FILTERS, year: 2025, q: 'шевченко' }, page: 0, size: 20 },
+      'signed-in',
+    );
+    expect((element(fixture, 'filter-q') as HTMLInputElement).value).toBe('шевченко');
+  });
+
+  it('ac1_11_a_search_goes_into_the_address_bar_on_the_first_page', async () => {
+    params.next(convertToParamMap({ year: '2025', page: '3' }));
+    const fixture = await open();
+
+    fixture.componentInstance.filter({ q: 'horizon' });
+
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { year: 2025, q: 'horizon' } }),
+    );
+  });
+
+  it('ac1_11_a_search_on_a_unit_page_keeps_the_unit_out_of_the_address_bar', async () => {
+    unitId.next(convertToParamMap({ id: '64' }));
+    const fixture = await open();
+
+    fixture.componentInstance.filter({ q: 'horizon' });
+
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { q: 'horizon' } }),
+    );
+  });
+
+  it('ac1_11_the_public_page_link_keeps_the_search', async () => {
+    params.next(convertToParamMap({ q: 'horizon' }));
+    const fixture = await open();
+
+    expect(element(fixture, 'achievements-counterpart')?.getAttribute('href')).toBe(
+      '/public/achievements?q=horizon',
+    );
+  });
+
+  it('ac1_6_an_unknown_unit_is_reported_without_a_retry', async () => {
+    service.list.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+    const fixture = await open();
+
+    expect(element(fixture, 'achievements-error')?.textContent).toContain(
+      'Такого підрозділу немає.',
+    );
+    expect(element(fixture, 'achievements-retry')).toBeNull();
+    expect(element(fixture, 'achievements-empty')).toBeNull();
+  });
+
+  it('edge_a_failed_load_offers_a_retry_that_loads_again', async () => {
+    service.list.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 503 })));
+    const fixture = await open();
+
+    (element(fixture, 'achievements-retry') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(service.list).toHaveBeenCalledTimes(2);
+    expect(element(fixture, 'achievements-error')).toBeNull();
+    expect(element(fixture, 'achievement-card')).not.toBeNull();
+  });
+
+  it('edge_a_filter_change_cancels_a_pending_retry', async () => {
+    const pending = new Subject<Page<Achievement>>();
+    service.list
+      .mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 503 })))
+      .mockReturnValueOnce(pending)
+      .mockReturnValueOnce(of(page([])));
+    const fixture = await open();
+
+    (element(fixture, 'achievements-retry') as HTMLButtonElement).click();
+    params.next(convertToParamMap({ year: '2025' }));
+    fixture.detectChanges();
+
+    expect(pending.observed).toBe(false);
+    expect(element(fixture, 'achievements-empty')).not.toBeNull();
+  });
+
+  it('ac2_4_a_unit_page_lists_the_unit_with_the_other_filters_and_no_unit_filter', async () => {
+    unitId.next(convertToParamMap({ id: '64' }));
+    params.next(convertToParamMap({ unit: '9', year: '2025' }));
+    const fixture = await open();
+
+    expect(service.list).toHaveBeenLastCalledWith(
+      { filters: { ...NO_ACHIEVEMENT_FILTERS, unit: 64, year: 2025 }, page: 0, size: 20 },
+      'signed-in',
+    );
+    expect(element(fixture, 'filter-unit')).toBeNull();
+    expect(element(fixture, 'unit-header')).not.toBeNull();
+    expect(element(fixture, 'achievements-title')).toBeNull();
+  });
+
+  it('ac2_4_a_filter_on_a_unit_page_keeps_the_unit_out_of_the_address_bar', async () => {
+    unitId.next(convertToParamMap({ id: '64' }));
+    const fixture = await open();
+
+    fixture.componentInstance.filter({ year: 2024 });
+
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { year: 2024 } }),
+    );
+  });
+
+  it('ac2_4_an_unknown_unit_shows_the_not_found_page', async () => {
+    unitId.next(convertToParamMap({ id: '1' }));
+    service.list.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+    await open();
+
+    expect(navigate).toHaveBeenCalledWith(['/not-found'], { skipLocationChange: true });
+  });
+
+  it('ac2_4_an_id_that_is_no_number_shows_the_not_found_page_without_a_request', async () => {
+    unitId.next(convertToParamMap({ id: 'abc' }));
+    await open();
+
+    expect(service.list).not.toHaveBeenCalled();
+    expect(navigate).toHaveBeenCalledWith(['/not-found'], { skipLocationChange: true });
+  });
+
+  it('ac2_5_an_anonymous_visitor_gets_the_public_set_without_a_staff_link', async () => {
+    signedIn.set(false);
+    const fixture = await open('public');
+
+    expect(service.list).toHaveBeenCalledWith(expect.anything(), 'public');
+    expect(element(fixture, 'achievements-title')?.textContent).toContain(
+      'Досягнення університету',
+    );
+    expect(element(fixture, 'achievements-counterpart')).toBeNull();
+    expect(element(fixture, 'achievement-unit')?.getAttribute('href')).toBe(
+      '/public/units/64/achievements',
+    );
+  });
+
+  it('ac2_6_a_signed_in_visitor_of_a_public_unit_page_is_offered_the_staff_page', async () => {
+    unitId.next(convertToParamMap({ id: '64' }));
+    params.next(convertToParamMap({ year: '2025' }));
+    const fixture = await open('public');
+
+    const link = element(fixture, 'achievements-counterpart');
+    expect(link?.textContent).toContain('Переглянути як співробітник');
+    expect(link?.getAttribute('href')).toBe('/units/64/achievements?year=2025');
+  });
+
+  it('ac2_6_the_staff_page_leads_to_the_public_page_with_the_same_filters', async () => {
+    params.next(convertToParamMap({ unit: '9', level: 'NATIONAL' }));
+    const fixture = await open();
+
+    const link = element(fixture, 'achievements-counterpart');
+    expect(link?.textContent).toContain('Публічна сторінка');
+    expect(link?.getAttribute('href')).toBe('/public/achievements?unit=9&level=NATIONAL');
+    expect(element(fixture, 'achievement-unit')?.getAttribute('href')).toBe(
+      '/units/64/achievements',
+    );
+  });
+
+  it('ac3_5_the_public_page_of_a_person_names_the_person_and_keeps_the_other_filters', async () => {
+    signedIn.set(false);
+    params.next(convertToParamMap({ person: '12', year: '2025' }));
+    const fixture = await open('public');
+
+    expect(service.list).toHaveBeenCalledWith(
+      { filters: { ...NO_ACHIEVEMENT_FILTERS, person: 12, year: 2025 }, page: 0, size: 20 },
+      'public',
+    );
+    expect(element(fixture, 'achievements-title')?.textContent).toContain(
+      'Досягнення: Анастасія Коваль',
+    );
+  });
+
+  it('ac3_5_a_person_page_without_awards_keeps_the_public_heading', async () => {
+    params.next(convertToParamMap({ person: '12' }));
+    service.list.mockReturnValue(of(page([])));
+    const fixture = await open('public');
+
+    expect(element(fixture, 'achievements-title')?.textContent).toContain(
+      'Досягнення університету',
+    );
+  });
+
+  it('ac3_5_the_staff_link_of_a_person_page_drops_the_person', async () => {
+    params.next(convertToParamMap({ person: '12', year: '2025' }));
+    const fixture = await open('public');
+
+    expect(element(fixture, 'achievements-counterpart')?.getAttribute('href')).toBe(
+      '/achievements?year=2025',
+    );
+  });
+
+  it('ac3_5_the_staff_list_ignores_a_person_in_the_address_bar', async () => {
+    params.next(convertToParamMap({ person: '12' }));
+    await open();
+
+    expect(service.list).toHaveBeenCalledWith(
+      { filters: NO_ACHIEVEMENT_FILTERS, page: 0, size: 20 },
+      'signed-in',
+    );
+  });
+
+  it('ac3_1_the_recipient_chips_set_the_filter_in_the_address_bar', async () => {
+    params.next(convertToParamMap({ recipient: 'UNIT' }));
+    const fixture = await open();
+
+    expect(element(fixture, 'recipient-UNIT')?.getAttribute('aria-pressed')).toBe('true');
+    expect(element(fixture, 'recipient-all')?.getAttribute('aria-pressed')).toBe('false');
+
+    (element(fixture, 'recipient-PERSON') as HTMLButtonElement).click();
+
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { recipient: 'PERSON' } }),
+    );
+
+    (element(fixture, 'recipient-all') as HTMLButtonElement).click();
+
+    expect(navigate).toHaveBeenLastCalledWith([], expect.objectContaining({ queryParams: {} }));
+  });
+
+  it('ac3_2_highlights_the_highest_level_of_this_month_from_the_list_filters', async () => {
+    const today = kyivToday();
+    service.highlightCandidates.mockReturnValue(
+      of([
+        { ...achievement, awardId: 9, awardDate: today, title: 'Faculty prize' },
+        {
+          ...achievement,
+          awardId: 8,
+          awardDate: `${today.slice(0, 7)}-01`,
+          title: 'International grant',
+          titleUk: 'Міжнародний грант',
+          category: { ...achievement.category, level: 'INTERNATIONAL' },
+        },
+      ]),
+    );
+    params.next(convertToParamMap({ recipient: 'PERSON' }));
+    const fixture = await open();
+
+    expect(service.highlightCandidates).toHaveBeenCalledWith(
+      expect.objectContaining({ recipient: 'PERSON', unit: null }),
+      'signed-in',
+    );
+    expect(element(fixture, 'achievements-highlight')?.textContent).toContain('Міжнародний грант');
+  });
+
+  it('ac3_2_leaves_the_highlight_out_on_a_narrowed_list_and_brings_it_back_on_retry', async () => {
+    const today = kyivToday();
+    service.highlightCandidates
+      .mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 503 })))
+      .mockReturnValue(of([{ ...achievement, awardDate: today }]));
+    service.list.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 503 })));
+    const fixture = await open();
+
+    expect(element(fixture, 'achievements-highlight')).toBeNull();
+
+    (element(fixture, 'achievements-retry') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(element(fixture, 'achievements-highlight')).not.toBeNull();
+
+    params.next(convertToParamMap({ year: '1976' }));
+    fixture.detectChanges();
+
+    expect(element(fixture, 'achievements-highlight')).toBeNull();
+  });
+
+  it('ac3_2_leaves_the_highlight_out_without_awards_this_month', async () => {
+    service.highlightCandidates.mockReturnValue(of([{ ...achievement, awardDate: '2020-01-01' }]));
+    const fixture = await open();
+
+    expect(element(fixture, 'achievements-highlight')).toBeNull();
+  });
+
+  it('ac3_3_groups_the_page_by_year_newest_first_with_the_count_in_the_title', async () => {
+    service.list.mockReturnValue(
+      of({
+        ...page([
+          { ...achievement, awardId: 3, awardDate: '2026-02-01' },
+          { ...achievement, awardId: 2, awardDate: '2025-06-01' },
+          { ...achievement, awardId: 1, awardDate: '2025-01-01' },
+        ]),
+        totalElements: 906,
+      }),
+    );
+    const fixture = await open();
+
+    const groups = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll(
+        '[data-testid="achievements-year"]',
+      ),
+    ];
+    expect(groups.map((group) => group.querySelector('h2')?.textContent?.trim())).toEqual([
+      '2026',
+      '2025',
+    ]);
+    expect(groups[1].querySelectorAll('[data-testid="achievement-card"]')).toHaveLength(2);
+    expect(element(fixture, 'achievements-feed')?.querySelector('h2')?.textContent).toContain(
+      '906',
+    );
+  });
+});

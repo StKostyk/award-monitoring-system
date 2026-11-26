@@ -1,0 +1,202 @@
+@if (loading()) {
+  <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />
+}
+@if (notFound()) {
+  <app-status-page
+    icon="search-x"
+    [title]="'awards.notFound' | transloco"
+    [text]="'awards.notFoundText' | transloco"
+    data-testid="award-not-found"
+  >
+    <a mat-flat-button routerLink="/awards">{{ 'awards.back' | transloco }}</a>
+  </app-status-page>
+}
+@if (failed()) {
+  <p class="award-detail__problem" role="alert" data-testid="award-detail-error">
+    {{ 'awards.problems.unknown' | transloco }}
+  </p>
+}
+@if (notice(); as notice) {
+  <p class="award-detail__problem" role="alert" data-testid="award-detail-notice">
+    {{ notice | transloco }}
+  </p>
+}
+
+@if (award(); as award) {
+  <article class="award-detail" data-testid="award-detail">
+    <div class="award-detail__header">
+      <h1 class="award-detail__title" data-testid="award-detail-title">{{ title(award) }}</h1>
+      <mat-chip data-testid="award-detail-status">{{
+        'awards.status.' + award.status | transloco
+      }}</mat-chip>
+      @if (award.source === 'IMPORT') {
+        <mat-chip data-testid="award-detail-imported">{{ 'awards.imported' | transloco }}</mat-chip>
+      }
+    </div>
+    <div class="award-detail__columns">
+      <div class="award-detail__main">
+        <app-pane icon="file-text" [heading]="'awards.facts' | transloco">
+          <dl class="award-detail__fields">
+            @if (award.titleUk && award.title) {
+              <dt>{{ 'awards.fields.title' | transloco }}</dt>
+              <dd>{{ award.title }}</dd>
+            }
+            <dt>{{ 'awards.fields.category' | transloco }}</dt>
+            <dd data-testid="award-detail-category">{{ category(award) || '—' }}</dd>
+            <dt>{{ 'awards.fields.awardingOrganization' | transloco }}</dt>
+            <dd>{{ award.awardingOrganization || '—' }}</dd>
+            <dt>{{ 'awards.fields.awardDate' | transloco }}</dt>
+            <dd>{{ award.awardDate | kyivDate }}</dd>
+            @if (award.descriptionUk || award.description) {
+              <dt>{{ 'awards.fields.descriptionUk' | transloco }}</dt>
+              <dd class="award-detail__text">{{ award.descriptionUk || award.description }}</dd>
+            }
+            @if (award.externalUrl) {
+              <dt>{{ 'awards.fields.externalUrl' | transloco }}</dt>
+              <dd>
+                <a [href]="award.externalUrl" target="_blank" rel="noopener noreferrer">{{
+                  award.externalUrl
+                }}</a>
+              </dd>
+            }
+            @if (award.recipient.organization; as unit) {
+              <dt>{{ 'awards.fields.recipient' | transloco }}</dt>
+              <dd data-testid="award-detail-recipient">{{ unitName(unit) }}</dd>
+              <dt>{{ 'awards.fields.enteredBy' | transloco }}</dt>
+            } @else {
+              <dt>{{ 'awards.fields.owner' | transloco }}</dt>
+            }
+            <dd data-testid="award-detail-owner">
+              {{ award.owner.name }}
+              @if (award.ownerWithoutAccount) {
+                <mat-chip class="award-detail__unclaimed" data-testid="award-owner-unclaimed">{{
+                  'awards.recipient.withoutAccount' | transloco
+                }}</mat-chip>
+              }
+            </dd>
+            @if (!award.recipient.organization) {
+              <dt>{{ 'awards.fields.organization' | transloco }}</dt>
+              <dd>{{ organization(award) }}</dd>
+            }
+            @if (award.request; as request) {
+              <dt>{{ 'awards.fields.request' | transloco }}</dt>
+              <dd data-testid="award-detail-request">
+                {{ 'awards.requestStatus.' + request.status | transloco }} ·
+                {{ 'awards.levels.' + request.currentLevel | transloco }}
+              </dd>
+            }
+            @if (award.impactScore !== null) {
+              <dt>{{ 'awards.fields.impactScore' | transloco }}</dt>
+              <dd>{{ award.impactScore }}</dd>
+            }
+          </dl>
+        </app-pane>
+        @if (sharable(award)) {
+          <app-visibility-section
+            [award]="award"
+            (changed)="shared($event)"
+            (refused)="refresh(award.id)"
+          />
+        } @else if (award.recipient.organization) {
+          <p class="award-detail__visibility" data-testid="award-unit-visibility">
+            {{ 'awards.visibility.unit' | transloco }}
+          </p>
+        }
+        <div class="award-detail__actions">
+          @if (reviewable(award)) {
+            <a mat-button routerLink="/reviews" data-testid="award-back">{{
+              'reviews.back' | transloco
+            }}</a>
+          } @else {
+            <a mat-button routerLink="/awards" data-testid="award-back">{{
+              'awards.back' | transloco
+            }}</a>
+          }
+          @if (removable(award)) {
+            <button
+              mat-button
+              type="button"
+              class="award-detail__remove"
+              (click)="remove(award)"
+              data-testid="award-remove"
+            >
+              {{ 'awards.remove.action' | transloco }}
+            </button>
+          }
+          @if (withdrawable(award)) {
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="withdraw(award)"
+              data-testid="award-withdraw"
+            >
+              {{ 'awards.withdraw.action' | transloco }}
+            </button>
+          }
+          @if (editable(award)) {
+            <a
+              mat-flat-button
+              [routerLink]="['/awards', award.id, 'edit']"
+              data-testid="award-edit"
+            >
+              {{ 'awards.edit' | transloco }}
+            </a>
+          }
+        </div>
+      </div>
+      <div class="award-detail__side">
+        @if (reviewable(award)) {
+          <app-review-panel
+            [awardId]="award.id"
+            (changed)="refresh(award.id)"
+            (decided)="onDecided($event)"
+          />
+        }
+        @if (decision(); as decision) {
+          <p class="award-detail__decision" role="status" data-testid="award-detail-decision">
+            {{
+              decision.key
+                | transloco: { level: ('reviews.decide.to.' + decision.level | transloco) }
+            }}
+          </p>
+        }
+        <app-award-documents
+          [awardId]="award.id"
+          [removable]="editable(award)"
+          [sharing]="documentSharing(award)"
+        />
+        @if (award.status !== 'DRAFT') {
+          <app-award-status
+            [awardId]="award.id"
+            (changed)="refresh(award.id)"
+            (lost)="refresh(award.id)"
+          />
+        }
+      </div>
+      <div class="award-detail__later">
+        @if (showHistory(award)) {
+          @if (canAudit()) {
+            <mat-tab-group class="award-detail__history" data-testid="award-history-tabs">
+              <mat-tab [label]="'awards.history.title' | transloco">
+                <app-award-history [award]="award" />
+              </mat-tab>
+              <mat-tab>
+                <ng-template mat-tab-label>
+                  <span data-testid="award-audit-tab">{{ 'awards.audit.tab' | transloco }}</span>
+                </ng-template>
+                <ng-template matTabContent>
+                  <app-award-audit-trail [awardId]="award.id" />
+                </ng-template>
+              </mat-tab>
+            </mat-tab-group>
+          } @else {
+            <section class="award-detail__history" data-testid="award-history-section">
+              <h2 class="award-detail__subtitle">{{ 'awards.history.title' | transloco }}</h2>
+              <app-award-history [award]="award" />
+            </section>
+          }
+        }
+      </div>
+    </div>
+  </article>
+}

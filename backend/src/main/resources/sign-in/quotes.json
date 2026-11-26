@@ -1,0 +1,104 @@
+[
+  {
+    "text": {"uk": "Якщо я бачив далі за інших, то тому, що стояв на плечах гігантів.", "en": "If I have seen further, it is by standing on the shoulders of giants."},
+    "author": {"uk": "Ньютон, І.", "en": "Newton, I."},
+    "year": {"uk": "1675", "en": "1675"},
+    "source": {"uk": "лист до Р. Гука", "en": "letter to R. Hooke"}
+  },
+  {
+    "text": {"uk": "Учітесь, читайте, і чужому научайтесь, й свого не цурайтесь.", "en": "Learn and read, and learn from others, but do not shun your own."},
+    "author": {"uk": "Шевченко, Т.", "en": "Shevchenko, T."},
+    "year": {"uk": "1845", "en": "1845"},
+    "source": {"uk": "«І мертвим, і живим…»", "en": "“To the Dead, the Living and the Unborn…”"}
+  },
+  {
+    "text": {"uk": "Перший принцип: не обманюй себе, а себе обманути найлегше.", "en": "The first principle is that you must not fool yourself, and you are the easiest person to fool."},
+    "author": {"uk": "Фейнман, Р.", "en": "Feynman, R."},
+    "year": {"uk": "1974", "en": "1974"},
+    "source": {"uk": "промова в Калтеху", "en": "Caltech commencement address"}
+  },
+  {
+    "text": {"uk": "Знання — сила.", "en": "Knowledge itself is power."},
+    "author": {"uk": "Бекон, Ф.", "en": "Bacon, F."},
+    "year": {"uk": "1597", "en": "1597"},
+    "source": {"uk": "Meditationes Sacrae", "en": "Meditationes Sacrae"}
+  },
+  {
+    "text": {"uk": "Світ ловив мене, та не спіймав.", "en": "The world tried to catch me, but did not catch me."},
+    "author": {"uk": "Сковорода, Г.", "en": "Skovoroda, H."},
+    "year": {"uk": "1794", "en": "1794"},
+    "source": {"uk": "епітафія", "en": "epitaph"}
+  },
+  {
+    "text": {"uk": "Навчаючи, ми вчимося.", "en": "While we teach, we learn."},
+    "author": {"uk": "Сенека", "en": "Seneca"},
+    "year": {"uk": "I ст.", "en": "1st c."},
+    "source": {"uk": "«Листи до Луцилія», 7.8", "en": "Letters to Lucilius, 7.8"}
+  },
+  {
+    "text": {"uk": "Я знаю, що нічого не знаю.", "en": "I know that I know nothing."},
+    "author": {"uk": "Сократ", "en": "Socrates"},
+    "year": {"uk": "V ст. до н. е.", "en": "5th c. BC"},
+    "source": {"uk": "за Платоном, «Апологія Сократа»", "en": "after Plato, Apology"}
+  },
+  {
+    "text": {"uk": "Ніколи не помічаєш того, що вже зроблено; бачиш лише те, що ще треба зробити.", "en": "One never notices what has been done; one can only see what remains to be done."},
+    "author": {"uk": "Склодовська-Кюрі, М.", "en": "Skłodowska-Curie, M."},
+    "year": {"uk": "1894", "en": "1894"},
+    "source": {"uk": "лист до брата Юзефа", "en": "letter to her brother Józef"}
+  },
+  {
+    "text": {"uk": "Без надії таки сподіватись, буду жити! Геть, думи сумні!", "en": "Without hope I shall still hope; I shall live! Away, sad thoughts!"},
+    "author": {"uk": "Українка, Л.", "en": "Ukrainka, L."},
+    "year": {"uk": "1890", "en": "1890"},
+    "source": {"uk": "«Contra spem spero!»", "en": "“Contra spem spero!”"}
+  },
+  {
+    "text": {"uk": "Слово, моя ти єдиная зброє, ми не повинні загинуть обоє!", "en": "Word, my only weapon, the two of us must not perish!"},
+    "author": {"uk": "Українка, Л.", "en": "Ukrainka, L."},
+    "year": {"uk": "1896", "en": "1896"},
+    "source": {"uk": "«Слово, моя ти єдиная зброє…»", "en": "“Word, my only weapon…”"}
+  },
+  {
+    "text": {"uk": "Vivere memento! Пам’ятай про життя!", "en": "Vivere memento! Remember to live!"},
+    "author": {"uk": "Франко, І.", "en": "Franko, I."},
+    "year": {"uk": "1883", "en": "1883"},
+    "source": {"uk": "«Vivere memento!»", "en": "“Vivere memento!”"}
+  },
+  {
+    "text": {"uk": "Ніщо не надто дивовижне, щоб бути правдою, якщо воно узгоджується з законами природи.", "en": "Nothing is too wonderful to be true, if it be consistent with the laws of nature."},
+    "author": {"uk": "Фарадей, М.", "en": "Faraday, M."},
+    "year": {"uk": "19.03.1849", "en": "19.03.1849"},
+    "source": {"uk": "лабораторний щоденник", "en": "laboratory diary"}
+  },
+  {
+    "text": {"uk": "Головне — не переставати ставити запитання. Допитливість має власну причину існувати.", "en": "The important thing is not to stop questioning. Curiosity has its own reason for existing."},
+    "author": {"uk": "Ейнштейн, А.", "en": "Einstein, A."},
+    "year": {"uk": "2.05.1955", "en": "2.05.1955"},
+    "source": {"uk": "журнал LIFE", "en": "LIFE magazine"}
+  },
+  {
+    "text": {"uk": "Sapere aude! Май мужність користуватися власним розумом!", "en": "Sapere aude! Have courage to use your own understanding!"},
+    "author": {"uk": "Кант, І.", "en": "Kant, I."},
+    "year": {"uk": "1784", "en": "1784"},
+    "source": {"uk": "«Що таке Просвітництво?»", "en": "“What Is Enlightenment?”"}
+  },
+  {
+    "text": {"uk": "Учитися й не думати — марна праця; думати й не вчитися — небезпечно.", "en": "Learning without thought is labour lost; thought without learning is perilous."},
+    "author": {"uk": "Конфуцій", "en": "Confucius"},
+    "year": {"uk": "V ст. до н. е.", "en": "5th c. BC"},
+    "source": {"uk": "«Лунь юй», 2.15", "en": "Analects, 2.15"}
+  },
+  {
+    "text": {"uk": "Життя коротке, мистецтво довге.", "en": "Life is short, the art long."},
+    "author": {"uk": "Гіппократ", "en": "Hippocrates"},
+    "year": {"uk": "V ст. до н. е.", "en": "5th c. BC"},
+    "source": {"uk": "«Афоризми», 1.1", "en": "Aphorisms, 1.1"}
+  },
+  {
+    "text": {"uk": "Борітеся — поборете, вам Бог помагає!", "en": "Fight on and you will win; God is helping you!"},
+    "author": {"uk": "Шевченко, Т.", "en": "Shevchenko, T."},
+    "year": {"uk": "1845", "en": "1845"},
+    "source": {"uk": "«Кавказ»", "en": "“The Caucasus”"}
+  }
+]

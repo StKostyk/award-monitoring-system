@@ -1,0 +1,223 @@
+:host {
+  display: block;
+}
+
+:host:has(.onboarding) {
+  margin-block-end: 16px;
+}
+
+.onboarding {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 24px;
+  padding: 22px;
+  border-radius: var(--app-radius-lg);
+  background: var(--app-brand-panel);
+  color: var(--app-on-brand-panel);
+}
+
+.onboarding__summary {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.onboarding__ring {
+  width: 120px;
+  height: 120px;
+  flex: none;
+}
+
+.onboarding__track,
+.onboarding__value {
+  fill: none;
+  stroke-width: 12;
+}
+
+.onboarding__track {
+  stroke: color-mix(in srgb, var(--app-on-brand-panel) 18%, transparent);
+}
+
+.onboarding__value {
+  stroke: var(--app-gold);
+  stroke-linecap: round;
+}
+
+.onboarding__count {
+  fill: currentcolor;
+  font: 800 28px var(--app-font-heading);
+}
+
+.onboarding__caption {
+  display: grid;
+  gap: 4px;
+}
+
+.onboarding__title {
+  margin: 0;
+  font: 800 1rem / 1.3 var(--app-font-heading);
+}
+
+.onboarding__greeting,
+.onboarding__progress {
+  margin: 0;
+  font: var(--mat-sys-body-small);
+}
+
+.onboarding__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.onboarding__all-done {
+  display: flex;
+  flex: 1;
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+  font: var(--mat-sys-body-large);
+}
+
+.onboarding__steps {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.onboarding__step {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--app-pane-border);
+  border-radius: var(--app-card-radius);
+  background: var(--mat-sys-surface-container-lowest);
+  color: var(--mat-sys-on-surface);
+}
+
+.onboarding__step--next {
+  box-shadow: 0 0 0 2px var(--app-gold);
+}
+
+.onboarding__number {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--app-pane-border);
+  border-radius: 50%;
+  color: var(--app-muted);
+  font: 800 0.875rem / 1 var(--app-font-heading);
+
+  --app-icon-size: 16px;
+}
+
+.onboarding__step--next .onboarding__number {
+  border-color: var(--mat-sys-primary);
+  color: var(--mat-sys-primary);
+}
+
+.onboarding__step--done .onboarding__number {
+  border-color: var(--app-ok);
+  background: var(--app-ok);
+  color: var(--mat-sys-surface);
+}
+
+.onboarding__text {
+  display: grid;
+  gap: 2px;
+}
+
+.onboarding__step-title {
+  font: var(--mat-sys-title-small);
+}
+
+.onboarding__step--done .onboarding__step-title {
+  color: var(--app-muted);
+  text-decoration: line-through;
+}
+
+.onboarding__hint {
+  color: var(--app-muted);
+  font: var(--mat-sys-body-small);
+}
+
+.onboarding__done {
+  color: var(--app-ok);
+  font: 600 0.8125rem var(--app-font-body);
+}
+
+.onboarding__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  color: var(--mat-sys-primary);
+  font: 600 0.8125rem var(--app-font-body);
+  text-underline-offset: 3px;
+}
+
+.onboarding__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  justify-content: flex-end;
+}
+
+.onboarding__action {
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--app-on-brand-panel);
+  font: var(--mat-sys-body-medium);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.onboarding__action:focus-visible,
+.onboarding__link:focus-visible {
+  outline: 2px solid var(--app-gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (max-width: 599.98px) {
+  .onboarding {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .onboarding__summary {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 16px;
+    text-align: start;
+  }
+
+  .onboarding__ring {
+    width: 88px;
+    height: 88px;
+  }
+
+  .onboarding__step {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+
+  .onboarding__open,
+  .onboarding__link,
+  .onboarding__done {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

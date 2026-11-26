@@ -1,0 +1,9 @@
+{
+  "id": "chnu",
+  "name": { "uk": "Облік нагород ЧНУ", "en": "ChNU Awards" },
+  "organization": {
+    "uk": "Чернівецький національний університет імені Юрія Федьковича",
+    "en": "Yuriy Fedkovych Chernivtsi National University"
+  },
+  "logo": "brand/chnu/logo.svg"
+}

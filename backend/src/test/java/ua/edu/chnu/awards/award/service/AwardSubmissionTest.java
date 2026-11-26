@@ -1,0 +1,232 @@
+package ua.edu.chnu.awards.award.service;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+
+import ua.edu.chnu.awards.audit.entity.AuditAction;
+import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
+import ua.edu.chnu.awards.audit.service.AuditService;
+import ua.edu.chnu.awards.award.dto.AwardResponse;
+import ua.edu.chnu.awards.award.dto.DuplicateMatch;
+import ua.edu.chnu.awards.award.dto.SubmitRequest;
+import ua.edu.chnu.awards.award.entity.ApprovalLevel;
+import ua.edu.chnu.awards.award.entity.Award;
+import ua.edu.chnu.awards.award.entity.AwardCategory;
+import ua.edu.chnu.awards.award.entity.AwardRequest;
+import ua.edu.chnu.awards.award.entity.AwardStatus;
+import ua.edu.chnu.awards.award.entity.RecognitionLevel;
+import ua.edu.chnu.awards.award.entity.RequestStatus;
+import ua.edu.chnu.awards.award.event.SubmissionMeasured;
+import ua.edu.chnu.awards.award.repository.AwardRepository;
+import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
+import ua.edu.chnu.awards.common.web.ApiProblemException;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
+import ua.edu.chnu.awards.support.TestAwards;
+import ua.edu.chnu.awards.support.TestUsers;
+import ua.edu.chnu.awards.support.TestWorkflow;
+import ua.edu.chnu.awards.user.entity.User;
+
+class AwardSubmissionTest {
+
+    private static final Instant NOW = Instant.parse("2026-09-28T09:00:00Z");
+    private static final Instant THREE_WORKING_DAYS_LATER = Instant.parse("2026-10-01T09:00:00Z");
+
+    private final AwardRepository awards = mock(AwardRepository.class);
+    private final AwardRequestRepository requests = mock(AwardRequestRepository.class);
+    private final AwardOwnership ownership = mock(AwardOwnership.class);
+    private final AwardInputRules rules = mock(AwardInputRules.class);
+    private final AuditService audit = mock(AuditService.class);
+    private final DuplicateFinder duplicates = mock(DuplicateFinder.class);
+    private final AwardHistory history = mock(AwardHistory.class);
+    private final StartLevel startLevel = mock(StartLevel.class);
+    private final Clock clock = Clock.fixed(NOW, ZoneId.of("Europe/Kyiv"));
+    private final List<Object> published = new ArrayList<>();
+    private final StatusEstimator estimator = TestWorkflow.estimator(clock);
+    private final AwardSubmission submission = new AwardSubmission(awards, requests, ownership, rules, duplicates,
+        TestAwards.mapper(estimator), audit, history, estimator, startLevel, clock, published::add);
+    private final Organization oldDepartment = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
+    private final Organization newDepartment = TestUsers.organization(69L, OrganizationType.DEPARTMENT);
+    private final User owner = TestUsers.person(21L, "owner@chnu.edu.ua", newDepartment);
+    private Award draft;
+
+    @BeforeEach
+    void setUp() {
+        AwardCategory category = AwardCategory.builder().id(13L).name("Ministry")
+            .level(RecognitionLevel.NATIONAL).active(true).build();
+        draft = TestAwards.award(owner, oldDepartment).category(category).awardingOrganization("MON")
+            .awardDate(LocalDate.of(2025, 5, 1)).build();
+        when(ownership.lockedDraft(5L)).thenReturn(draft);
+        when(ownership.callerId()).thenReturn(21L);
+        when(ownership.caller()).thenReturn(owner);
+        when(startLevel.of(69L, 21L)).thenReturn(ApprovalLevel.FACULTY_SECRETARY);
+        when(requests.saveAndFlush(any(AwardRequest.class))).thenAnswer(invocation -> {
+            AwardRequest request = invocation.getArgument(0);
+            request.setId(40L);
+            return request;
+        });
+    }
+
+    @Test
+    void ac1_5_submissionCreatesTheRequestAtTheFacultySecretaryAndAuditsIt() {
+        AwardResponse response = submission.submit(5L, new SubmitRequest(4L, null));
+
+        assertThat(draft.getStatus()).isEqualTo(AwardStatus.PENDING);
+        assertThat(draft.getImpactScore()).isEqualTo(RecognitionLevel.NATIONAL.baseScore());
+        assertThat(response.request().status()).isEqualTo(RequestStatus.SUBMITTED);
+        assertThat(response.request().currentLevel()).isEqualTo(ApprovalLevel.FACULTY_SECRETARY);
+        assertThat(response.request().submittedAt()).isEqualTo(NOW);
+        verify(awards).saveAndFlush(draft);
+        verify(audit).record(AuditAction.AWARD_SUBMITTED, AuditEntityConstants.AWARDS, 21L, 5L,
+            Map.of("requestId", 40L, "level", "FACULTY_SECRETARY", "organizationId", 69L));
+        assertThat(published).containsExactly(new SubmissionMeasured(ApprovalLevel.FACULTY_SECRETARY, false));
+    }
+
+    @Test
+    void ac1_1_theRequestIsDueOneReviewPeriodAfterTheSubmission() {
+        AwardResponse response = submission.submit(5L, new SubmitRequest(4L, null));
+
+        assertThat(response.request().deadline()).isEqualTo(THREE_WORKING_DAYS_LATER);
+        assertThat(response.request().estimatedCompletion())
+            .isEqualTo(LocalDate.of(2026, 10, 9));
+        assertThat(response.request().overdue()).isFalse();
+    }
+
+    @Test
+    void ac1_6_ac1_8_aRequestOfAFacultyWithItsOwnPeriodIsDueByThatPeriod() {
+        newDepartment.setParent(facultyWithPeriod());
+
+        AwardResponse response = submission.submit(5L, new SubmitRequest(4L, null));
+
+        assertThat(response.request().deadline()).isEqualTo(Instant.parse("2026-10-05T09:00:00Z"));
+        assertThat(response.request().estimatedCompletion()).isEqualTo(LocalDate.of(2026, 10, 15));
+    }
+
+    @Test
+    void ac1_6_aRequestStartingAtTheRectorLevelsKeepsTheDefault() {
+        newDepartment.setParent(facultyWithPeriod());
+        when(startLevel.of(69L, 21L)).thenReturn(ApprovalLevel.RECTOR_SECRETARY);
+
+        AwardResponse response = submission.submit(5L, new SubmitRequest(4L, null));
+
+        assertThat(response.request().deadline()).isEqualTo(THREE_WORKING_DAYS_LATER);
+    }
+
+    private static Organization facultyWithPeriod() {
+        Organization faculty = TestUsers.organization(9L, OrganizationType.FACULTY);
+        faculty.setReviewWorkingDays(5);
+        return faculty;
+    }
+
+    @Test
+    void ac1_3_theSubmissionIsRecordedAsAVersionOfThePendingAward() {
+        submission.submit(5L, new SubmitRequest(4L, null));
+
+        verify(history).submitted(draft);
+        assertThat(draft.getStatus()).isEqualTo(AwardStatus.PENDING);
+    }
+
+    @Test
+    void edge_theOrganisationIsRefreshedFromTheOwnersCurrentDepartment() {
+        AwardResponse response = submission.submit(5L, new SubmitRequest(4L, null));
+
+        assertThat(response.organization().id()).isEqualTo(69L);
+    }
+
+    @Test
+    void ac1_5_anIncompleteDraftIsNotSubmitted() {
+        doThrow(new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "award-incomplete", "missing"))
+            .when(rules).checkComplete(draft);
+
+        assertThatThrownBy(() -> submission.submit(5L, new SubmitRequest(4L, null)))
+            .isInstanceOf(ApiProblemException.class);
+        assertThat(draft.getStatus()).isEqualTo(AwardStatus.DRAFT);
+        verify(requests, never()).saveAndFlush(any());
+        verify(audit, never()).record(any(), anyString(), anyLong(), anyLong(), anyMap());
+        verify(history, never()).submitted(any());
+    }
+
+    @Test
+    void ac2_5_aPossibleDuplicateIsRefusedWithoutAcknowledgementAndNothingChanges() {
+        DuplicateMatch match = new DuplicateMatch(9L, "Letter", null, LocalDate.of(2025, 5, 1),
+            AwardStatus.PENDING);
+        when(duplicates.matches(List.of(5L))).thenReturn(Map.of(5L, List.of(match)));
+
+        assertThatThrownBy(() -> submission.submit(5L, new SubmitRequest(4L, false)))
+            .isInstanceOfSatisfying(ApiProblemException.class, e -> {
+                assertThat(e.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+                assertThat(e.getType()).isEqualTo("award-possible-duplicate");
+                assertThat(e.getProperties()).containsEntry("matches", List.of(match));
+            });
+        assertThat(draft.getStatus()).isEqualTo(AwardStatus.DRAFT);
+        verify(requests, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void ac2_5_anAcknowledgedDuplicateIsSubmittedAndTheAuditRowSaysSo() {
+        DuplicateMatch match = new DuplicateMatch(9L, "Letter", null, LocalDate.of(2025, 5, 1),
+            AwardStatus.PENDING);
+        when(duplicates.matches(List.of(5L))).thenReturn(Map.of(5L, List.of(match)));
+
+        submission.submit(5L, new SubmitRequest(4L, true));
+
+        assertThat(draft.getStatus()).isEqualTo(AwardStatus.PENDING);
+        verify(audit).record(AuditAction.AWARD_SUBMITTED, AuditEntityConstants.AWARDS, 21L, 5L,
+            Map.of("requestId", 40L, "level", "FACULTY_SECRETARY", "organizationId", 69L,
+                "duplicateAcknowledged", true));
+    }
+
+    @Test
+    void ac0_6_theRequestStartsAtTheLevelTheStartRuleChooses() {
+        when(startLevel.of(69L, 21L)).thenReturn(ApprovalLevel.DEAN);
+
+        AwardResponse response = submission.submit(5L, new SubmitRequest(4L, null));
+
+        assertThat(response.request().currentLevel()).isEqualTo(ApprovalLevel.DEAN);
+    }
+
+    @Test
+    void ac0_4_aUnitAwardStaysWithItsUnitAndTheAuditRowNamesIt() {
+        Organization faculty = TestUsers.organization(9L, OrganizationType.FACULTY);
+        draft.setOrganization(faculty);
+        draft.setRecipientOrganizationId(9L);
+        when(startLevel.of(9L, 21L)).thenReturn(ApprovalLevel.FACULTY_SECRETARY);
+
+        AwardResponse response = submission.submit(5L, new SubmitRequest(4L, null));
+
+        assertThat(response.organization().id()).isEqualTo(9L);
+        assertThat(response.recipient().organization().id()).isEqualTo(9L);
+        verify(rules).checkComplete(draft);
+        verify(audit).record(AuditAction.AWARD_SUBMITTED, AuditEntityConstants.AWARDS, 21L, 5L,
+            Map.of("requestId", 40L, "level", "FACULTY_SECRETARY", "organizationId", 9L,
+                "recipientOrganizationId", 9L));
+    }
+
+    @Test
+    void ac1_3_theVersionIsCheckedEvenWithoutABody() {
+        submission.submit(5L, null);
+
+        verify(ownership).requireVersion(draft, null);
+    }
+}

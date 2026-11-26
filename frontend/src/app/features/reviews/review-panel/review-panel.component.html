@@ -1,0 +1,128 @@
+@if (item() || notice()) {
+  <section class="review-panel" aria-labelledby="review-panel-title" data-testid="review-panel">
+    <h2 class="review-panel__title" id="review-panel-title">
+      {{ 'reviews.panel.title' | transloco }}
+    </h2>
+    @if (busy()) {
+      <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />
+    }
+    @if (notice(); as notice) {
+      <p class="review-panel__notice" role="status" data-testid="review-panel-notice">
+        {{ notice.key | transloco: notice.params }}
+      </p>
+    }
+    @if (item(); as item) {
+      <dl class="review-panel__fields">
+        <dt>{{ 'reviews.columns.reviewer' | transloco }}</dt>
+        <dd data-testid="review-panel-reviewer">
+          {{ item.reviewer?.name ?? ('reviews.panel.nobody' | transloco) }}
+        </dd>
+        <dt>{{ 'reviews.columns.deadline' | transloco }}</dt>
+        <dd class="review-panel__deadline" data-testid="review-panel-deadline">
+          {{ item.deadline | kyivDate }}
+          @if (item.overdue) {
+            <mat-chip class="review-panel__overdue">{{ 'reviews.overdue' | transloco }}</mat-chip>
+          }
+        </dd>
+        @if (item.delegatedFrom; as delegator) {
+          <dt>{{ 'reviews.panel.delegatedFrom' | transloco }}</dt>
+          <dd>{{ delegator.name }}</dd>
+        }
+      </dl>
+      @if (canDecide()) {
+        <div class="review-panel__actions" data-testid="review-decisions">
+          <button
+            mat-flat-button
+            type="button"
+            [disabled]="busy()"
+            (click)="decide(item, 'APPROVE')"
+            data-testid="review-approve"
+          >
+            {{ 'reviews.panel.approve' | transloco }}
+          </button>
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="busy()"
+            (click)="decide(item, 'RETURN')"
+            data-testid="review-return"
+          >
+            {{ 'reviews.panel.return' | transloco }}
+          </button>
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="busy()"
+            (click)="decide(item, 'REJECT')"
+            data-testid="review-reject"
+          >
+            {{ 'reviews.panel.reject' | transloco }}
+          </button>
+          @if (nextLevel(); as next) {
+            <button
+              mat-stroked-button
+              type="button"
+              [disabled]="busy()"
+              (click)="decide(item, 'ESCALATE')"
+              data-testid="review-escalate"
+            >
+              {{
+                'reviews.panel.escalate'
+                  | transloco: { level: ('reviews.decide.to.' + next | transloco) }
+              }}
+            </button>
+          }
+          <a
+            mat-stroked-button
+            [routerLink]="['/awards', item.awardId, 'correct']"
+            data-testid="review-correct"
+          >
+            {{ 'reviews.panel.correct' | transloco }}
+          </a>
+        </div>
+      }
+      <div class="review-panel__actions">
+        @if (item.reviewer === null) {
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="busy()"
+            (click)="claim(item)"
+            data-testid="review-claim"
+          >
+            {{ 'reviews.panel.claim' | transloco }}
+          </button>
+        } @else if (mine()) {
+          <button
+            mat-button
+            type="button"
+            [disabled]="busy()"
+            (click)="release(item)"
+            data-testid="review-release"
+          >
+            {{ 'reviews.panel.release' | transloco }}
+          </button>
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="busy()"
+            (click)="handOver(item)"
+            data-testid="review-hand-over"
+          >
+            {{ 'reviews.panel.handOver' | transloco }}
+          </button>
+        } @else if (canTakeOver()) {
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="busy()"
+            (click)="takeOver(item)"
+            data-testid="review-take-over"
+          >
+            {{ 'reviews.panel.takeOver' | transloco }}
+          </button>
+        }
+      </div>
+    }
+  </section>
+}

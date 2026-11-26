@@ -1,0 +1,136 @@
+:host {
+  display: block;
+  max-width: 1120px;
+}
+
+.award-detail__columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.award-detail__main,
+.award-detail__side,
+.award-detail__later {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.award-detail__side > app-award-documents,
+.award-detail__side > app-award-status:not([hidden]),
+.award-detail__main > app-visibility-section,
+.award-detail__history {
+  display: block;
+  box-sizing: border-box;
+  min-width: 0;
+  margin: 0;
+  padding: 14px 18px 18px;
+  border-radius: var(--app-card-radius);
+  background: var(--app-pane);
+  border: 1px solid var(--app-pane-border);
+}
+
+.award-detail__side > app-award-documents {
+  padding-top: 0;
+}
+
+.award-detail__later:empty {
+  display: none;
+}
+
+@media (min-width: 960px) {
+  .award-detail__columns {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
+    grid-template-rows: auto 1fr;
+    align-items: start;
+  }
+
+  .award-detail__side {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+}
+
+.award-detail__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.award-detail__title {
+  font: var(--mat-sys-headline-small);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.award-detail__fields {
+  display: grid;
+  grid-template-columns: minmax(120px, max-content) 1fr;
+  gap: 8px 16px;
+  margin: 0;
+}
+
+.award-detail__fields dt {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.award-detail__fields dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.award-detail__text {
+  white-space: pre-line;
+}
+
+.award-detail__visibility {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.award-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.award-detail__remove {
+  color: var(--mat-sys-error);
+}
+
+.award-detail__subtitle {
+  font: var(--mat-sys-title-medium);
+  margin: 0 0 12px;
+}
+
+.award-detail__problem {
+  color: var(--mat-sys-error);
+}
+
+.award-detail__decision {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+@media (max-width: 480px) {
+  .award-detail__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .award-detail__fields dd {
+    margin-bottom: 8px;
+  }
+}
+
+.award-detail__unclaimed {
+  margin-inline-start: 8px;
+  vertical-align: middle;
+}

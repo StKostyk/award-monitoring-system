@@ -181,6 +181,37 @@ This document presents a comprehensive threat model for the Award Monitoring & T
 | **DoS** | D-DB-02 | Resource-intensive queries | Query injection | Performance degradation |
 | **Elevation** | E-DB-01 | Privilege escalation | SQL injection | Full database access |
 
+#### 2.2.5 Document Upload (Feature 3.1)
+
+Award evidence uploaded by employees (certificates, diplomas, photos) and kept in a private S3 bucket (MinIO on the Compose network, ADR-021). The roadmap's earlier reference to a "T-12" for virus scanning points here.
+
+| **Threat Category** | **Threat ID** | **Threat Description** | **Attack Vector** | **Impact** | **Control** |
+|---------------------|---------------|------------------------|-------------------|------------|-------------|
+| **Spoofing** | S-DOC-01 | Spoofed file type | Executable or HTML renamed `.pdf`, forged part `Content-Type` | Stored XSS, malware delivered to reviewers | Type from the leading bytes only (PDF, JPEG, PNG, WEBP); an extension of another supported type is refused (`content-mismatch`); stored `mime_type` from the content |
+| **Tampering** | T-DOC-01 | Path traversal in the file name | `..\..\x.pdf`, control or bidi characters | Overwrite of other objects, misleading names | Object key `awards/<award>/<random UUID>` never uses the name; the name is reduced to its last segment without control and format characters, max 255 |
+| **Tampering** | T-DOC-02 | Evidence replaced after submission | Upload or delete on a submitted award | Reviewer judges other evidence than was submitted | Upload and delete only on the owner's draft, under the award row lock that the submission also takes |
+| **Repudiation** | R-DOC-01 | Denied access to personal documents | No record of who read a scan | GDPR accountability gap | `DOCUMENT_DOWNLOAD` audit row per download; trigger rows name the uploader and the deleting user |
+| **Info Disclosure** | I-DOC-01 | Enumeration of document ids | Sequential `GET /documents/{id}` | Disclosure of other people's scans | Award read rule on every download; unreadable and unknown ids both answer 404 |
+| **Info Disclosure** | I-DOC-02 | Storage exposure | Public bucket policy, a pre-signed URL leaked in logs or history, stolen disk or backup | Mass disclosure of scans | Private bucket without policy, the backend's MinIO account limited to the objects of that bucket (`minio-init`), no published MinIO port in production, no pre-signed URLs (downloads stream through the API), server-side encryption with a key from the environment |
+| **Info Disclosure** | I-DOC-03 | Active content rendered in the app's origin | PDF with JavaScript, SVG, HTML opened inline | XSS with the user's session | Served as `attachment` with `nosniff`, `Content-Security-Policy: sandbox`, `Cache-Control: private, no-store`; SVG and HTML are not accepted |
+| **DoS** | D-DOC-01 | Oversized or many uploads | 1 GB bodies, thousands of files, scripted uploads across many drafts | Disk and memory exhaustion, scanner saturation | 10 MB per file and 11 MB per request in nginx and Spring, 10 documents per award, one copy of a file per award, 50 MB of documents per user (`storage-quota`), 20 uploads a minute per user in Redis (429 with `Retry-After`), checked before the scan |
+| **DoS** | D-DOC-02 | Orphaned objects | Failures between storage and database | Storage growth | Object written before the row and removed on rollback; removal after commit on deletion; daily sweep of objects older than 24 h without a row |
+| **Elevation** | E-DOC-01 | Malicious content | Infected PDF or image | Malware on reviewers' machines | `clamd` (INSTREAM over the Compose network, signatures updated by `freshclam`) scans every file after the size check and before the type check and before anything is stored; a finding answers 422 `malware-detected` and writes `DOCUMENT_REJECTED` with the signature; no answer within 30 s or an error answers 503 `scanner-unavailable` (fail closed); `clamav` in the actuator health. Residual: signatures only, no detection of new or targeted payloads |
+
+#### 2.2.6 Review Workflow and Public Achievements (Epic 4)
+
+Reviewers decide on submitted awards; owners may publish approved awards to colleagues or to anyone without an account.
+
+| **Threat Category** | **Threat ID** | **Threat Description** | **Attack Vector** | **Impact** | **Control** |
+|---------------------|---------------|------------------------|-------------------|------------|-------------|
+| **Tampering** | T-WF-01 | Two reviewers decide on the same request | Parallel claims and decisions, a stale page | Contradicting decisions, a lost update | Row lock and optimistic `requestVersion`; the second caller answers 409 `request-claimed` or `request-stale`; a decided request answers 409 `request-closed` |
+| **Elevation** | E-WF-01 | Deciding outside one's scope or level | Guessed award ids, a lower-level role deciding higher, lending a role without the right | Unauthorised approval | One reviewer rule from role and delegation scopes (own or lower level), owner and submitter excluded; a request outside the scope answers 404, not 403; a delegation is stamped on the decision (`delegator_id`) |
+| **DoS** | D-WF-01 | Oversized batch | `POST /reviews/decisions` with thousands of items | Long transactions, lock contention | 1–50 distinct items per call, each in its own transaction, failures reported per item |
+| **Info Disclosure** | I-PUB-01 | Scraping of the public achievements | Scripted `GET /api/v1/public/achievements` without an account | Bulk collection of names and awards | Only awards the owner published and approved unit awards; projection without e-mail, documents, reviewers and comments; 120 requests a minute per address; `Cache-Control: no-store`; the `person` filter lists only the PUBLIC personal awards of an `ACTIVE` account and answers an unknown or inactive id with an empty page, so ids reveal nothing beyond the public set |
+| **DoS** | D-PUB-01 | Exhausting the public endpoint | High request rate from many addresses, or Redis down | Load on the database | The per-address limit lives in Redis and fails open while Redis is down (an error is logged); residual risk accepted for the demo |
+| **Info Disclosure** | I-WF-01 | Reviewer comments and decisions exposed | Reading a decision of an award that is not one's own | Disclosure of internal remarks | Comments only to the owner and to reviewers whose scope covers the award; withdrawn choices of visibility take effect at the next request |
+| **Repudiation** | R-WF-01 | Denied review action | A reviewer disputes a claim, decision or correction | Accountability gap | Audit rows `REVIEW_CLAIMED`, `REVIEW_RELEASED`, `REVIEW_TAKEN_OVER`, `REVIEW_HANDED_OVER`, `REVIEW_DECISION`, `REVIEW_BATCH`, `AWARD_CORRECTED`, `AWARD_VISIBILITY_CHANGED`, with the delegator under a delegation |
+
 ---
 
 ## 3. Detailed Threat Scenarios

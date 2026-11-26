@@ -1,0 +1,289 @@
+<app-page-header [heading]="'reviews.title' | transloco">
+  <div
+    pageChips
+    class="reviews__chips"
+    role="group"
+    [attr.aria-label]="'reviews.tabs.label' | transloco"
+    data-testid="review-tabs"
+  >
+    @for (tab of tabs; track tab.label) {
+      <button
+        type="button"
+        class="app-chip reviews__chip"
+        [class.app-chip--filled]="filters().assigned === tab.assigned"
+        [attr.aria-pressed]="filters().assigned === tab.assigned"
+        (click)="filter({ assigned: tab.assigned })"
+        [attr.data-testid]="'review-tab-' + (tab.assigned ?? 'all')"
+      >
+        {{ tab.label | transloco }}
+      </button>
+    }
+  </div>
+</app-page-header>
+<app-review-period />
+@if (notice(); as notice) {
+  <p class="reviews__notice" role="status" data-testid="reviews-notice">{{ notice | transloco }}</p>
+}
+
+<app-split mode="detail" [detailOpen]="selectedId() !== null">
+  <div splitSide class="reviews__side">
+    <div class="reviews__filters">
+      <mat-form-field class="reviews__filter" subscriptSizing="dynamic">
+        <mat-label>{{ 'reviews.filters.level' | transloco }}</mat-label>
+        <mat-select
+          [ngModel]="filters().level"
+          (ngModelChange)="filter({ level: $event })"
+          data-testid="review-filter-level"
+        >
+          <mat-option [value]="null">{{ 'reviews.filters.all' | transloco }}</mat-option>
+          @for (level of levels; track level) {
+            <mat-option [value]="level">{{ 'awards.levels.' + level | transloco }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field class="reviews__filter" subscriptSizing="dynamic">
+        <mat-label>{{ 'reviews.filters.unit' | transloco }}</mat-label>
+        <mat-select
+          [ngModel]="filters().organizationId"
+          (ngModelChange)="filter({ organizationId: $event })"
+          data-testid="review-filter-unit"
+        >
+          <mat-option [value]="null">{{ 'reviews.filters.all' | transloco }}</mat-option>
+          @for (unit of units(); track unit.id) {
+            <mat-option [value]="unit.id" [class.reviews__child]="unit.type === 'DEPARTMENT'">
+              {{ unitName(unit) }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-checkbox
+        class="reviews__filter-noticed"
+        [checked]="filters().noticed === true"
+        (change)="filter({ noticed: $event.checked ? true : null })"
+        data-testid="review-filter-noticed"
+        >{{ 'reviews.filters.noticed' | transloco }}</mat-checkbox
+      >
+      @if (lowerLevel) {
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="filter({ level: lowerLevel, noticed: true })"
+          data-testid="review-filter-lower-overdue"
+        >
+          {{ 'reviews.filters.lowerOverdue' | transloco }}
+        </button>
+      }
+    </div>
+
+    @if (loading()) {
+      <mat-progress-bar
+        [attr.aria-label]="'app.loading' | transloco"
+        mode="indeterminate"
+        data-testid="reviews-loading"
+      />
+    }
+
+    @if (problem(); as problem) {
+      <p class="reviews__problem" role="alert" data-testid="reviews-error">
+        {{ 'reviews.problems.' + problem | transloco }}
+      </p>
+    }
+
+    @if (summary(); as summary) {
+      <section class="reviews__summary" role="status" data-testid="batch-result">
+        <p class="reviews__summary-title" data-testid="batch-done">
+          {{ 'reviews.batch.done' | transloco: { done: summary.done, total: summary.total } }}
+        </p>
+        @if (summary.failed.length > 0) {
+          <p class="reviews__summary-failed">{{ 'reviews.batch.failed' | transloco }}</p>
+          <ul class="reviews__summary-list">
+            @for (failure of summary.failed; track failure.awardId) {
+              <li data-testid="batch-failed">
+                <a class="reviews__link" [routerLink]="['/awards', failure.awardId]">{{
+                  failure.title
+                }}</a>
+                —
+                <span data-testid="batch-reason">{{
+                  'reviews.batch.reasons.' + failure.reason | transloco
+                }}</span>
+              </li>
+            }
+          </ul>
+        }
+        <button mat-button type="button" (click)="dismiss()" data-testid="batch-dismiss">
+          {{ 'reviews.batch.dismiss' | transloco }}
+        </button>
+      </section>
+    }
+
+    @if (selection().length > 0) {
+      <div
+        class="reviews__actions"
+        role="toolbar"
+        [attr.aria-label]="'reviews.batch.actions' | transloco"
+        data-testid="batch-actions"
+      >
+        <span class="reviews__selected" data-testid="batch-selected">{{
+          'reviews.batch.selected' | transloco: { count: selection().length }
+        }}</span>
+        <button
+          mat-flat-button
+          type="button"
+          [disabled]="busy()"
+          (click)="decide('APPROVE')"
+          data-testid="batch-approve"
+        >
+          {{ 'reviews.batch.approve' | transloco: { count: selection().length } }}
+        </button>
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="busy()"
+          (click)="decide('RETURN')"
+          data-testid="batch-return"
+        >
+          {{ 'reviews.batch.return' | transloco }}
+        </button>
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="busy()"
+          (click)="decide('REJECT')"
+          data-testid="batch-reject"
+        >
+          {{ 'reviews.batch.reject' | transloco }}
+        </button>
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="busy()"
+          (click)="decide('ESCALATE')"
+          data-testid="batch-escalate"
+        >
+          @if (escalateTarget(); as target) {
+            {{
+              'reviews.batch.escalateTo'
+                | transloco: { level: ('reviews.decide.to.' + target | transloco) }
+            }}
+          } @else {
+            {{ 'reviews.batch.escalate' | transloco }}
+          }
+        </button>
+        <button
+          mat-button
+          type="button"
+          [disabled]="busy()"
+          (click)="clear()"
+          data-testid="batch-clear"
+        >
+          {{ 'reviews.batch.clear' | transloco }}
+        </button>
+      </div>
+    }
+
+    <app-pane icon="inbox" [heading]="'reviews.queue.title' | transloco" flush>
+      <span paneMeta>{{ 'reviews.queue.oldestFirst' | transloco }}</span>
+      <div class="reviews__rows-head">
+        @if (visible().length > 0) {
+          <mat-checkbox
+            [checked]="allTicked()"
+            [indeterminate]="selection().length > 0 && !allTicked()"
+            (change)="toggleAll()"
+            data-testid="batch-select-all"
+            >{{ 'reviews.batch.selectAll' | transloco }}</mat-checkbox
+          >
+        }
+        <span class="reviews__left" data-testid="queue-left">{{
+          'reviews.queue.left' | transloco: { count: total() }
+        }}</span>
+      </div>
+      <nav
+        class="reviews__rows"
+        appListRows
+        [attr.aria-label]="'reviews.queue.title' | transloco"
+        data-testid="review-rows"
+      >
+        @for (item of visible(); track item.requestId) {
+          <div class="reviews__row" [attr.data-award]="item.awardId" data-testid="review-item">
+            <mat-checkbox
+              class="reviews__row-select"
+              [checked]="isTicked(item)"
+              (change)="toggle(item)"
+              [aria-label]="'reviews.batch.selectRow' | transloco: { title: title(item) }"
+              data-testid="batch-select"
+            />
+            <button
+              appListRow
+              class="list-row--wrap"
+              type="button"
+              [initials]="initialsOf(item)"
+              [rowTitle]="title(item)"
+              [meta]="recipient(item) + ' · ' + (item.submittedAt | kyivDate)"
+              [selected]="isShown(item)"
+              (click)="select(item.awardId)"
+              data-testid="review-title"
+            >
+              <span rowEnd class="reviews__row-chips">
+                <span class="app-st" data-testid="review-level">{{
+                  'roles.' + item.level | transloco
+                }}</span>
+                @if (item.overdue) {
+                  <span class="app-st app-st--bad" data-testid="review-overdue">{{
+                    'reviews.overdue' | transloco
+                  }}</span>
+                } @else {
+                  <span class="app-st app-st--wait" data-testid="review-due">{{
+                    'reviews.queue.due' | transloco: { date: (item.deadline | kyivDate) }
+                  }}</span>
+                }
+                @if (item.overdueNoticedAt) {
+                  <span class="app-st" data-testid="review-noticed">{{
+                    'reviews.noticed' | transloco: { date: (item.overdueNoticedAt | kyivDate) }
+                  }}</span>
+                }
+                @if (item.reviewer; as reviewer) {
+                  <span class="app-st" data-testid="review-reviewer">{{ reviewer.name }}</span>
+                }
+              </span>
+            </button>
+          </div>
+        }
+      </nav>
+    </app-pane>
+
+    @if (total() > 0) {
+      <mat-paginator
+        [length]="total()"
+        [pageIndex]="pageIndex()"
+        [pageSize]="pageSize()"
+        [pageSizeOptions]="pageSizes"
+        (page)="page($event)"
+        data-testid="reviews-paginator"
+      />
+    }
+  </div>
+
+  <div splitMain class="reviews__main">
+    @if (selectedId() !== null) {
+      <button
+        mat-button
+        type="button"
+        class="reviews__back"
+        (click)="select(null)"
+        data-testid="reviews-back"
+      >
+        {{ 'reviews.back' | transloco }}
+      </button>
+    }
+    @if (!problem()) {
+      <app-review-queue
+        [items]="visible()"
+        [selectedId]="shownId()"
+        [loading]="loading()"
+        (selectedChange)="select($event)"
+        (decided)="queueDecided($event)"
+        (changed)="refresh()"
+      />
+    }
+  </div>
+</app-split>

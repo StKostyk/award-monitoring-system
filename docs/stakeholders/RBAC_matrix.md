@@ -7,9 +7,9 @@ This matrix defines granular permissions for each role within the Award Monitori
 
 | Role | Description | Scope | Reporting Structure |
 |------|-------------|-------|-------------------|
-| **Employee** | End-user submitting award requests | Personal awards management, view all university awards | Reports to Faculty Secretary or Dean |
-| **Faculty Secretary** | Faculty award reviewer and approver | Faculty-level awards management, view all university awards | Reports to Dean |
-| **Dean** | Faculty-level leadership and oversight | Faculty-level awards management, policy decisions, view all university awards | Reports to Rector |
+| **Employee** | End-user submitting award requests | Personal awards management | Reports to Faculty Secretary or Dean |
+| **Faculty Secretary** | Faculty award reviewer and approver | Department-level awards management | Reports to Dean |
+| **Dean** | Faculty-level leadership and oversight | Faculty-level awards management, policy decisions | Reports to Rector |
 | **Rector's Secretary** | Executive administrative support | University-wide coordination | Reports to Rector |
 | **Rector** | Executive authority and final approver | University-wide strategic decisions | Top-level authority |
 | **System Ops** | Technical operations and maintenance | System infrastructure | Reports to IT Director |
@@ -22,27 +22,90 @@ This matrix defines granular permissions for each role within the Award Monitori
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|
 | **Award Management** |
-| Submit Award Request | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Edit Own Award Request | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Upload Scanned Document | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
-| View All University Awards | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
-| View Own Awards | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| Submit Award Request¹ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| Submit an Award for a Faculty or Department⁹ | ❌ | Faculty + its departments | Faculty + its departments | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Edit Own Award Request¹ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| Withdraw Own Unclaimed Award¹² | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| Upload Scanned Document (own draft)⁶ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| Delete Own Document (own draft)⁶ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| Download Award Documents⁶ | Own | Own + Department | Own + Faculty | ✓ | ✓ | ❌⁷ | ✓ | ❌ | ❌ |
+| View Submitted Awards of Others⁵ | ❌ | Department | Faculty | ✓ | ✓ | ❌⁷ | ✓ | ❌ | ❌ |
+| Choose Who Sees Own Approved Award¹⁶ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| Show Own Documents to Colleagues (shared approved award)¹⁶ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| Download Documents Shown to Colleagues¹⁶ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| View Shared Achievements¹⁶ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| View Public Achievements, no sign-in¹⁶ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| View Own Awards⁵ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| View Award Change History² | ✓ | ✓ | ✓ | ✓ | ✓ | ❌⁷ | ✓ | ❌ | ❌ |
+| View Award Review Status and Reviewer Comments⁴ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌⁷ | ✓ | ❌ | ❌ |
 | Manage Personal Profile | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Manage Department Profile | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Manage Faculty Profile | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Manage University Profile | ❌ | ❌ | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 
+¹ Approvers receive awards too and submit their own like every employee (`award:create`, `award:update:own`; decision of 2026-09-28, Feature 2.1). A request starts at the faculty secretary; since 4.1.0 a level whose only reviewer would be the submitter, or a delegate the submitter lent the role to, is passed over (the only secretary of a faculty submits their own award to the dean), and a vacant level is kept. GDPR officers read awards for oversight and never submit; system administrators neither submit nor read awards (note 7).
+
+² The owner sees every saved version of their award; anyone who may read a submitted award (scope over its organisation, or `award:read:all`) sees its versions from the submission on (Feature 2.2, `GET /awards/{id}/versions`).
+
+⁴ The review timeline of an award (approval path, deadlines, expected completion, delay reason) and the reviewer decisions with the reviewer's name and comment are shown to everybody who may read the award, by the same rule as footnote ² (Feature 2.3 D-6, `GET /awards/{id}/status`). Reviewers act in their official role; the owner needs the comment to correct the award.
+
+⁵ As built in Epic 2 (`RolePermissions`, `AwardOwnership.isReadable`): the owner always reads their award, drafts included. Anyone else reads only submitted awards whose organisation is covered by a role granting `award:read:department` (faculty secretary), `award:read:faculty` (dean) or `award:read:all` (rector's secretary, rector, system administrator, GDPR officer), held or delegated; any other award answers 404. `award:read:own` is held by every role and gates the read endpoints; system administrators and GDPR officers own no awards. The original "every employee sees all university awards" row is kept as the public award pages, planned once approved awards exist (proposed in the Epic 2 documentation sync, 2026-10-01).
+
+⁶ Feature 3.1 (`DocumentUpload`, `DocumentService`): uploads and deletions need `award:update:own` and only touch the caller's own draft; documents of a submitted award are frozen. Downloads and the document list follow the award read rule of note 5, so whoever reads the award reads its documents; every download is recorded as `DOCUMENT_DOWNLOAD`. Unknown or unreadable documents answer 404.
+
+⁷ Decided in the design review of 2026-10-04, in force since 2.1.8 (SCRUM-43): the system administrator runs the system and keeps `audit:read` (the award audit trail, note 3), but loses `award:read:all`, so award content, documents, history and review status are no longer readable to that role. The GDPR officer keeps award reading for data-protection oversight.
+
+⁹ Feature 4.1.0 (`RecipientUnits`, `GET /awards/recipient-units`): a faculty secretary or dean, by own or delegated role, enters and submits awards received by an active faculty or department inside the role's scope; no new permission. The entering person owns the award (draft rights, GDPR export) and the award belongs to the unit, so its review and the scoped reads of note 5 follow the unit. The scope is checked again at submission (`recipient-out-of-scope`).
+
+¹⁰ Feature 4.1.1 (`ReviewerRule`, `ReviewAssignment`, `GET /reviews`, `PUT`/`DELETE /awards/{id}/reviewer`): any approval role, own or delegated (`award:approve:level1`), reviews requests at its level or below inside its scope, never an award its holder owns or submitted, nor one owned or submitted by the person who lent a delegated role. The queue shows the own level; a lower level is reached through the `level` filter. A claim makes the caller the only reviewer; a higher level, or a peer when the holder may no longer review or once the request is past its deadline, takes it over (the previous holder is told by e-mail); the holder releases it or hands it to an eligible colleague. Every change is audited (`REVIEW_CLAIMED`, `REVIEW_RELEASED`, `REVIEW_HANDED_OVER`, `REVIEW_TAKEN_OVER`).
+
+¹¹ Feature 4.1.2 (`ReviewDecisions`, `POST /awards/{id}/decisions`): whoever may review a request (note 10) approves, returns, rejects or escalates it; an unclaimed request is claimed by the decision, one held by a colleague answers 409 `request-claimed`. Return and reject need a comment. An approval below the category's minimum level (§ Final approval by recognition level) and an escalation move the request to the next level not passed over; the rector cannot escalate, nor can a caller who already reviews at the next level (409 `escalation-not-upward`, e.g. a dean on a secretary-level request). A delegate's decision is stamped with the delegator (`review_decisions.delegator_id`); a reviewer who also holds the role in their own right decides under it. Every decision is audited (`REVIEW_DECISION`).
+
+¹² Feature 4.1.3 (`AwardWithdrawal`, `POST /awards/{id}/withdraw`): the owner (`award:update:own`) takes a pending award back as a draft while no reviewer has claimed its request (`request-claimed` otherwise); the request becomes `WITHDRAWN` and leaves every queue. A returned or withdrawn draft is edited and resubmitted like any draft but cannot be deleted (`award-has-request`).
+
+¹³ Feature 4.1.4 (`BatchReview`, `POST /reviews/decisions`): the same decision for up to 50 requests of the queue, each item checked and decided as in note 11 in its own transaction, so items held by a colleague, stale or closed fail alone while the rest are decided. The comment templates (`GET /reviews/templates`) are read under the same permission. A batch is audited once (`REVIEW_BATCH`) besides each item's `REVIEW_DECISION`.
+
+¹⁴ Feature 4.2.1 (`ReviewPeriods`, `GET`/`PUT /organizations/{id}/review-period`): a faculty secretary or dean whose scope, own or delegated, covers the faculty reads its review period; only the dean (own role or a delegation in effect) changes it, to 1–20 working days or back to the default; the system administrator (`system:configure`) reads and changes every faculty. Anyone else with an approving role gets 404 for the faculty, a caller without one 403. The period applies at the faculty levels only; the rector's levels keep the global default.
+
+¹⁵ Feature 4.2, story 2.4.1 (`AwardCorrection`, `POST /awards/{id}/corrections`): whoever may review a request (note 10) corrects the title, description, awarding organisation, award date, category or link of the pending award with a reason; the recipient and documents stay the owner's. An unclaimed request is claimed by the correction, one held by a colleague answers 409 `request-claimed`; a draft, returned, withdrawn or decided award answers 404. The request keeps its level and deadline; a changed category sets the minimum approval level from the next decision on. The correction is a `CORRECTED` award version with the reason, audited as `AWARD_CORRECTED` (with the delegator under a delegation) and e-mailed to the owner.
+
+¹⁶ Feature 4.3.1 (`AwardSharing`, `PUT /awards/{id}/visibility`; `Achievements`, `GET /achievements`): the owner (`award:update:own`) of an approved personal award chooses «Лише мені та рецензентам» (`PRIVATE`), «Показувати колегам» (`UNIVERSITY`) or «Показувати публічно» (`PUBLIC`); anyone else, scoped readers included, gets 404, an award that is not approved or a unit award 409 `visibility-fixed`. Every signed-in user reads the achievements page: shared personal awards of accounts that are not deleted and approved unit awards, without e-mail, documents, reviewers or comments. Each effective change is audited as `AWARD_VISIBILITY_CHANGED`. Feature 4.3.2 (`PublicAchievementController`, `GET /public/achievements`): anyone, signed in or not, reads the public set (personal awards marked «Показувати публічно» and approved unit awards) with the same projection, on `/public/achievements` and `/public/units/:id/achievements`; signed-in users also open `/units/:id/achievements`, the achievements page of one faculty or department. Feature 4.3.8 (`DocumentSharing`, `PUT /documents/{id}/sharing`; `GET /achievements/{id}`): while a personal award is approved and shared at `UNIVERSITY` or `PUBLIC`, its owner (`award:update:own`) shows chosen documents to colleagues (409 `sharing-fixed` otherwise, 404 for anyone else); every signed-in user opens the read-only achievement with those documents and downloads them through `GET /documents/{id}`, audited with `via: colleague`. Anonymous and public-page visitors never get a document, and returning the award to `PRIVATE` clears every choice.
+
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|
 | **Approval Workflow** |
-| Review Department Awards | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Approve Department Awards | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Review Faculty Awards | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Approve Faculty Awards | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Review Department Awards | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| Approve Department Awards | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| Review Faculty Awards | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| Approve Faculty Awards | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Escalate to University Level | ❌ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Final University Approval | ❌ | ❌ | ❌ | ❌ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| Claim, Release and Hand Over a Review¹⁰ | ❌ | Own level; take over overdue | Own level; take over lower or overdue | Own level; take over lower or overdue | Own level; take over lower or overdue | ❌ | ❌ | ❌ | ❌ |
+| Decide at a Level (Own or Lower)¹¹ | ❌ | Own level | Own or lower | Own or lower | Own or lower | ❌ | ❌ | ❌ | ❌ |
+| Decide Several Requests at Once¹³ | ❌ | Own level | Own or lower | Own or lower | Own or lower | ❌ | ❌ | ❌ | ❌ |
+| Correct a Pending Award¹⁵ | ❌ | Own level | Own or lower | Own or lower | Own or lower | ❌ | ❌ | ❌ | ❌ |
+| Read the Faculty Review Period¹⁴ | ❌ | Own faculty | Own faculty | ❌ | ❌ | ✓ | ❌ | ❌ | ❌ |
+| Set the Faculty Review Period¹⁴ | ❌ | ❌ | Own faculty | ❌ | ❌ | ✓ | ❌ | ❌ | ❌ |
+| Final Approval of National and International Awards | ❌ | ❌ | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Reject Award Request | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Request Additional Information | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+
+### Final approval by recognition level
+
+The category's recognition level sets the lowest role that may give the final approval and the impact base score; every role above that minimum in the same line may approve too, and a request climbs every level from the faculty secretary to the minimum. Decided in the design review of 2026-10-04 (LOCAL = city or community, REGIONAL = oblast), in force since 2.1.8 (SCRUM-43) (Feature 2.1 D-3 had college and faculty awards final at the dean, LOCAL 45, UNIVERSITY 60).
+
+| Recognition level | Final approval from | Impact base score |
+|-------------------|---------------------|:-----------------:|
+| `SPECIALITY` | Faculty Secretary | 10 |
+| `DEPARTMENT` | Faculty Secretary | 20 |
+| `COLLEGE` | Faculty Secretary | 30 |
+| `FACULTY` | Faculty Secretary | 40 |
+| `UNIVERSITY` | Faculty Secretary | 50 |
+| `LOCAL` | Faculty Secretary | 60 |
+| `REGIONAL` | Faculty Secretary | 70 |
+| `NATIONAL` | Rector's Secretary | 80 |
+| `INTERNATIONAL` | Rector's Secretary | 100 |
+
+No level requires the rector. The review period of each level is counted in working days (Monday to Friday, default 3, configurable; since 4.2.1 a dean sets 1–20 days for the faculty levels of the faculty, note 14), decided in the same review.
 
 ## 2. Administrative Permissions Matrix
 
@@ -54,8 +117,10 @@ This matrix defines granular permissions for each role within the Award Monitori
 | Manage Department Users | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Manage Faculty Users | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Manage All Users | ❌ | ❌ | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ✓ |
-| Assign User Roles | ❌ | ❌ | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ✓ |
+| Assign User Roles⁸ | ❌ | Employee | Faculty Secretary, Employee | Employee | Rector's Secretary, Dean | All | ❌ | ❌ | ✓ |
 | Deactivate User Accounts | ❌ | ❌ | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ✓ |
+
+⁸ Roles each role may assign, always inside its own organisation subtree (design review of 2026-10-04, in force since 2.1.8 (SCRUM-43)). The faculty secretary and the rector's secretary only confirm membership by assigning `EMPLOYEE`; the dean appoints faculty secretaries; the rector appoints the rector's secretary and deans; the system administrator assigns every role, including `SYSTEM_ADMIN` and `GDPR_OFFICER`. Feature 1.2 allowed any role strictly below the caller's own, university roles only by the rector.
 
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|
@@ -90,23 +155,35 @@ This matrix defines granular permissions for each role within the Award Monitori
 | View Faculty Audit Logs | ❌ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | View All Audit Logs | ❌ | ❌ | ❌ | ❌ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Export Audit Reports | ❌ | ❌ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| View and Export Award Audit Trail³ | ❌ | ❌ | ❌ | ❌ | ❌ | ✓ | ✓ | ❌ | ❌ |
 | Configure Audit Rules | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✓ | ❌ | ✓ |
-| Manage Data Retention | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✓ | ❌ | ✓ |
-| Handle Data Requests | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✓ | ❌ | ✓ |
-| Process GDPR Requests | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✓ | ❌ | ✓ |
+| Manage Data Retention¹⁷ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✓ | ❌ | ✓ |
+| Handle Data Requests¹⁷ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✓ | ❌ | ✓ |
+| Process GDPR Requests¹⁷ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✓ | ❌ | ✓ |
+
+³ `audit:read` (system administrator, GDPR officer): the `audit_logs` rows about one award, also of a deleted draft (Feature 2.2 D-5), shown as the «Журнал аудиту» tab of the award page and downloadable as CSV (`GET /awards/{id}/audit-trail/export`, audited as `AUDIT_EXPORT`). The wider audit rows above describe the Epic 6 compliance dashboard.
+
+
+¹⁷ As built (Epic 6): the GDPR officer alone holds `legal-hold:manage` (place and lift a legal hold on an account, which blocks its erasure and its retention) and `compliance:read` (the compliance page with retention policies and runs, erasure requests and legal holds). Retention periods are application properties, changed by configuration and a restart; no screen edits them. Every user can request and cancel the erasure of their own account and withdraw their optional consents; the officer does not erase accounts by hand.
 
 ## 4. Reporting & Analytics Permissions Matrix
 
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|
 | **Reports & Analytics** |
-| View Personal Analytics | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| View Department Analytics | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
-| View Faculty Analytics | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
-| View University Analytics | ❌ | ❌ | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| View Personal Analytics¹⁸ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ |
+| View Department Analytics¹⁹ | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| View Faculty Analytics¹⁹ | ❌ | ❌ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| View University Analytics²⁰ | ❌ | ❌ | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Export Reports (CSV/PDF) | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Create Custom Reports | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Access Raw Data | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✓ |
+
+¹⁸ Feature 5.1.1 (`PersonalAnalyticsService`, `GET /analytics/me`): every role holds `analytics:read:own`, since approvers, administrators and GDPR officers can own personal awards too (Epic 5 tracker, deviation 2); an account without a role (membership not confirmed) gets 403. Only the caller's own approved personal awards are read, with no parameter naming another person. The rank in the department carries figures only when the caller's latest `ANALYTICS` consent is a grant and the department has at least `app.analytics.min-group-size` (5) active accounts; every active account of the department counts in the group, with or without the consent.
+
+¹⁹ Feature 5.2.1 (`UnitAnalyticsService`, `GET /analytics/units`, `GET /analytics/units/{id}`): `analytics:read:department` belongs to every approver role and `analytics:read:faculty` to the dean, the rector's secretary and the rector; both are read through the role scopes a person holds, never through a delegation. A faculty secretary scoped to a faculty therefore opens each of its departments but not the faculty comparison, which corrects the earlier ✓ for "View Faculty Analytics". A unit outside the caller's scopes answers 404. Top performers name only active people whose latest `ANALYTICS` consent is a grant, in units with at least `app.analytics.min-group-size` (5) active accounts. "View University Analytics" is footnote ²⁰.
+
+²⁰ Feature 5.3.1 (`UniversityAnalyticsService`, `UniversityComplianceService`, `GET /analytics/university`, `GET /analytics/university/compliance`): `analytics:read:university` belongs to the rector's secretary and the rector, is held university-wide by role whatever scope the role names, and is never delegable. The university analytics name nobody: they compare the faculties and colleges and the university level, with rising and falling categories and sources, a projection and rule-based highlights. The compliance summary under the same permission returns counts only (notice acknowledgements, analytics consents, erasure requests, legal holds, the last retention run, review backlog); the records stay on the GDPR officer's compliance page under `compliance:read`.
 
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|
@@ -124,14 +201,10 @@ This matrix defines granular permissions for each role within the Award Monitori
 - **Faculty Secretary** inherits all Employee permissions
 - **Dean** inherits all Faculty Secretary permissions for their faculty
 - **Rector** inherits all Dean permissions for the entire university
-- **Rector's Secretary** can act on behalf of Rector for administrative tasks (not approval decisions)
+- **Rector's Secretary** can act on behalf of Rector for administrative tasks and decides at the levels up to their own (note 11)
 
 ### Temporary Delegation Rules
-| Delegating Role | Can Delegate To | Duration Limit | Approval Required |
-|-----------------|----------------|----------------|-------------------|
-| Faculty Secretary | Another Faculty Secretary | 30 days | Dean approval |
-| Dean | Another Dean or Senior Faculty Secretary | 60 days | Rector approval |
-| Rector | Dean (acting capacity) | 90 days | Board notification |
+An approval role is lent to a colleague for at most 90 days, for any of the four approval roles and without a second approval; the delegation is stamped on every decision it enables (`review_decisions.delegator_id`). The rules as built are in the "Approval delegation" row of [AUTHENTICATION_AUTHORIZATION.md](../security/AUTHENTICATION_AUTHORIZATION.md).
 
 ### Emergency Access Procedures
 - **Technical Emergency:** Dev Team can temporarily escalate to System Ops level for critical issues

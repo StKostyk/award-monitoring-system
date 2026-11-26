@@ -1,0 +1,69 @@
+@if (table()) {
+  <app-table-scroll [label]="'analytics.trend.title' | transloco">
+    <table class="analytics-table" data-testid="trend-table">
+      <caption>
+        {{
+          'analytics.trend.title' | transloco
+        }}
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">{{ 'analytics.table.year' | transloco }}</th>
+          <th scope="col">{{ 'analytics.table.count' | transloco }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of bars(); track row.key) {
+          <tr>
+            <th scope="row">{{ row.label }}</th>
+            <td>{{ row.value }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </app-table-scroll>
+} @else {
+  @if (summary(); as card) {
+    <dl
+      class="years"
+      data-testid="trend-cards"
+      [attr.aria-label]="'analytics.trend.cards' | transloco"
+    >
+      <div class="years__card years__card--now">
+        <dt>{{ card.year }}</dt>
+        <dd class="years__count" data-testid="trend-card-now">{{ card.count }}</dd>
+        <dd class="years__hint">
+          {{ (isNow() ? 'analytics.trend.now' : 'analytics.trend.end') | transloco }}
+        </dd>
+      </div>
+      <div class="years__card">
+        <dt>{{ card.previousYear }}</dt>
+        <dd class="years__count" data-testid="trend-card-previous">{{ card.previousCount }}</dd>
+        <dd class="years__hint">
+          {{ (isNow() ? 'analytics.trend.previousNow' : 'analytics.trend.previous') | transloco }}
+        </dd>
+      </div>
+      <div class="years__card">
+        <dt>{{ 'analytics.trend.average' | transloco }}</dt>
+        <dd class="years__count" data-testid="trend-card-average">{{ average() }}</dd>
+        <dd class="years__hint">
+          @if (card.averageFrom !== null) {
+            {{
+              'analytics.trend.averageHint'
+                | transloco: { from: card.averageFrom, to: card.year - 1 }
+            }}
+          } @else {
+            {{ 'analytics.trend.noEarlier' | transloco }}
+          }
+        </dd>
+      </div>
+    </dl>
+  }
+  <app-bar-list
+    class="years__bars"
+    data-testid="trend-bars"
+    [rows]="bars()"
+    [label]="barsLabel()"
+    shortLabels
+  />
+}

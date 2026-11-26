@@ -1,0 +1,35 @@
+# =============================================================================
+# Logstash Configuration
+# =============================================================================
+#
+# This is the main configuration file for Logstash itself (not the pipeline)
+# It controls how Logstash runs, not what it does with logs
+# =============================================================================
+
+# HTTP API settings for monitoring Logstash
+http.host: "0.0.0.0"
+http.port: 9600
+
+# Pipeline settings
+# These control how Logstash processes your logs
+pipeline:
+  # Number of worker threads
+  # More workers = higher throughput but more CPU usage
+  workers: 2
+
+  # How many events to process in each batch
+  # Larger batches = better throughput but higher memory usage
+  batch.size: 125
+
+  # How long to wait for a full batch before processing
+  # Lower values = faster processing but possibly smaller batches
+  batch.delay: 50
+
+# Logging configuration for Logstash itself
+# This controls how Logstash logs its own operations
+log.level: info
+path.logs: /usr/share/logstash/logs
+
+# Disable X-Pack monitoring if you're not using it
+# X-Pack is Elastic's commercial monitoring solution
+xpack.monitoring.enabled: false

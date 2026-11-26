@@ -1,0 +1,181 @@
+package ua.edu.chnu.awards.auth.service;
+
+import java.util.Map;
+
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import ua.edu.chnu.awards.audit.entity.AuditAction;
+import ua.edu.chnu.awards.audit.service.AuditService;
+import ua.edu.chnu.awards.auth.config.AuthProperties;
+import ua.edu.chnu.awards.auth.dto.RegisterRequest;
+import ua.edu.chnu.awards.auth.dto.RegistrationResponse;
+import ua.edu.chnu.awards.auth.entity.TokenPurpose;
+import ua.edu.chnu.awards.auth.event.VerificationRequested;
+import ua.edu.chnu.awards.common.EmailUtils;
+import ua.edu.chnu.awards.common.event.AfterCommit;
+import ua.edu.chnu.awards.common.limit.RequestThrottle;
+import ua.edu.chnu.awards.common.privacy.PrivacyNoticeVersions;
+import ua.edu.chnu.awards.common.web.ApiProblemException;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
+import ua.edu.chnu.awards.organization.service.OrganizationLookup;
+import ua.edu.chnu.awards.user.entity.AccountStatus;
+import ua.edu.chnu.awards.user.entity.User;
+import ua.edu.chnu.awards.user.service.MembershipConfirmation;
+import ua.edu.chnu.awards.user.service.RoleHolders;
+import ua.edu.chnu.awards.user.service.UserAccounts;
+
+import lombok.RequiredArgsConstructor;
+
+/**
+ * Self-registration with an institutional address, email verification and re-sending of the link.
+ */
+@Service
+@RequiredArgsConstructor
+public class RegistrationService {
+
+    static final String RESEND_KEY_PREFIX = "auth:resend:";
+
+    private final UserAccounts users;
+    private final RoleHolders roleHolders;
+    private final OrganizationLookup organizations;
+    private final OneTimeTokenService tokens;
+    private final PasswordPolicy passwordPolicy;
+    private final PasswordEncoder passwordEncoder;
+    private final AfterCommit events;
+    private final RequestThrottle throttle;
+    private final EmailAddressRules addressRules;
+    private final AuthProperties properties;
+    private final AuditService audit;
+    private final MembershipConfirmation membership;
+    private final PrivacyNoticeVersions noticeVersions;
+    private final AccountClaim claim;
+
+    /**
+     * Creates a pending account with the acknowledgement of the current privacy notice and requests the
+     * verification email. The row of a person added without an account is taken over instead, keeping its name
+     * and department; the answer is the same.
+     *
+     * @param request registration data
+     * @return the address and its {@code PENDING} status
+     */
+    @Transactional
+    public RegistrationResponse register(RegisterRequest request) {
+        String email = EmailUtils.normalize(request.email());
+        addressRules.requireInstitutional(email,
+            "Registration is open to institutional addresses only; ask your faculty secretary for help");
+        passwordPolicy.require(request.password());
+        noticeVersions.requireCurrent(request.privacyNoticeVersion(), "privacyNoticeVersion");
+        Organization department = organizations.findById(request.organizationId())
+            .filter(org -> org.getOrgType() == OrganizationType.DEPARTMENT && org.isActive())
+            .orElseThrow(() -> new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "organisation-invalid",
+                "Choose an active department"));
+        User found = users.findByEmailAddressIgnoreCase(email).orElse(null);
+        User user;
+        if (found == null) {
+            user = create(email, request, department);
+        } else if (found.isWithoutAccount()) {
+            user = claim.takeOver(found, request.password());
+        } else {
+            user = replaceAbandoned(found, request, department);
+        }
+
+        if (!user.isWithoutAccount()) {
+            membership.confirm(user, department).ifPresent(roleHolders::save);
+        }
+        noticeVersions.recordAcknowledgement(user.getId(), request.privacyNoticeVersion());
+        throttle.claimForTransaction(RESEND_KEY_PREFIX + email, properties.resendInterval());
+        sendVerification(user);
+        return new RegistrationResponse(user.getEmailAddress(), user.getAccountStatus());
+    }
+
+    private User create(String email, RegisterRequest request, Organization department) {
+        try {
+            return users.saveAndFlush(User.builder()
+                .emailAddress(email)
+                .firstName(request.firstName().trim())
+                .lastName(request.lastName().trim())
+                .passwordHash(passwordEncoder.encode(request.password()))
+                .accountStatus(AccountStatus.PENDING)
+                .organization(department)
+                .build());
+        } catch (DataIntegrityViolationException e) {
+            throw addressRules.taken(e);
+        }
+    }
+
+    /**
+     * A pending account whose newest verification link has run out is taken over by the new registration, so an
+     * address is not lost to somebody who mistyped it or never opened the email. While a link is still usable
+     * the address stays taken.
+     */
+    private User replaceAbandoned(User existing, RegisterRequest request, Organization department) {
+        boolean abandoned = existing.getAccountStatus() == AccountStatus.PENDING
+            && tokens.countUsable(existing, TokenPurpose.EMAIL_VERIFICATION) == 0;
+        if (!abandoned) {
+            throw addressRules.taken(null);
+        }
+        existing.setFirstName(request.firstName().trim());
+        existing.setLastName(request.lastName().trim());
+        existing.setPasswordHash(passwordEncoder.encode(request.password()));
+        existing.setOrganization(department);
+        tokens.invalidate(existing, TokenPurpose.EMAIL_VERIFICATION);
+        audit.record(AuditAction.REGISTRATION_REPLACED, existing.getId(),
+            Map.of("organizationId", department.getId()));
+        return existing;
+    }
+
+    /**
+     * Activates the account behind a verification token once the registration password is presented, so that
+     * only the person who registered can complete the registration.
+     *
+     * @param rawToken token from the link
+     * @param password the password chosen at registration
+     * @return the address, its new status and the awards waiting for a claimed account
+     */
+    @Transactional
+    public RegistrationResponse verify(String rawToken, String password) {
+        User owner = tokens.peekOwner(rawToken, TokenPurpose.EMAIL_VERIFICATION);
+        if (!passwordEncoder.matches(password, owner.getPasswordHash())) {
+            throw new ApiProblemException(HttpStatus.FORBIDDEN, "password-mismatch",
+                "The password does not match the one chosen at registration");
+        }
+        User user = tokens.redeemOwner(rawToken, TokenPurpose.EMAIL_VERIFICATION);
+        if (user.getAccountStatus() != AccountStatus.PENDING) {
+            throw new ApiProblemException(HttpStatus.CONFLICT, "account-not-pending",
+                "The account is not awaiting verification");
+        }
+        user.setAccountStatus(AccountStatus.ACTIVE);
+        audit.record(AuditAction.EMAIL_VERIFIED, user.getId());
+        long waiting = claim.complete(user);
+        return new RegistrationResponse(user.getEmailAddress(), user.getAccountStatus(), waiting);
+    }
+
+    /**
+     * Sends a fresh verification link to a pending account, at most once per interval. Unknown or already
+     * verified addresses are ignored so the response does not reveal whether an account exists.
+     *
+     * @param email the address
+     */
+    @Transactional
+    public void resend(String email) {
+        String normalized = EmailUtils.normalize(email);
+        if (!throttle.claimForTransaction(RESEND_KEY_PREFIX + normalized, properties.resendInterval())) {
+            throw ApiProblemException.tooManyRequests("A verification email was sent recently; try again in a minute",
+                properties.resendInterval().toSeconds());
+        }
+        users.findByEmailAddressIgnoreCase(normalized)
+            .filter(user -> user.getAccountStatus() == AccountStatus.PENDING)
+            .ifPresent(this::sendVerification);
+    }
+
+    private void sendVerification(User user) {
+        String raw = tokens.issue(user, TokenPurpose.EMAIL_VERIFICATION, properties.verificationTtl());
+        String link = properties.link("/verify-email", raw);
+        events.publish(new VerificationRequested(user.getEmailAddress(), user.getFirstName(), link));
+    }
+}

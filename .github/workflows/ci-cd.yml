@@ -11,23 +11,19 @@ on:
   push:
     branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
   workflow_dispatch:
     inputs:
-      deploy_environment:
-        description: 'Environment to deploy'
+      image_tag:
+        description: 'Deploy this earlier image tag (main-<sha>) to the demo server without a build'
         required: false
-        default: 'staging'
-        type: choice
-        options:
-          - staging
-          - production
+        default: ''
+        type: string
 
 env:
   JAVA_VERSION: '21'
   NODE_VERSION: '20'
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   # ===========================================================================
@@ -36,6 +32,9 @@ jobs:
   backend-build:
     name: Backend Build & Test
     runs-on: ubuntu-latest
+    # A dispatch with image_tag only deploys
+    if: inputs.image_tag == ''
+
     defaults:
       run:
         working-directory: backend
@@ -44,7 +43,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history for SonarQube
+          fetch-depth: 0  # Full history for SonarQube blame information
 
       - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
@@ -52,55 +51,25 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
           cache: 'maven'
-          cache-dependency-path: backend/pom.xml
 
-      - name: Configure Maven settings
-        run: |
-          mkdir -p ~/.m2
-          cat > ~/.m2/settings.xml << 'EOF'
-          <settings>
-            <servers>
-              <server>
-                <id>central</id>
-                <configuration>
-                  <httpConfiguration>
-                    <all>
-                      <connectionTimeout>30000</connectionTimeout>
-                      <readTimeout>30000</readTimeout>
-                    </all>
-                  </httpConfiguration>
-                </configuration>
-              </server>
-            </servers>
-          </settings>
-          EOF
+      - name: Build, test and check quality gates
+        run: mvn clean verify -B
 
-      - name: Build with Maven
-        run: mvn clean compile -B -DskipTests -Dmaven.wagon.http.retryHandler.count=3
-
-      - name: Run Unit Tests
-        run: mvn test -B -Dmaven.wagon.http.retryHandler.count=3
-
-      - name: Run Integration Tests
-        run: mvn verify -B -DskipUnitTests -Dmaven.wagon.http.retryHandler.count=3
-
-      - name: Generate JaCoCo Coverage Report
-        run: mvn jacoco:report -B
-        continue-on-error: true
-
-      - name: Upload Coverage Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: backend/target/site/jacoco/
-          retention-days: 7
-
-      - name: Upload Test Results
+      - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: test-results
-          path: backend/target/surefire-reports/
+          name: backend-test-results
+          path: |
+            backend/target/surefire-reports/
+            backend/target/failsafe-reports/
+          retention-days: 7
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-report
+          path: backend/target/site/jacoco/
           retention-days: 7
 
   # ===========================================================================
@@ -109,6 +78,8 @@ jobs:
   frontend-build:
     name: Frontend Build & Test
     runs-on: ubuntu-latest
+    # A dispatch with image_tag only deploys
+    if: inputs.image_tag == ''
     defaults:
       run:
         working-directory: frontend
@@ -127,22 +98,116 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Linting
+      - name: Run linting
         run: npm run lint
 
-      - name: Run Unit Tests
-        run: npm test
+      - name: Lint styles
+        run: npm run lint:styles
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Run unit tests
+        # Angular tests need headless mode in CI
+        run: npm run test:ci
         env:
           CI: true
 
-      - name: Build Production
+      - name: Build production bundle
         run: npm run build -- --configuration=production
 
-      - name: Upload Build Artifacts
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-test-results
+          path: frontend/coverage/
+          retention-days: 7
+
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
           path: frontend/dist/
+          retention-days: 7
+
+  # ===========================================================================
+  # End-to-End Tests (Playwright against the backend on the local profile)
+  # ===========================================================================
+  e2e:
+    name: Playwright E2E
+    runs-on: ubuntu-latest
+    # A dispatch with image_tag only deploys
+    if: inputs.image_tag == ''
+    timeout-minutes: 45
+    env:
+      CI: true
+      AUTH_RATE_LIMIT_PER_MINUTE: '1000'
+      AUTH_ACCOUNT_RATE_LIMIT_PER_MINUTE: '1000'
+      E2E_NGINX_URL: http://127.0.0.1:4280
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Start PostgreSQL, Redis, Mailpit, MinIO and ClamAV
+        run: docker compose up -d --wait postgres redis mailpit minio clamav
+
+      - name: Start nginx in front of the backend
+        run: |
+          docker run -d --name award-e2e-nginx -p 127.0.0.1:4280:80 --add-host app:host-gateway \
+            -v "$GITHUB_WORKSPACE/frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro" \
+            -v "$GITHUB_WORKSPACE/frontend/security-headers.conf:/etc/nginx/snippets/security-headers.conf:ro" \
+            -v "$GITHUB_WORKSPACE/frontend/backend-proxy.conf:/etc/nginx/snippets/backend-proxy.conf:ro" \
+            nginx:alpine
+
+      - name: Start the backend
+        working-directory: backend
+        run: |
+          mkdir -p ../build
+          nohup mvn -B spring-boot:run -Dspring-boot.run.profiles=local > ../build/e2e-backend.log 2>&1 &
+          for _ in $(seq 1 60); do
+            if curl -fs http://localhost:8080/actuator/health | grep -q '"status":"UP"'; then
+              exit 0
+            fi
+            sleep 5
+          done
+          tail -n 100 ../build/e2e-backend.log
+          exit 1
+
+      - name: Install dependencies and the Playwright browsers
+        working-directory: frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium webkit
+
+      - name: Run Playwright
+        working-directory: frontend
+        run: npx playwright test
+
+      - name: Upload Playwright report and traces
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+            build/e2e-backend.log
           retention-days: 7
 
   # ===========================================================================
@@ -168,32 +233,57 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
           cache: 'maven'
-          cache-dependency-path: backend/pom.xml
 
-      - name: Run Checkstyle
-        run: mvn checkstyle:check -B -Dmaven.wagon.http.retryHandler.count=3
-        continue-on-error: true
+      - name: Download coverage reports
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage-report
+          path: backend/target/site/jacoco/
 
-      - name: Run PMD
-        run: mvn pmd:check -B -Dmaven.wagon.http.retryHandler.count=3
-        continue-on-error: true
+      - name: Run static analysis
+        run: mvn compile checkstyle:check pmd:check spotbugs:check -B
 
-      - name: Run SpotBugs
-        run: mvn spotbugs:check -B -Dmaven.wagon.http.retryHandler.count=3
-        continue-on-error: true
+      - name: Upload Checkstyle report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: checkstyle-report
+          path: backend/target/checkstyle-result.xml
+          retention-days: 7
 
-      - name: SonarQube Analysis
+      - name: Upload PMD report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pmd-report
+          path: backend/target/pmd.xml
+          retention-days: 7
+
+      - name: Upload SpotBugs report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: spotbugs-report
+          path: backend/target/spotbugsXml.xml
+          retention-days: 7
+
+      - name: SonarQube analysis
+        # Only run SonarQube if the token is configured
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: |
+          if [ -z "${SONAR_TOKEN}" ]; then
+            echo "SONAR_TOKEN not configured, skipping analysis"
+            exit 0
+          fi
           mvn sonar:sonar -B \
-            -Dmaven.wagon.http.retryHandler.count=3 \
             -Dsonar.projectKey=award-monitoring-system \
-            -Dsonar.organization=${{ github.repository_owner }} \
-            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.organization=kostyk-stefan \
+            -Dsonar.host.url="${SONAR_HOST_URL}" \
+            -Dsonar.token="${SONAR_TOKEN}" \
             -Dsonar.qualitygate.wait=true
-        continue-on-error: true
 
   # ===========================================================================
   # Security Scanning
@@ -205,6 +295,7 @@ jobs:
     permissions:
       contents: read
       security-events: write
+      actions: read
     defaults:
       run:
         working-directory: backend
@@ -219,58 +310,56 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
           cache: 'maven'
-          cache-dependency-path: backend/pom.xml
 
       - name: OWASP Dependency Check
+        run: mvn dependency-check:check -B
+        continue-on-error: true
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-        run: |
-          if [ -n "$NVD_API_KEY" ]; then
-            mvn org.owasp:dependency-check-maven:check -B \
-              -Dmaven.wagon.http.retryHandler.count=3 \
-              -DnvdApiKey=$NVD_API_KEY
-          else
-            echo "::warning::NVD API Key not configured. Skipping detailed vulnerability database update."
-            mvn org.owasp:dependency-check-maven:check -B \
-              -Dmaven.wagon.http.retryHandler.count=3 \
-              -DnvdDatafeedUrl=https://dependency-check.github.io/DependencyCheck_Hosted/nvd_datafeed.json.gz \
-              -DcveValidForHours=24
-          fi
-        continue-on-error: true
 
-      - name: Upload Dependency Check Report
+      - name: Upload OWASP Dependency Check report
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: dependency-check-report
-          path: backend/target/dependency-check-report.html
+          path: |
+            backend/target/dependency-check-report.html
+            backend/target/dependency-check-report.json
           retention-days: 30
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+      - name: Run Trivy vulnerability scanner on filesystem
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: 'fs'
-          scan-ref: '.'
+          scan-ref: './backend'
           format: 'sarif'
           output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
 
-      - name: Upload Trivy scan results
+      - name: Upload Trivy scan results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
+          category: 'trivy-fs-scan'
 
   # ===========================================================================
-  # Docker Build
+  # Docker Build and Push
   # ===========================================================================
   docker-build:
-    name: Docker Build
+    name: Docker Build and Push
     runs-on: ubuntu-latest
-    needs: [backend-build, frontend-build, code-quality]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    needs: [backend-build, frontend-build, e2e, code-quality]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     permissions:
       contents: read
       packages: write
+      security-events: write
+
+    # Output the image tags so other jobs can use them
+    outputs:
+      backend-image: ${{ steps.backend-meta.outputs.tags }}
+      frontend-image: ${{ steps.frontend-meta.outputs.tags }}
 
     steps:
       - name: Checkout code
@@ -279,142 +368,236 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Container Registry
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Convert repository name to lowercase
-        id: repo
-        run: echo "name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+      # Convert repository name to lowercase for container registry
+      # Container registries require lowercase names
+      - name: Prepare image names
+        id: prep
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          {
+            echo "repo=${REPO_LOWER}"
+            echo "backend_image=${REGISTRY}/${REPO_LOWER}-backend"
+            echo "frontend_image=${REGISTRY}/${REPO_LOWER}-frontend"
+          } >> "$GITHUB_OUTPUT"
 
-      - name: Extract metadata for Docker
-        id: meta
+      # Generate Docker metadata for backend
+      # This creates appropriate tags based on branch, PR, or release
+      - name: Extract metadata for backend
+        id: backend-meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}
+          images: ${{ steps.prep.outputs.backend_image }}
           tags: |
-            type=sha,prefix=
             type=ref,event=branch
-            type=semver,pattern={{version}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and push Backend image
+      # Generate Docker metadata for frontend
+      - name: Extract metadata for frontend
+        id: frontend-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.prep.outputs.frontend_image }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      # Build and push backend Docker image
+      - name: Build and push backend image
         uses: docker/build-push-action@v5
         with:
           context: ./backend
           file: ./backend/Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}-backend:${{ github.sha }}
+          tags: ${{ steps.backend-meta.outputs.tags }}
+          labels: ${{ steps.backend-meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          platforms: linux/amd64
 
-      - name: Build and push Frontend image
+      # Build and push frontend Docker image
+      - name: Build and push frontend image
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}-frontend:${{ github.sha }}
+          tags: ${{ steps.frontend-meta.outputs.tags }}
+          labels: ${{ steps.frontend-meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+      # Scan the built images for vulnerabilities
+      - name: Run Trivy vulnerability scanner on backend image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ steps.prep.outputs.backend_image }}:${{ github.ref_name }}
+          format: 'sarif'
+          output: 'trivy-backend-image.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy backend image scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-backend-image.sarif'
+          category: 'trivy-backend-image'
 
   # ===========================================================================
-  # Deploy to Staging
+  # Deploy to the demo server (ADR-021, DEMO_DEPLOYMENT §3): a push to main deploys the images it built; a dispatch
+  # with image_tag deploys an earlier main-<sha> without a build. Skipped while DEMO_HOST is not set.
   # ===========================================================================
-  deploy-staging:
-    name: Deploy to Staging
+  deploy-demo:
+    name: Deploy to the demo server
     runs-on: ubuntu-latest
     needs: [docker-build, security-scan]
-    if: github.ref == 'refs/heads/develop'
+    if: >-
+      !cancelled() && vars.DEMO_HOST != '' &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+        needs.docker-build.result == 'success' && needs.security-scan.result == 'success') ||
+       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.image_tag != ''))
+    permissions:
+      contents: read
+      packages: read
     environment:
-      name: staging
-      url: https://staging.awards.example.com
+      name: demo
+      url: https://${{ vars.SITE_ADDRESS }}
+    concurrency:
+      group: deploy-demo
+      cancel-in-progress: false
+    env:
+      DEMO_HOST: ${{ vars.DEMO_HOST }}
+      DEMO_USER: ${{ vars.DEMO_USER }}
+      DEMO_DIR: ${{ vars.DEMO_DIR }}
+      SITE_ADDRESS: ${{ vars.SITE_ADDRESS }}
+      IMAGE_TAG_INPUT: ${{ inputs.image_tag }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v4
-
-      - name: Configure kubectl
+      - name: Choose the images
+        id: images
         run: |
-          echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > kubeconfig
-          export KUBECONFIG=kubeconfig
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then tag="$IMAGE_TAG_INPUT"; else tag="main-${GITHUB_SHA::7}"; fi
+          echo "$tag" | grep -Eq '^main-[0-9a-f]{7,40}$' || { echo "image_tag must look like main-<sha>: $tag"; exit 1; }
+          repo=$(echo "${{ env.REGISTRY }}/${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          {
+            echo "BACKEND_IMAGE=${repo}-backend:${tag}"
+            echo "FRONTEND_IMAGE=${repo}-frontend:${tag}"
+          } > .env.release
+          cat .env.release
+          {
+            echo "backend=${repo}-backend:${tag}"
+            echo "frontend=${repo}-frontend:${tag}"
+          } >> "$GITHUB_OUTPUT"
 
-      - name: Deploy to Staging
+      # The exact images to deploy, also on a rollback: a fixable critical vulnerability stops the deploy
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Scan the backend image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ steps.images.outputs.backend }}
+          severity: 'CRITICAL'
+          ignore-unfixed: true
+          trivyignores: '.trivyignore'
+          exit-code: '1'
+
+      - name: Scan the frontend image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ steps.images.outputs.frontend }}
+          severity: 'CRITICAL'
+          ignore-unfixed: true
+          trivyignores: '.trivyignore'
+          exit-code: '1'
+
+      - name: Set up SSH with the pinned host key
+        env:
+          DEMO_SSH_KEY: ${{ secrets.DEMO_SSH_KEY }}
+          DEMO_KNOWN_HOSTS: ${{ secrets.DEMO_KNOWN_HOSTS }}
         run: |
-          kubectl set image deployment/award-backend \
-            backend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ github.sha }} \
-            -n staging
-          kubectl set image deployment/award-frontend \
-            frontend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:${{ github.sha }} \
-            -n staging
-          kubectl rollout status deployment/award-backend -n staging --timeout=300s
-          kubectl rollout status deployment/award-frontend -n staging --timeout=300s
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEMO_SSH_KEY" > ~/.ssh/id_demo
+          printf '%s\n' "$DEMO_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_demo ~/.ssh/known_hosts
+          {
+            echo "Host demo"
+            echo "  HostName $DEMO_HOST"
+            echo "  User $DEMO_USER"
+            echo "  IdentityFile ~/.ssh/id_demo"
+            echo "  IdentitiesOnly yes"
+            echo "  StrictHostKeyChecking yes"
+            echo "  BatchMode yes"
+            echo "  ConnectTimeout 20"
+          } > ~/.ssh/config
 
-      - name: Run Smoke Tests
+      - name: Copy the Compose files
         run: |
-          sleep 30
-          curl -f https://staging.awards.example.com/actuator/health || exit 1
+          # shellcheck disable=SC2029 # DEMO_DIR is expanded on the runner on purpose
+          tar -czf - docker-compose.yaml docker-compose.prod.yml infra/caddy/Caddyfile infra/minio infra/backup \
+            .env.release | ssh demo "mkdir -p '$DEMO_DIR' && tar -xzf - -C '$DEMO_DIR'"
 
-  # ===========================================================================
-  # Deploy to Production
-  # ===========================================================================
-  deploy-production:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    needs: [docker-build, security-scan]
-    if: github.ref == 'refs/heads/main'
-    environment:
-      name: production
-      url: https://awards.example.com
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v4
-
-      - name: Configure kubectl
+      - name: Pull and start
         run: |
-          echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > kubeconfig
-          export KUBECONFIG=kubeconfig
+          # shellcheck disable=SC2029 # DEMO_DIR is expanded on the runner on purpose
+          ssh demo "DEMO_DIR='$DEMO_DIR' bash -s" <<'EOF'
+          set -eu
+          cd "$DEMO_DIR"
+          dc="docker compose -f docker-compose.yaml -f docker-compose.prod.yml --env-file .env.prod --env-file .env.release"
+          $dc pull --quiet --ignore-buildable
+          $dc pull --quiet app frontend
+          $dc build --quiet backup
+          $dc up -d --wait --wait-timeout 300 --remove-orphans
+          EOF
 
-      - name: Blue-Green Deployment
+      - name: Smoke test
         run: |
-          # Deploy to green environment
-          kubectl set image deployment/award-backend-green \
-            backend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ github.sha }} \
-            -n production
-          kubectl set image deployment/award-frontend-green \
-            frontend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:${{ github.sha }} \
-            -n production
-          
-          # Wait for rollout
-          kubectl rollout status deployment/award-backend-green -n production --timeout=300s
-          kubectl rollout status deployment/award-frontend-green -n production --timeout=300s
-          
-          # Switch traffic to green
-          kubectl patch service award-service -n production \
-            -p '{"spec":{"selector":{"version":"green"}}}'
+          deadline=$((SECONDS + 300))
+          until body=$(curl -fsS --max-time 10 "https://$SITE_ADDRESS/.well-known/openid-configuration"); do
+            [ $SECONDS -lt $deadline ] || { echo "no answer from https://$SITE_ADDRESS within 5 minutes"; exit 1; }
+            sleep 10
+          done
+          issuer=$(echo "$body" | jq -r .issuer)
+          echo "issuer: $issuer"
+          [ "$issuer" = "https://$SITE_ADDRESS" ] || { echo "expected the issuer https://$SITE_ADDRESS"; exit 1; }
+          # shellcheck disable=SC2029 # DEMO_DIR is expanded on the runner on purpose
+          bad=$(ssh demo "DEMO_DIR='$DEMO_DIR' bash -s" <<'EOF'
+          cd "$DEMO_DIR"
+          docker compose -f docker-compose.yaml -f docker-compose.prod.yml --env-file .env.prod --env-file .env.release \
+            ps -a --format '{{.Service}} {{.State}} {{.Health}}' \
+            | awk '$1 != "minio-init" && ($2 == "exited" || $2 == "dead" || $3 == "unhealthy") {print $1}'
+          EOF
+          )
+          [ -z "$bad" ] || { echo "unhealthy or exited: $bad"; exit 1; }
+          echo "all services up"
 
-      - name: Run Production Smoke Tests
-        run: |
-          sleep 30
-          curl -f https://awards.example.com/actuator/health || exit 1
-
-      - name: Notify Deployment Success
-        if: success()
-        run: echo "Production deployment successful!"
-
-      - name: Rollback on Failure
+      - name: Logs of unhealthy services
         if: failure()
         run: |
-          kubectl patch service award-service -n production \
-            -p '{"spec":{"selector":{"version":"blue"}}}'
-          echo "Rolled back to blue environment"
-
+          # shellcheck disable=SC2029 # DEMO_DIR is expanded on the runner on purpose
+          ssh demo "DEMO_DIR='$DEMO_DIR' bash -s" <<'EOF'
+          cd "$DEMO_DIR"
+          dc="docker compose -f docker-compose.yaml -f docker-compose.prod.yml --env-file .env.prod --env-file .env.release"
+          $dc ps -a
+          for s in $($dc ps -a --format '{{.Service}} {{.State}} {{.Health}}' \
+              | awk '$1 != "minio-init" && ($2 != "running" || $3 == "unhealthy" || $3 == "starting") {print $1}'); do
+            echo "===== $s"
+            $dc logs --no-color --tail 50 "$s"
+          done
+          EOF

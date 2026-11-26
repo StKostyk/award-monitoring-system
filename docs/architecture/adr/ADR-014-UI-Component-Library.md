@@ -161,6 +161,85 @@ $theme: mat.define-light-theme((
 
 ---
 
+## Addendum 2026-10: Chart library
+
+Angular Material has no charts. The personal dashboard (Feature 5.1) uses **ngx-echarts 21 on ECharts 6**:
+
+- **SVG renderer**: crisp in print and at any zoom, and every mark is a DOM node that tests and audits can inspect.
+  ng2-charts draws on canvas, which gives screen readers nothing and prints blurred, and its peer range already
+  requires Angular 22.
+- **Bundle**: tree-shaken imports from `echarts/core` (bar and scatter charts; grid, tooltip, legend and aria
+  components; the SVG renderer) loaded with the lazy `dashboard` route (`provideEchartsCore` with a dynamic
+  import), so the initial bundle does not grow.
+- **Wrapper**: `shared/charts/ChartComponent` adds the ARIA description, theme text colours, no animation under
+  `prefers-reduced-motion`, and a "Show as table" switch that replaces the chart with a table of the same figures.
+- **Colours**: theme tokens `--app-chart-bar` and `--app-chart-band-1..5` (one blue hue, five steps per scheme,
+  checked for monotone lightness, visible step gaps and at least 2:1 against the surface in light and dark), read
+  by `ChartThemeService` and re-read when the colour scheme changes. Nine recognition levels cannot be told apart in
+  one hue, so stacked charts fold the five levels below the university into one band; tables and the level chart
+  keep all nine.
+
+## Addendum 2026-11-14: Lucide icons (Feature 9.3)
+
+Material Icons (a ligature font of about 2 000 glyphs) give way to **Lucide** line icons (`lucide-angular`), which
+match the thin strokes of the new look and reach the bundle one by one:
+
+- `shared/icons/icons.ts` lists every icon the app uses under a short name; `<app-icon name="…">` draws it as inline
+  SVG in the current text colour, sized by `--app-icon-size`. Icons not listed there stay out of the bundle.
+- Icons are decorative (`aria-hidden`); a control that shows only an icon carries an `aria-label`.
+- The lint rule `no-restricted-imports` blocks `@angular/material/icon`, so `<mat-icon>` does not come back.
+  Material components stay as they are; only their icon content changes.
+
+| Option | Decision |
+|--------|----------|
+| Keep Material Icons (font) | Rejected: one font file for a handful of glyphs, filled style that clashes with the new look |
+| Material Symbols (variable font) | Rejected: larger font, same ligature approach |
+| Lucide SVGs registered per use | **Chosen**: tree-shaken, stroke style, no font request |
+
+---
+
+## Addendum 2026-11-15: Motion, effect components and chart colours (Feature 9.3)
+
+**Motion.** CSS and Angular `animate.enter`/`animate.leave` stay the default. The `motion` package (its `animate`
+function only) covers what CSS does poorly: counting a number up, staggering list entries and springs. It is wrapped
+by `MotionHelper` in `shared/effects`, which sets the end state at once under `prefers-reduced-motion: reduce` and
+stops every animation through the owning component's `DestroyRef`. Only lazy routes import it, so the initial bundle
+does not grow.
+
+**Effect components.** Six home-made standalone components replace a third-party effects kit: beam, border beam,
+spotlight (decorative, `aria-hidden`), ticker, marquee and typed text (their text stays readable by screen readers in
+a static copy). They move only `transform` and `opacity`, take colours from tokens and stand still under reduced
+motion.
+
+**Chart colours.** The single blue hue of the 2026-10 addendum gives way to the theme: `--app-chart-1..8` are
+categorical series colours (ECharts `color`, used for lines per unit), `--app-chart-bar` is `--app-chart-1`, and
+`--app-chart-band-1..5` stay one hue per scheme (burgundy in light, cyan in dark) with the same checks: monotone
+lightness and at least 2:1 against the surfaces (series colours at least 3:1). `ChartThemeService` resolves all of
+them again when the scheme changes.
+
+## Addendum 2026-11-15: Shell and command palette (Feature 9.3)
+
+**Command palette.** No palette library (cmdk ports, ngx-kbar) is added: the palette is a Material dialog with one
+combobox field and a listbox (`CommandPaletteService`, `core/layout/command-palette`). It reuses the side menu entry
+list (`nav-entries.ts`, filtered by the route permission helpers) and the existing `GET /awards?q=` search, so it
+offers nothing the person could not open from the menu or the award list.
+
+**Aurora background.** Three fixed radial gradients in the shell, coloured by `--app-aurora-*`, shown only in the
+dark scheme and moved by `transform` only; no `backdrop-filter` or `filter`, which cost too much on scrolling pages
+(PRD 9.3 D2). The toolbar is a translucent surface over it.
+
+## Addendum 2026-11-15: Sign-in and account pages (Feature 9.3)
+
+**Sign-in page.** The Thymeleaf sign-in, error and 429 pages keep their own copy of the brand (`login-assets`), now
+with the burgundy and aurora values and self-hosted Manrope and Onest variable fonts copied from `@fontsource-variable`
+(no build step links the backend to `node_modules`; a font update copies the four files again). The brand panel shows
+the number of approved awards, a model attribute of `LoginController` held in Redis for 10 minutes; without Redis the
+page shows the claim only, so the sign-in page never adds a query per visit.
+
+**Account pages.** The six public account pages of the browser application stay inside the shell (toolbar with
+language and scheme) and wrap their card in `app-auth-layout`, the same panel drawn from the Angular tokens. The count
+stays on the sign-in page only, so 9.3 adds no endpoint.
+
 ## Related Documents
 
 - **Technology Stack**: [Technology Stack Selection](../TECH_STACK.md)
@@ -174,6 +253,11 @@ $theme: mat.define-light-theme((
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-21 | Stefan Kostyk | Initial version | Document creation |
+| 2026-10-19 | Stefan Kostyk | Addendum: chart library | Personal dashboard (Feature 5.1) |
+| 2026-11-14 | Stefan Kostyk | Addendum: Lucide icons | New look (Feature 9.3) |
+| 2026-11-15 | Stefan Kostyk | Addendum: motion, effect components, chart colours | New look (Feature 9.3) |
+| 2026-11-15 | Stefan Kostyk | Addendum: shell and command palette | New look (Feature 9.3) |
+| 2026-11-15 | Stefan Kostyk | Addendum: sign-in and account pages | New look (Feature 9.3) |
 
 ---
 

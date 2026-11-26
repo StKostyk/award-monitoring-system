@@ -1,0 +1,14 @@
+<button
+  mat-stroked-button
+  type="button"
+  (click)="download()"
+  [disabled]="disabled() || busy()"
+  data-testid="board-report"
+>
+  {{ 'universityAnalytics.boardReport' | transloco }}
+</button>
+@if (failed()) {
+  <p class="board-report__failed" role="alert" data-testid="board-report-failed">
+    {{ 'universityAnalytics.boardReportFailed' | transloco }}
+  </p>
+}

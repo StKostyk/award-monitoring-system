@@ -1,0 +1,60 @@
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
+
+import { environment } from '../../../environments/environment';
+import { AccountStatus } from '../../core/auth/user-profile';
+import {
+  OrganizationSummary,
+  OrganizationsService,
+} from '../../core/organizations/organizations.service';
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  organizationId: number;
+  privacyNoticeVersion: string;
+}
+
+export interface RegistrationResponse {
+  email: string;
+  status: AccountStatus;
+  waitingAwards?: number;
+}
+
+@Injectable({ providedIn: 'root' })
+export class RegistrationService {
+  private readonly http = inject(HttpClient);
+  private readonly organizations = inject(OrganizationsService);
+  private readonly base = `${environment.apiUrl}/auth`;
+
+  departments(): Observable<OrganizationSummary[]> {
+    return this.organizations.ofType('DEPARTMENT');
+  }
+
+  register(request: RegisterRequest): Observable<RegistrationResponse> {
+    return this.http.post<RegistrationResponse>(`${this.base}/register`, request);
+  }
+
+  verifyEmail(token: string, password: string): Observable<RegistrationResponse> {
+    return this.http.post<RegistrationResponse>(`${this.base}/verify-email`, { token, password });
+  }
+
+  resendVerification(email: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/resend-verification`, { email });
+  }
+
+  requestPasswordReset(email: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/password-reset/request`, { email });
+  }
+
+  confirmPasswordReset(token: string, password: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/password-reset/confirm`, { token, password });
+  }
+
+  revokeAccess(token: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/security/revoke`, { token });
+  }
+}

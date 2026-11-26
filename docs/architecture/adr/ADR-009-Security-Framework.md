@@ -1,6 +1,6 @@
 # ADR-009: Security Framework Selection
 
-**Status**: Accepted  
+**Status**: Accepted (extended, see Addendum 2026-10)  
 **Date**: 2025-08-20  
 **Author**: Stefan Kostyk  
 **Stakeholders**: Project Architect, Security Team, Development Team
@@ -99,9 +99,10 @@ public class SecurityConfig {
 ```
 
 ### RBAC Implementation
-- **Roles**: EMPLOYEE, FACULTY_SECRETARY, DEAN, RECTOR_SECRETARY, RECTOR, SUPER_ADMIN
-- **Permissions**: award:read, award:create, award:approve, user:manage
-- **Method Security**: `@PreAuthorize` annotations for fine-grained control
+- **Roles**: EMPLOYEE, FACULTY_SECRETARY, DEAN, RECTOR_SECRETARY, RECTOR, SYSTEM_ADMIN, GDPR_OFFICER (the data dictionary's `user_roles.role_type`)
+- **Permissions**: the matrix of AUTHENTICATION_AUTHORIZATION.md §3.3 — `award:read:{own,department,faculty,all}`, `award:create`, `award:update:own`, `award:approve:{level1,level2,level3,final}`, `user:read:{all,scope}`, `user:manage`, `user:manage:scope`, `system:configure`, `data:export`, `consent:manage`, `legal-hold:manage`, `audit:read`
+- **Scope**: every role is held within an organisation; the access token carries `role_scopes` (`ROLE:orgId`) and the resource server resolves "inside my subtree" from an in-memory organisation tree (`@access` in `@PreAuthorize` expressions)
+- **Method Security**: `@PreAuthorize` annotations for fine-grained control; every denial is audited as `ACCESS_DENIED`
 
 ---
 
@@ -121,11 +122,29 @@ public class SecurityConfig {
 
 ---
 
+## Addendum 2026-10: Embedded authorization server
+
+Epic 1 implements the decision with the embedded Spring Authorization Server: the application is its own
+OAuth 2.1 / OpenID Connect provider.
+
+- The Angular application is a public client using the authorization code flow with PKCE; access tokens are
+  RS256-signed JWTs verified against the published JWKS, refresh tokens rotate on every use.
+- Two security filter chains: the authorization server and the sign-in pages use a server-side login session
+  (`LoginSessionConfig`), limited to the authorization flow; every `/api` request is a stateless bearer request
+  to the resource server.
+- Redis stores revoked tokens, lockout and rate-limit state, not HTTP sessions.
+- The reference to Spring Cloud Gateway no longer applies (ADR-008 addendum).
+
+Details: [AUTHENTICATION_AUTHORIZATION.md](../../security/AUTHENTICATION_AUTHORIZATION.md).
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-20 | Stefan Kostyk | Initial version | Document creation |
+| 2026-10-01 | Stefan Kostyk | Addendum: embedded authorization server | Documentation sync after Epic 2 |
 
 ---
 

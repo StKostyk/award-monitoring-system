@@ -209,10 +209,57 @@ $theme: mat.define-light-theme((
 
 ---
 
+## Addendum 2026-10-04: Material 3 theming, university brands and dark mode
+
+The theme configuration above uses the Material 2 API (`define-palette`, `define-light-theme`). The application is on Angular Material 21 and uses the Material 3 `mat.theme()` mixin; this addendum replaces those snippets and adds per-university branding (story 3.0.2).
+
+**Brands.** Each university has a precompiled theme in `frontend/src/styles/brands/<id>/`: `_theme-colors.scss` (tonal palettes from the brand colours, built by the Angular Material `theme-color` schematic) and `_brand.scss` (`mat.theme()`, `mat.theme-overrides()` for the exact brand primary, surfaces and borders, and the application tokens `--app-nav-*`, `--app-brand-accent`, `--app-card-radius`). `styles.scss` applies the neutral theme to `html` and each brand under `html.brand-<id>`. At start-up `BrandService` reads `brand/brand.json` (id, product name and organisation in Ukrainian and English, logo path) and sets the class, the logo, the name and the tab title; a missing file or an unknown id gives the neutral brand. One image serves every university: a deployment replaces `brand.json` and the logo; a new university adds one SCSS folder and a brand id.
+
+| Option | Decision |
+|--------|----------|
+| One build per university (`fileReplacements`) | Rejected: one image per university |
+| Colours from `brand.json`, palettes computed in the browser | Rejected: contrast only known at runtime, an extra library |
+| Precompiled themes per brand, selected by `brand.json` | **Chosen**: contrast checked in CI for every brand and scheme |
+
+**Dark mode.** `mat.theme()` emits `light-dark()` values, so `color-scheme` decides the scheme: `light dark` (device setting) by default, `html[data-color-scheme]` when the user picks light or dark in the user menu (`ColorSchemeService`, kept in `localStorage`).
+
+**Shell.** One responsive shell: a side menu (`mat-sidenav`, `mat-nav-list`) from 960 px, a drawer with a menu button below. A top-bar variant per brand is deferred.
+
+**Rules.** Component styles use `--mat-sys-*` and `--app-*` tokens only, without colour literals or fallbacks; award status colours (`--app-status-*`) are the same in every brand; fonts and icons are self-hosted (`@fontsource`), so no request goes to Google Fonts and the CSP allows fonts from `'self'` only. Details: [UI guidelines](../../frontend/UI_GUIDELINES.md).
+
+## Addendum 2026-11-14: Two-hue ChNU theme and new fonts (Feature 9.3)
+
+**Two hues in one brand.** The `chnu` theme is replaced in place: the light scheme is burgundy and cream (primary
+`#7A1F2B`, navigation `#5E1621`, background `#F6EFE4`, gold `#C9952B` as a fill), the dark scheme is the aurora (deep
+navy `#060914`, cyan primary `#7DDCFF`, gold `#F5C451`). Each Material colour role in `brands/chnu/_brand.scss` is a
+`light-dark(<burgundy>, <aurora>)` pair, so `color-scheme` still decides the scheme and no component knows which hue
+is active. `neutral` stays the fallback and second-brand check with its green primary.
+
+**Tokens.** `styles/_tokens.scss` holds the brand-independent `--app-*` tokens and their defaults (gold and cyan as
+fills with their `--app-on-*` text colours, ok/bad, accent gradient, aurora light, font stacks, radius scale); a brand
+mixin overrides them. `--app-brand-accent` is replaced by `--app-gold`.
+
+**Fonts.** Manrope (headings, the Material brand family) and Onest (text, the plain family) replace Nunito and IBM
+Plex Sans. Both are variable fonts from `@fontsource-variable` with Cyrillic and Latin files chosen by
+`unicode-range`; they stay on the app's own origin under the CSP `font-src 'self'`.
+
+**Browser bar.** The manifest `theme_color` and `<meta name="theme-color">` of the ChNU brand are `#5E1621`.
+
+## Addendum 2026-11-17: Colour scheme on the account (Feature 9.4)
+
+The scheme picked in the toolbar is also stored on the account (`dashboard_preferences.color_scheme`, `SYSTEM`,
+`LIGHT` or `DARK`, `PUT /users/me/dashboard-preferences`). `localStorage` stays the first source: `ColorSchemeService`
+applies it before the first paint, so signed-out pages and the time before the preferences arrive keep the browser's
+value; once the preferences load after the profile, the stored scheme replaces it and is written back to
+`localStorage`, so the next start in that browser opens in it without a flash. Signed out, nothing is sent.
+
+---
+
 ## Related Documents
 
 - **Technology Stack**: [Technology Stack Selection](../TECH_STACK.md)
-- **Other ADRs**: [ADR-014 UI Component Library](./ADR-014-UI-Component-Library.md)
+- **UI guidelines**: [UI_GUIDELINES.md](../../frontend/UI_GUIDELINES.md)
+- **Other ADRs**: [ADR-014 UI Component Library](./ADR-014-UI-Component-Library.md), [ADR-022 Modular Monolith and Multi-University Deployment](./ADR-022-Modular-Monolith-Multi-Tenancy.md) (one brand per deployment)
 - **External Resources**: [Angular Material Theming](https://material.angular.io/guide/theming)
 
 ---
@@ -222,6 +269,9 @@ $theme: mat.define-light-theme((
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-21 | Stefan Kostyk | Initial version | Document creation |
+| 2026-10-04 | Stefan Kostyk | Addendum: Material 3 themes, university brands, dark mode | Story 3.0.2 |
+| 2026-11-14 | Stefan Kostyk | Addendum: two-hue ChNU theme, Manrope and Onest | New look (Feature 9.3) |
+| 2026-11-17 | Stefan Kostyk | Addendum: colour scheme stored on the account | Story 9.4.1 |
 
 ---
 

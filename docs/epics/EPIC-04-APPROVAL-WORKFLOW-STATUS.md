@@ -1,0 +1,190 @@
+# Epic 4: Approval Workflow Engine — Status
+
+> **Started**: 2026-10-06
+> **Done**: 2026-10-09 (manual runs of PRD §9 and §10 pending)
+> **Author**: Stefan Kostyk
+> **Jira epic**: SCRUM-47
+> **Roadmap**: DEVELOPMENT_ROADMAP.md § Epic 4 (local planning document)
+
+## Progress
+
+| Feature | Status | Started | Done |
+|---------|--------|---------|------|
+| 4.1 Workflow Engine Core (organisational awards, queue, decisions, withdrawal, batch review) | Done, manually verified 2026-10-11, fixes re-run 2026-10-12 (PRD §9 run tables, [PRD](../features/epic-04/feature-4.1-workflow-engine-core.md), validation §12) | 2026-10-06 | 2026-10-08 |
+| 4.2 Review Period & Escalation (per-faculty period, overdue notice, reviewer corrections, decision dialog) | Done, manually verified 2026-10-11, fixes re-run 2026-10-12 (PRD §10 run tables, [PRD](../features/epic-04/feature-4.2-review-period-escalation.md), validation §13) | 2026-10-08 | 2026-10-08 |
+| 4.3 Achievements (colleague visibility, unit and public pages) | Done, manually verified 2026-10-11, fixes re-run 2026-10-12 (PRD §10 run tables, [PRD](../features/epic-04/feature-4.3-achievements.md), validation §13) | 2026-10-09 | 2026-10-09 |
+
+## Current focus
+
+Epic delivered 2026-10-09: features 4.1 to 4.3 are merged, each validated against its PRD. What remains is the manual
+run of the three scenarios (4.1 PRD §9, 4.2 §10, 4.3 §10) and the findings they produce. Story status lives in the table
+below; the documentation sync of 2026-10-09 (`docs/sync-epic-04`) brought the contract documents and the Ukrainian
+copies up to date.
+
+## Scope
+
+Reviewers work through the submitted awards: a queue per approval level and organisation, claim and hand-over,
+decisions with comments (approve, reject, return, escalate to the dean), batch decisions with template responses,
+and the owner's withdrawal while nobody has claimed the request. Awards may name a unit (faculty or department) as
+recipient. Overdue requests are marked and the next level is told; nothing moves or decides on its own. Approved
+awards become visible beyond their owner on an achievements page, by the owner's choice for personal awards and
+university-wide for unit awards.
+
+Out of scope here: workflow types "expedited", "appeal" and "exception" (BRD §2, Epic 4 summary), appeals after a
+rejection, in-app and push notifications and the notification centre (Epic 7), search over awards (Epic 5),
+Spring Modulith and the event publication registry (Epic 7, ADR-022 step 2), ShedLock for the scheduled job
+(Epic 9), public holidays in the review period.
+
+## Stories
+
+`parallel` marks stories whose UI can be built in a separate lane from the OpenAPI contract while the backend is in progress.
+
+| # | Story | Feature | Pts | Jira | GitHub | Parallel | Status |
+|---|-------|---------|-----|------|--------|----------|--------|
+| 1 | 4.1.0 Organisational awards: unit recipients and submitter | 4.1 | 5 | SCRUM-48 | #142 | no | Done |
+| 2 | 4.1.1 Reviewer queue with claim, release and hand-over | 4.1 | 8 | SCRUM-49 | #143 | yes | Done |
+| 3 | 4.1.2 Review decisions: approve, reject, return, escalate to the dean | 4.1 | 8 | SCRUM-50 | #144 | yes | Done |
+| 4 | 4.1.3 Withdraw an unclaimed request and resubmit a returned award | 4.1 | 3 | SCRUM-51 | #145 | no | Done |
+| 5 | 4.1.4 Batch review with template responses | 4.1 | 5 | SCRUM-52 | #146 | yes | Done |
+| 5a | 4.1.5 Fixes from the Feature 4.1 validation | 4.1 | 3 | SCRUM-58 | #160 | no | Done |
+| 6 | 4.2.1 Per-faculty review period set by the dean | 4.2 | 3 | SCRUM-53 | #147 | no | Done |
+| 7 | 4.2.2 Overdue detection, escalation notice and SLA metrics | 4.2 | 5 | SCRUM-54 | #148 | no | Done |
+| 8 | 2.4.1 Award correction by reviewers | 4.2 | 5 | SCRUM-55 | #149 | no | Done |
+| 8a | 4.2.3 Keep the decision dialog open until the answer | 4.2 | 2 | SCRUM-59 | #162 | no | Done |
+| 8b | 4.2.4 Fixes from the Feature 4.2 walk | 4.2 | 2 | SCRUM-60 | #169 | no | Done |
+| 8c | 4.2.5 Refactor from the Feature 4.2 sweep | 4.2 | 3 | SCRUM-61 | #171 | no | Done |
+| 9 | 4.3.1 Colleague visibility and the achievements page | 4.3 | 5 | SCRUM-56 | #150 | yes | Done |
+| 10 | 4.3.2 Unit achievement pages and public achievements | 4.3 | 5 | SCRUM-57 | #151 | yes | Done |
+| 10a | 4.3.3 Fixes from the Feature 4.3 validation | 4.3 | 2 | SCRUM-62 | #176 | no | Done |
+| 10b | 4.3.6 Public rate limit for the organisation list | 4.3 | 1 | SCRUM-72 | #192 | no | Done |
+| 10c | 4.1.7 Hide delete on the edit form of a returned draft | 4.1 | 1 | SCRUM-76 | #199 | no | Done |
+| 10c | 4.2.6 Review list: overdue notice chip clipped at 1280 px | 4.2 | 1 | SCRUM-78 | #202 | no | Done |
+| 10c | 4.3.9 Achievement card names do not follow a language switch | 4.3 | 1 | SCRUM-79 | #204 | no | Done |
+| 10d | 4.1.6 Take over a request whose holder lost the role | 4.1 | 3 | SCRUM-77 | #200 | no | Done |
+| 10e | 4.3.7 Peer take-over of overdue requests and no self-escalation for deans | 4.1 | 3 | SCRUM-73 | #193 | no | Done |
+| 10f | 4.3.4 Review decisions in the personal data export | 4.3 | 3 | SCRUM-70 | #190 | no | Done |
+| 10g | 4.3.5 Wire the business metrics to the award workflow | 4.3 | 2 | SCRUM-71 | #191 | no | Done |
+| 10h | 4.3.8 Documents shown to colleagues on a shared award | 4.3 | 5 | SCRUM-74 | #194 | no | Done |
+| 10i | 4.2.7 Stabilise failing and flaky e2e specs | 4.2 | 3 | SCRUM-111 | #312 | no | Done |
+
+Total: 64 points, all delivered in sprint 4 (2026-10-05 to 2026-10-11).
+
+## Decisions
+
+| Date | Decision | Rationale | Reference |
+|------|----------|-----------|-----------|
+| 2026-10-05 | Workflow engine: a hand-written transition table in the `award` module, not Spring State Machine or Flowable | Seven request states and four levels; a BPMN engine adds its own schema, a second state store and a learning cost the thesis gains nothing from | ADR-023 (with 4.1.1) |
+| 2026-10-05 | Claim model: `current_reviewer_id` plus an optimistic version, 409 on a double claim, release and hand-over to a peer, the dean may take over; a claim never lapses on its own | Two secretaries of one faculty must not review the same request; an automatic lapse would take work away silently | 4.1.1 |
+| 2026-10-05 | Escalation of an overdue request notifies the next level and marks the request «Керівника повідомлено» (deviation 1 of the Feature 4.2 PRD); it never moves or decides a request. A plain `@Scheduled` job with idempotent SQL; ShedLock waits for Epic 9 | A decision on an award is a person's act; one backend instance in the demo | 4.2.2 |
+| 2026-10-05 | Decision emails go through the existing mail listener; Spring Modulith and the publication registry stay at Epic 7 | ADR-006 addendum and ADR-022 step 2 already place them there | ADR-006, ADR-022 |
+| 2026-10-05 | Organisational awards: the submitter owns the award (`submitted_by`), a nullable `recipient_org_id` names the unit; faculty secretaries and deans submit for their faculty and its departments; the submitter never reviews it; approved unit awards are visible university-wide and counted separately in analytics | Faculties and departments receive awards too; one ownership rule keeps editing and GDPR export unchanged | Design note before 4.1.0 |
+| 2026-10-05 | Per-faculty review period: nullable `organizations.review_working_days`, set by the dean; `app.workflow.review-working-days` (default 3) applies otherwise | Faculties differ in volume; the global default stays the rule | 4.2.1 |
+| 2026-10-05 | Batch decisions: every item in its own transaction, per-item results | US-004: invalid items are shown individually while the rest are processed | 4.1.4 |
+| 2026-10-05 | Review period counts Monday to Friday only, no public holidays | Under martial law there are no public days off | DATA_DICTIONARY § award_requests |
+| 2026-10-05 | The administrator's award audit trail stays API-only until Epic 6 | No reviewer needs it in Epic 4 | Design review §P |
+| 2026-10-05 | «Відкликати»: the owner withdraws a submitted award back to a draft while the request is unclaimed; no edit window after a claim | Owners noticed mistakes right after submitting (manual run of Feature 2.1) | 4.1.3 |
+| 2026-10-05 | Colleague visibility: the owner opts in per approved award («Показувати колегам»); a separate opt-in publishes it on the public achievements page; unit awards are public once approved | Employees see only their own awards today; publication of personal data needs the owner's choice | 4.3.1, 4.3.2 |
+| 2026-10-06 | Story order: organisational award model first, achievement pages last | Changing the award model before the queue and decisions avoids reworking their access rules | This kickoff |
+| 2026-10-08 | Feature 4.1 validated: two fixes (release of an unheld request, batch retry with stale versions) in 4.1.5; bilingual decision e-mails (F-3) and the comment lost on a failed decision (F-4) stay open | Evidence and findings in the PRD §12 | 4.1.5 |
+| 2026-10-08 | Feature 4.2 PRD approved: the overdue mark reads «Керівника повідомлено» next to «Прострочено» («Ескальовано» stays the `ESCALATED` status); one digest e-mail per recipient and run; a faculty period does not move existing deadlines; reviewers correct pending awards only, with a reason and without a second approval; F-4 and F-7 become 4.2.3; F-3 waits for Epic 7 | Deviations 1–7 of the PRD §7 | 4.2.1–4.2.3, 2.4.1 |
+| 2026-10-08 | Feature 4.2 validated: every AC has tests, no fix story; four findings accepted (run-wide rollback of the overdue job on an unexpected error, gauges empty until the first run after a restart, last write wins for the period, 403/429 shown as a send failure); duplication from the sweep in a `refactor(award)` PR | Evidence and findings in the PRD §13 | 4.2 |
+| 2026-10-09 | Feature 4.3 validated: every AC has tests; the CI-only E2E failure (test relied on other shared awards) and the retry race on the achievements list fixed in 4.3.3; 429 shown as a generic error and the fail-open public limit while Redis is down accepted | Evidence and findings in the PRD §13 | 4.3.3 |
+
+## Documentation deviations
+
+Settled in the Feature 4.1 or 4.2 PRD; status at the documentation sync of 2026-10-09.
+
+1. Automatic escalation (roadmap, BRD): decided as a notice and a mark, never a move. Resolved in the state diagram,
+   the BPMN, ADR-023 and the BRD; the roadmap, a local planning document, keeps the original wording.
+2. `state-machine-award-request.puml`: redrawn from the transition table of ADR-023 (resolved); `EXPIRED` stays in
+   the constraint, unused.
+3. `openapi.yml`: every Epic 4 path is documented (resolved).
+4. The roadmap's estimate of 13 points in sprints 6–8 became 64 points in sprint 4 (calendar weeks); recorded in the
+   PROJECT_PLAN addendum, the roadmap stays as the local original.
+5. `review_decisions.delegator_id` (V028) stamps a delegated decision (resolved).
+6. RACI "Escalate approval decisions": the row names the dean's decision on a request the faculty secretary escalated and
+   the overdue notice to the next level (resolved).
+
+## Technical notes
+
+- `award_requests` (V024) already holds `current_reviewer_id`, `current_level` and `deadline`; `review_decisions`
+  (V026) and the status timeline (`GET /awards/{id}/status`) exist since 2.1.8. The workflow writes rows the
+  timeline already reads.
+- `RecognitionLevel.minimumApproval()` sets the lowest level that may approve: faculty secretary for every level
+  up to REGIONAL, rector's secretary for NATIONAL and INTERNATIONAL; every level above may approve too.
+- Permissions `award:approve:level1|level2|level3|final` exist in `RolePermissions`; delegated roles already carry
+  them through the `delegations` claim, and `@access.inScope` accepts borrowed scopes.
+- Approvers may submit their own awards (review 2026-10-04); no one reviews an award they own or submitted.
+- `documents.request_id` exists for documents added during a resubmission (deferred from Epic 3).
+- The mail listener of Epic 1 sends after commit; decision emails reuse it with new templates (uk, en).
+- Refactor candidates from the 4.1 sweep, left for a story that touches the code: shared fixtures for the five
+  workflow FTs (department lookup, cleanup, `submitted`, `requestVersion`, `audited`, claim and decide builders, the
+  two-thread race); one caller lookup for `ReviewDecisions`, `ReviewAssignment` and `AwardOwnership`; problem slug
+  constants (`request-claimed`, `request-stale` …) in the backend and one slug list in `features/reviews`;
+  `ApprovalLevel.below`/`atOrAbove` for `ReviewAssignment.release` and `mayTakeOver`; `AwardWithdrawal` reusing
+  `ReviewGuards.claimed`; one `openDecision` helper for the panel and the queue; a `ReviewAssignmentFilter` type
+  with `others` in `reviews.service.ts`.
+- Refactor candidates from the 4.2 sweep, left for a story that touches the code: `CorrectionFT` and
+  `OverdueNoticeFT` copy the FT helpers above (`requestVersion`, `claim`, `decide`, `audited`) — one `ReviewApi` in
+  `support/` for all workflow FTs; `CorrectionFT.body` builds current and stale bodies through a sentinel; an 11th
+  copy of the JWT `token(claims)` helper in `review-period.component.spec.ts` — one `testing/token.ts`.
+- Refactor candidates from the 4.3 sweep, left for a story that touches the code: the create-and-submit award
+  flow copied in `achievements.spec.ts`, `award-status.spec.ts` and `award-correction.spec.ts` — `createDraft` and
+  `submitAward` in `e2e/helpers.ts`; `new HttpClient(inject(HttpBackend))` in `AchievementsService` and
+  `OrganizationsService` — one anonymous client in `core/`; the response building shared by
+  `AchievementController` and `PublicAchievementController`; seed unit ids 1 and 9 as named constants in the spec.
+
+## Risks
+
+1. The organisational award model touches access rules, the award form and the GDPR export at once; a design note
+   before 4.1.0 keeps the change in one story.
+2. The queue query joins requests, awards, organisations and delegations per reviewer scope; it needs the partial
+   indexes of V012 and a plan check with the seed data.
+3. Story 4.3.2 publishes personal data beyond the university; the public page shows only what the owner opted into,
+   and the privacy documents are updated with it.
+
+### Epic refactor sweep of 2026-10-09
+
+Applied in `refactor(epic-04)`: one held-by-other check in `ReviewGuards`, `ReviewProblemConstants` for the request and
+award slugs, `ApprovalLevel.below()`. Left for a story that touches the code:
+
+- One `support/ReviewApi` for the workflow FTs (`submitted`, `version`, `claim`, `decide`, `audited`, the two-thread race),
+  replacing the copies in `ReviewFT`, `DecisionFT`, `WithdrawFT`, `CorrectionFT`, `BatchReviewFT`, `OverdueNoticeFT`,
+  `AwardStatusFT` and `AwardHistoryFT`.
+- One caller lookup instead of `users.findById(access.callerId())` in `ReviewDecisions`, `ReviewAssignment` (twice) and
+  `AwardOwnership`; `StatusEstimator.FACULTY_LEVELS` onto `ApprovalLevel`.
+- Frontend: `isStale`/`RELOADING` in `review-problems.ts` for the decision dialog, review panel, review list and
+  correction form; `createDraft`, `submitAward` and `openAward` in `e2e/helpers.ts`; one `testing/token.ts` for the 13
+  unit specs that build a JWT; one anonymous `HttpClient` for `achievements.service` and `organizations.service`.
+- `award-correction` repeats the field group and validators of `award-form` (controls, `titleInOneLanguage`, error keys);
+  extract `award-fields.ts`.
+- `AchievementController` and `PublicAchievementController` differ only in the set they read.
+
+### Findings of the documentation sync of 2026-10-09
+
+Documentation behind the code was corrected in the sync. Where the code is what falls short, the documents keep their
+promise and the gap is listed here for a fix story:
+
+- Review decisions are not part of the personal data export (`PersonalDataFile`): the decisions a person made as a
+  reviewer (`reviewer_id`, `delegator_id`, comments) and the decisions on their own awards are missing; the export
+  section of PRIVACY_BY_DESIGN promises awards, versions and activity (closed by 4.3.4: format 1.2 adds
+  `review_decisions` and `decisions_made`, other people by name only).
+- `BusinessMetricsService` (`award.submissions.total`, `award.approvals.total`, `user.sessions.active` …) is never
+  called outside its test; only the `awards.review.*` meters are live. MONITORING_OBSERVABILITY still lists the old ones.
+  (closed by 4.3.5: `awards.submissions` counted after the commit, the unused service removed, the doc lists the
+  live meters).
+- `GET /api/v1/organizations` is anonymous but outside the public chain, so the public rate limit does not cover it
+  (closed by 4.3.6: anonymous calls count against the public budget).
+- The `awards.review.open` and `awards.review.overdue` gauges read 0 until the first run of the overdue job after a
+  start (already accepted at the validation of 4.2; documented in MONITORING_OBSERVABILITY).
+- Open for a decision: TRACEABILITY_MATRIX rows FR-001 to FR-005 are all "Pending" and USER_STORIES US-004 and US-005 have
+  unticked checklists; keep them current or freeze them as the plan. `DFD level 1` still draws assignment notifications
+  that were never built (target view).
+
+## Quick links
+
+- [User story US-004](../requirements/USER_STORIES.md#us-004-batch-award-review-and-approval)
+- [Data dictionary § award_requests](../database/DATA_DICTIONARY.md#31-entity-award_requests) · [§ review_decisions](../database/DATA_DICTIONARY.md#32-entity-review_decisions)
+- [Request state machine](../diagrams/uml/state-machine-award-request.puml) · [BPMN approval workflow](../diagrams/data-flow/bpmn-approval-workflow.puml) · [Approval sequence](../diagrams/uml/sequence-approval-workflow.puml)
+- [OpenAPI](../api/openapi.yml) · [Authentication and authorization](../security/AUTHENTICATION_AUTHORIZATION.md)
+- [RACI matrix](../stakeholders/RACI_matrix.md) · [ADR-006 Message queue](../architecture/adr/ADR-006-Message-Queue.md) · [ADR-022 Modular monolith](../architecture/adr/ADR-022-Modular-Monolith-Multi-Tenancy.md)

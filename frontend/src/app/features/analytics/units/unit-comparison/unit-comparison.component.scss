@@ -1,0 +1,52 @@
+.comparison__scroll {
+  display: block;
+  container-type: inline-size;
+}
+
+.comparison__table {
+  th[scope='row'] {
+    min-width: 150px;
+    font: 600 0.8125rem / 1.35 var(--app-font-heading);
+  }
+}
+
+.comparison__table th[scope='row'] {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.comparison__table--full {
+  min-width: 640px;
+}
+
+.comparison__barcell {
+  width: 20%;
+  min-width: 72px;
+}
+
+.comparison__value {
+  display: block;
+  font: 800 0.875rem / 1.2 var(--app-font-heading);
+  font-variant-numeric: tabular-nums;
+}
+
+.comparison__track {
+  display: block;
+  height: 14px;
+  margin-top: 4px;
+  overflow: hidden;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-track);
+
+  i {
+    display: block;
+    height: 100%;
+    border-radius: var(--app-radius-sm);
+    background: var(--app-bar);
+  }
+}
+
+.comparison__inactive {
+  color: var(--app-muted);
+  font: var(--mat-sys-body-small);
+}

@@ -1,0 +1,27 @@
+.dashboard__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dashboard__streak {
+  margin: 0;
+}
+
+.dashboard__after {
+  margin-top: 16px;
+}
+
+.dashboard__problem {
+  color: var(--mat-sys-error);
+}
+
+.dashboard__kpi {
+  padding: 18px;
+  border-bottom: 1px solid var(--app-pane-divider);
+}
+
+.dashboard__streak {
+  font: 400 0.8125rem / 1.4 var(--app-font-body);
+  color: var(--app-muted);
+}

@@ -1,0 +1,158 @@
+import { expect, test } from './fixtures';
+
+import {
+  DEMO_PASSWORD,
+  registerAndVerify,
+  SEED,
+  signIn,
+  toggleLanguage,
+  userRow,
+  userTableRow,
+} from './helpers';
+
+const { employee, secretary, dean } = SEED;
+const password = 'correct-horse-battery';
+
+test.describe('role assignment', () => {
+  test('ac26 a newcomer keeps the membership banner and cannot open the directory', async ({
+    page,
+  }) => {
+    const email = `newcomer.${Date.now()}@chnu.edu.ua`;
+    await registerAndVerify(page, email, password);
+
+    await signIn(page, email, password);
+
+    await expect(page.getByTestId('membership-banner')).toContainText(
+      'Ваше членство у підрозділі ще не підтверджено',
+    );
+    await expect(page.getByTestId('membership-banner')).toContainText('Кафедра алгебри');
+    await expect(page.getByTestId('nav-users')).toHaveCount(0);
+
+    await page.goto('/admin/users');
+
+    await expect(page).toHaveURL(/\/forbidden$/);
+    await expect(page.getByTestId('forbidden-card')).toContainText('Доступ заборонено');
+  });
+
+  test('ac27 ac210 the secretary confirms a newcomer from the user directory', async ({ page }) => {
+    const email = `confirm.${Date.now()}@chnu.edu.ua`;
+    await registerAndVerify(page, email, password);
+
+    await signIn(page, secretary, DEMO_PASSWORD);
+    await page.getByTestId('nav-users').click();
+
+    await expect(page).toHaveURL(/\/admin\/users$/);
+    await page.getByTestId('filter-q').fill(email);
+    const row = userTableRow(page, email);
+
+    await expect(row.getByTestId('unconfirmed-badge')).toContainText('Не підтверджено');
+
+    await userRow(page, email).click();
+    await page.getByTestId('confirm-membership').click();
+
+    await expect(page.getByTestId('membership-actions')).toHaveCount(0);
+    await expect(page.getByTestId('current-roles')).toContainText('Працівник');
+    await page.getByTestId('detail-close').click();
+
+    await expect(page).toHaveURL(/\/admin\/users$/);
+    await expect(row.getByTestId('user-roles')).toContainText('Працівник');
+    await expect(row.getByTestId('unconfirmed-badge')).toHaveCount(0);
+  });
+
+  test('ac210 the dean assigns a role and revokes it after the confirmation', async ({ page }) => {
+    const email = `assignee.${Date.now()}@chnu.edu.ua`;
+    await registerAndVerify(page, email, password);
+    await signIn(page, dean, DEMO_PASSWORD);
+    await expect(page.getByTestId('nav-awards')).toBeVisible();
+    await page.goto('/admin/users');
+    await page.getByTestId('filter-q').fill(email);
+    await userRow(page, email).click();
+
+    await expect(page.getByTestId('detail-email')).toHaveText(email);
+
+    await page.getByTestId('assign-role-open').click();
+    await page.getByTestId('assign-role').click();
+    await page.getByRole('option', { name: 'Секретар факультету' }).click();
+    const faculty = page.getByRole('option', { name: 'Факультет математики' });
+    await expect(async () => {
+      await page.getByTestId('assign-organization').click();
+      await expect(faculty).toBeVisible({ timeout: 2000 });
+    }).toPass();
+    await faculty.click();
+    await page.getByTestId('assign-submit').click();
+
+    await expect(page.getByTestId('detail-message')).toContainText('Роль призначено');
+    await expect(page.getByTestId('detail-session-hint')).toContainText('наступного');
+    await expect(page.getByTestId('current-roles')).toContainText('Секретар факультету');
+
+    await page
+      .getByRole('listitem')
+      .filter({ hasText: 'Секретар факультету' })
+      .getByTestId('revoke-role')
+      .click();
+
+    await expect(page.getByTestId('revoke-text')).toContainText('Секретар факультету');
+    await page.getByTestId('revoke-cancel').click();
+
+    await expect(page.getByTestId('current-roles')).toContainText('Секретар факультету');
+
+    await page
+      .getByRole('listitem')
+      .filter({ hasText: 'Секретар факультету' })
+      .getByTestId('revoke-role')
+      .click();
+    await page.getByTestId('revoke-confirm').click();
+
+    await expect(page.getByTestId('detail-message')).toContainText('Роль відкликано');
+    await expect(page.getByTestId('role-history')).toContainText('Секретар факультету');
+  });
+
+  test('ac210 an unknown user ends on the not-found state without an error loop', async ({
+    page,
+  }) => {
+    const calls: string[] = [];
+    page.on('request', (request) => {
+      if (request.url().includes('/api/v1/users/999999')) {
+        calls.push(request.url());
+      }
+    });
+    await signIn(page, dean, DEMO_PASSWORD);
+
+    await page.goto('/admin/users/999999');
+
+    await expect(page.getByTestId('detail-not-found')).toContainText('Користувача не знайдено');
+    await expect(page.getByTestId('detail-profile')).toHaveCount(0);
+    expect(calls).toHaveLength(1);
+  });
+
+  test('ac4_8 a non-numeric user id is not found without asking the server', async ({ page }) => {
+    const calls: string[] = [];
+    page.on('request', (request) => {
+      if (request.url().includes('/api/v1/users/abc')) {
+        calls.push(request.url());
+      }
+    });
+    await signIn(page, dean, DEMO_PASSWORD);
+
+    await page.goto('/admin/users/abc');
+
+    await expect(page.getByTestId('detail-not-found')).toContainText('Користувача не знайдено');
+    expect(calls).toHaveLength(0);
+  });
+
+  test('ac210 the directory is closed to an employee and reads in English too', async ({
+    page,
+  }) => {
+    await signIn(page, employee, DEMO_PASSWORD);
+
+    await expect(page.getByTestId('nav-users')).toHaveCount(0);
+
+    await page.goto('/admin/users');
+
+    await expect(page).toHaveURL(/\/forbidden$/);
+
+    await toggleLanguage(page);
+
+    await expect(page.getByTestId('forbidden-card')).toContainText('Access denied');
+  });
+});

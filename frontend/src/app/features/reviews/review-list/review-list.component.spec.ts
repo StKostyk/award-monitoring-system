@@ -1,0 +1,646 @@
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
+import { signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import {
+  ActivatedRoute,
+  ParamMap,
+  Router,
+  convertToParamMap,
+  provideRouter,
+} from '@angular/router';
+import { TranslocoTestingModule } from '@jsverse/transloco';
+import { Store, provideState, provideStore } from '@ngrx/store';
+import { BehaviorSubject, EMPTY, Observable, Subject, catchError, of, throwError } from 'rxjs';
+import { vi } from 'vitest';
+
+import { AuthService } from '../../../core/auth/auth.service';
+import { readPermissions } from '../../../core/auth/permissions';
+import { OrganizationType } from '../../../core/auth/user-profile';
+import { LanguageService } from '../../../core/i18n/language.service';
+import {
+  OrganizationSummary,
+  OrganizationsService,
+} from '../../../core/organizations/organizations.service';
+import { DocumentsService } from '../../awards/award-documents/documents.service';
+import { AwardsService } from '../../awards/awards.service';
+import { DecisionDialogData } from '../decision-dialog/decision-dialog.component';
+import { HeldDecisionService, ReturnedDecision } from '../held-decision.service';
+import { BatchItemResult, NO_REVIEW_FILTERS, ReviewItem, ReviewsService } from '../reviews.service';
+import { ReviewsActions } from '../store/reviews.actions';
+import { reviewsFeature } from '../store/reviews.feature';
+import { ReviewListComponent } from './review-list.component';
+
+function reviewItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
+  return {
+    awardId: 5,
+    requestId: 8,
+    requestVersion: 3,
+    title: null,
+    titleUk: 'Грамота Міністерства освіти і науки',
+    recipient: { type: 'PERSON', organization: null },
+    owner: { id: 21, name: 'Анастасія Коваль', email: 'employee.fmi@chnu.edu.ua' },
+    organization: {
+      id: 64,
+      name: 'Algebra',
+      nameUk: 'Кафедра алгебри',
+      code: 'DAI',
+      type: 'DEPARTMENT',
+    },
+    category: { id: 13, name: 'Ministry', nameUk: 'Відзнака міністерства', level: 'NATIONAL' },
+    level: 'FACULTY_SECRETARY',
+    status: 'SUBMITTED',
+    reviewer: null,
+    submittedAt: '2026-10-01T08:00:00Z',
+    deadline: '2026-10-06T20:59:59Z',
+    overdue: false,
+    overdueNoticedAt: null,
+    documentCount: 2,
+    delegatedFrom: null,
+    canTakeOver: null,
+    canEscalate: null,
+    ...overrides,
+  };
+}
+
+function token(claims: Record<string, unknown>): string {
+  return `header.${btoa(JSON.stringify(claims))}.signature`;
+}
+
+function unit(id: number, type: OrganizationType, parent: number | null): OrganizationSummary {
+  return {
+    id,
+    name: `Unit ${id}`,
+    nameUk: `Підрозділ ${id}`,
+    code: null,
+    type,
+    parent:
+      parent === null ? null : { id: parent, name: '', nameUk: null, code: null, type: 'FACULTY' },
+  };
+}
+
+const translations = {
+  uk: {
+    reviews: {
+      title: 'На розгляді',
+      tabs: { mine: 'Мої', unassigned: 'Нерозподілені', all: 'Усі' },
+      overdue: 'Прострочено',
+      noticed: 'Керівника повідомлено {{date}}',
+      filters: { noticed: 'Повідомлені', lowerOverdue: 'Прострочені нижчого рівня' },
+      empty: 'Немає нагород на розгляді',
+      batch: {
+        selected: 'Вибрано: {{count}}',
+        approve: 'Затвердити ({{count}})',
+        escalateTo: 'Передати {{level}}',
+        escalate: 'Передати на вищий рівень',
+        done: 'Опрацьовано: {{done}} з {{total}}',
+        reasons: { 'request-claimed': 'Взято в роботу іншим рецензентом', unknown: 'Не вдалося' },
+      },
+      decide: { to: { DEAN: 'декану' } },
+      queue: { selectionGone: 'Цього запиту більше немає в черзі.' },
+    },
+    awards: { levels: { FACULTY_SECRETARY: 'секретар факультету', DEAN: 'декан' } },
+    categories: { levels: { NATIONAL: 'Національний' } },
+  },
+};
+
+describe('ReviewListComponent', () => {
+  let fixture: ComponentFixture<ReviewListComponent>;
+  let store: Store;
+  const query = new BehaviorSubject<ParamMap>(convertToParamMap({}));
+  const wide = new BehaviorSubject({ matches: true, breakpoints: {} });
+  const permissions = signal(
+    readPermissions(token({ role_scopes: ['EMPLOYEE:64', 'FACULTY_SECRETARY:9'] })),
+  );
+  const reviews = {
+    decideBatch: vi.fn(),
+    reviewPeriod: vi.fn(() => EMPTY),
+    item: vi.fn((): Observable<unknown> => EMPTY),
+  };
+  const dialog = { open: vi.fn() };
+  const held = {
+    heldIds: signal<ReadonlySet<number>>(new Set()),
+    returned: new Subject<ReturnedDecision>(),
+    hold: vi.fn(),
+  };
+  const organizations = {
+    ofType: (type: OrganizationType) =>
+      of(
+        type === 'FACULTY'
+          ? [unit(9, 'FACULTY', null), unit(10, 'FACULTY', null)]
+          : [unit(64, 'DEPARTMENT', 9), unit(70, 'DEPARTMENT', 10)],
+      ),
+  };
+
+  async function create(): Promise<void> {
+    await TestBed.configureTestingModule({
+      imports: [
+        ReviewListComponent,
+        NoopAnimationsModule,
+        TranslocoTestingModule.forRoot({
+          langs: translations,
+          translocoConfig: { availableLangs: ['uk'], defaultLang: 'uk' },
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        provideStore(),
+        provideState(reviewsFeature),
+        { provide: OrganizationsService, useValue: organizations },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            queryParamMap: query,
+            get snapshot() {
+              return { queryParamMap: query.value };
+            },
+          },
+        },
+        { provide: BreakpointObserver, useValue: { observe: () => wide } },
+        { provide: LanguageService, useValue: { current: () => 'uk' } },
+        { provide: AuthService, useValue: { permissions, userId: signal('21') } },
+        { provide: ReviewsService, useValue: reviews },
+        { provide: HeldDecisionService, useValue: held },
+        { provide: AwardsService, useValue: { get: () => EMPTY, status: () => EMPTY } },
+        { provide: DocumentsService, useValue: { list: () => of([]) } },
+        { provide: MatDialog, useValue: dialog },
+      ],
+    }).compileComponents();
+    store = TestBed.inject(Store);
+    vi.spyOn(store, 'dispatch');
+    fixture = TestBed.createComponent(ReviewListComponent);
+    fixture.detectChanges();
+  }
+
+  function load(items: ReviewItem[]): void {
+    store.dispatch(
+      ReviewsActions.reviewsLoaded({
+        page: { content: items, totalElements: items.length, totalPages: 1, size: 20, number: 0 },
+      }),
+    );
+    fixture.detectChanges();
+  }
+
+  beforeEach(() => {
+    query.next(convertToParamMap({}));
+    wide.next({ matches: true, breakpoints: {} });
+    reviews.decideBatch.mockReset();
+    reviews.item.mockImplementation(() => EMPTY);
+    dialog.open.mockReset();
+  });
+
+  function element(): HTMLElement {
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  function tick(testId: string, index = 0): void {
+    const boxes = element().querySelectorAll<HTMLElement>(
+      `[data-testid="${testId}"] input[type="checkbox"]`,
+    );
+    boxes[index].click();
+    fixture.detectChanges();
+  }
+
+  function text(testId: string): string {
+    return element().querySelector(`[data-testid="${testId}"]`)?.textContent?.trim() ?? '';
+  }
+
+  function confirmWith(comment?: string): void {
+    dialog.open.mockImplementation((_, config: { data: DecisionDialogData }) => ({
+      afterClosed: () =>
+        config.data.submit(comment ? { comment } : {}).pipe(catchError(() => EMPTY)),
+    }));
+  }
+
+  it('ac5_1_shows_a_row_per_request_with_initials_level_due_or_overdue_chip_and_reviewer', async () => {
+    await create();
+    load([
+      reviewItem(),
+      reviewItem({
+        awardId: 6,
+        requestId: 9,
+        overdue: true,
+        reviewer: { id: 31, name: 'Олена Петрук', email: 'secretary2.fmi@chnu.edu.ua' },
+      }),
+    ]);
+    const element: HTMLElement = fixture.nativeElement;
+    const rows = element.querySelectorAll('[data-testid="review-item"]');
+
+    expect(store.dispatch).toHaveBeenCalledWith(ReviewsActions.opened());
+    expect(rows.length).toBe(2);
+    expect(rows[0].textContent).toContain('Анастасія Коваль');
+    expect(rows[0].querySelector('.list-row__avatar')?.textContent).toBe('АК');
+    expect(rows[0].querySelector('[data-testid="review-level"]')).not.toBeNull();
+    expect(rows[0].querySelector('[data-testid="review-due"]')).not.toBeNull();
+    expect(rows[0].querySelector('[data-testid="review-overdue"]')).toBeNull();
+    expect(rows[1].querySelector('[data-testid="review-overdue"]')?.textContent).toContain(
+      'Прострочено',
+    );
+    expect(rows[1].querySelector('[data-testid="review-reviewer"]')?.textContent).toContain(
+      'Олена Петрук',
+    );
+  });
+
+  it('ac2_4_a_noticed_request_shows_the_notice_next_to_the_overdue_chip', async () => {
+    await create();
+    load([
+      reviewItem(),
+      reviewItem({
+        awardId: 6,
+        requestId: 9,
+        overdue: true,
+        overdueNoticedAt: '2026-10-07T08:05:00Z',
+      }),
+    ]);
+    const rows = (fixture.nativeElement as HTMLElement).querySelectorAll(
+      '[data-testid="review-item"]',
+    );
+
+    expect(rows[0].querySelector('[data-testid="review-noticed"]')).toBeNull();
+    expect(rows[1].querySelector('[data-testid="review-noticed"]')?.textContent).toContain(
+      'Керівника повідомлено 07.10.2026',
+    );
+  });
+
+  it('ac2_4_the_noticed_filter_toggles_the_query', async () => {
+    await create();
+    const element: HTMLElement = fixture.nativeElement;
+
+    element.querySelector<HTMLInputElement>('[data-testid="review-filter-noticed"] input')?.click();
+
+    expect(store.dispatch).toHaveBeenCalledWith(
+      ReviewsActions.filtersChanged({ filters: { ...NO_REVIEW_FILTERS, noticed: true } }),
+    );
+    expect(element.querySelector('[data-testid="review-filter-lower-overdue"]')).toBeNull();
+  });
+
+  it('ac2_4_a_dean_lists_the_noticed_requests_of_the_faculty_secretaries', async () => {
+    const own = permissions();
+    permissions.set(readPermissions(token({ role_scopes: ['DEAN:9'] })));
+    await create();
+
+    (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLElement>('[data-testid="review-filter-lower-overdue"]')
+      ?.click();
+
+    expect(store.dispatch).toHaveBeenCalledWith(
+      ReviewsActions.filtersChanged({
+        filters: { ...NO_REVIEW_FILTERS, level: 'FACULTY_SECRETARY', noticed: true },
+      }),
+    );
+    permissions.set(own);
+  });
+
+  it('ac5_1_a_row_click_keeps_the_selection_in_the_url', async () => {
+    await create();
+    load([reviewItem()]);
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+
+    element().querySelector<HTMLElement>('[data-testid="review-title"]')?.click();
+
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { request: 5 }, queryParamsHandling: 'merge' }),
+    );
+  });
+
+  it('ac5_1_the_request_in_the_url_is_marked_and_opens_the_pane', async () => {
+    await create();
+    load([reviewItem(), reviewItem({ awardId: 6, requestId: 9 })]);
+    const rows = (): NodeListOf<HTMLElement> =>
+      element().querySelectorAll('[data-testid="review-title"]');
+
+    expect(rows()[0].getAttribute('aria-current')).toBe('true');
+    expect(element().querySelector('app-split')?.classList).not.toContain('split--detail-open');
+
+    query.next(convertToParamMap({ request: '6' }));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.selectedId()).toBe(6);
+    expect(rows()[0].getAttribute('aria-current')).toBeNull();
+    expect(rows()[1].getAttribute('aria-current')).toBe('true');
+    expect(element().querySelector('app-split')?.classList).toContain('split--detail-open');
+  });
+
+  it('edge_a_request_that_left_the_queue_on_a_refresh_clears_the_selection_with_a_snack_bar', async () => {
+    await create();
+    const snack = vi.spyOn(TestBed.inject(MatSnackBar), 'open');
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    load([reviewItem(), reviewItem({ awardId: 6, requestId: 9 })]);
+    query.next(convertToParamMap({ request: '6' }));
+    fixture.detectChanges();
+    reviews.item.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: HttpStatusCode.NotFound })),
+    );
+
+    fixture.componentInstance.refresh();
+    fixture.detectChanges();
+    load([reviewItem()]);
+
+    expect(reviews.item).toHaveBeenCalledWith(6);
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { request: null } }),
+    );
+    expect(snack).toHaveBeenCalledWith('Цього запиту більше немає в черзі.', undefined, {
+      duration: 5000,
+    });
+  });
+
+  it('edge_a_request_hidden_by_a_filter_stays_selected', async () => {
+    await create();
+    const snack = vi.spyOn(TestBed.inject(MatSnackBar), 'open');
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    load([reviewItem(), reviewItem({ awardId: 6, requestId: 9 })]);
+    query.next(convertToParamMap({ request: '6' }));
+    fixture.detectChanges();
+    reviews.item.mockReturnValue(of(reviewItem({ awardId: 6, requestId: 9 })));
+
+    fixture.componentInstance.filter({ assigned: 'me' });
+    fixture.detectChanges();
+    load([reviewItem()]);
+
+    expect(reviews.item).toHaveBeenCalledWith(6);
+    expect(navigate).not.toHaveBeenCalled();
+    expect(snack).not.toHaveBeenCalled();
+  });
+
+  it('edge_a_request_decided_in_a_batch_leaves_without_a_snack_bar', async () => {
+    await create();
+    const snack = vi.spyOn(TestBed.inject(MatSnackBar), 'open');
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    load([reviewItem(), reviewItem({ awardId: 6, requestId: 9 })]);
+    query.next(convertToParamMap({ request: '6' }));
+    fixture.detectChanges();
+    const results: BatchItemResult[] = [
+      { awardId: 5, outcome: 'DONE', status: 'APPROVED', level: 'FACULTY_SECRETARY' },
+      { awardId: 6, outcome: 'DONE', status: 'APPROVED', level: 'FACULTY_SECRETARY' },
+    ];
+    reviews.decideBatch.mockReturnValue(of(results));
+    confirmWith();
+    tick('batch-select-all');
+
+    element().querySelector<HTMLElement>('[data-testid="batch-approve"]')?.click();
+    fixture.detectChanges();
+
+    expect(store.dispatch).toHaveBeenCalledWith(ReviewsActions.itemsDecided({ awardIds: [5, 6] }));
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { request: null } }),
+    );
+    expect(snack).not.toHaveBeenCalled();
+  });
+
+  it.each(['abc', '0', '-3', '1.5', '1e3', '0x10', ' 5'])(
+    'edge_an_invalid_request_%s_selects_nothing',
+    async (value) => {
+      await create();
+      query.next(convertToParamMap({ request: value }));
+
+      expect(fixture.componentInstance.selectedId()).toBeNull();
+    },
+  );
+
+  it('edge_below_960_px_nothing_is_shown_until_a_request_is_opened', async () => {
+    wide.next({ matches: false, breakpoints: {} });
+    await create();
+    load([reviewItem()]);
+
+    expect(fixture.componentInstance.shownId()).toBeNull();
+    query.next(convertToParamMap({ request: '5' }));
+    expect(fixture.componentInstance.shownId()).toBe(5);
+  });
+
+  it('ac5_1_back_clears_the_selection', async () => {
+    await create();
+    query.next(convertToParamMap({ request: '5' }));
+    fixture.detectChanges();
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+
+    element().querySelector<HTMLElement>('[data-testid="reviews-back"]')?.click();
+
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { request: null } }),
+    );
+  });
+
+  it('ac5_3_chips_set_the_assignment_filter', async () => {
+    await create();
+    const element: HTMLElement = fixture.nativeElement;
+    const pressed = (id: string): string | null | undefined =>
+      element.querySelector(`[data-testid="review-tab-${id}"]`)?.getAttribute('aria-pressed');
+
+    expect(pressed('all')).toBe('true');
+    expect(pressed('me')).toBe('false');
+
+    element.querySelector<HTMLElement>('[data-testid="review-tab-me"]')?.click();
+    fixture.detectChanges();
+
+    expect(store.dispatch).toHaveBeenCalledWith(
+      ReviewsActions.filtersChanged({ filters: { ...NO_REVIEW_FILTERS, assigned: 'me' } }),
+    );
+    expect(pressed('me')).toBe('true');
+    expect(pressed('all')).toBe('false');
+  });
+
+  it('ac1_2_offers_the_units_and_levels_inside_the_callers_scopes', async () => {
+    await create();
+    const component = fixture.componentInstance as unknown as {
+      units: () => OrganizationSummary[];
+      levels: string[];
+    };
+
+    expect(component.units().map((organization) => organization.id)).toEqual([64, 9]);
+    expect(component.levels).toEqual(['FACULTY_SECRETARY']);
+  });
+
+  it('ac6_4_a_held_decision_takes_the_request_out_of_the_list_and_the_count', async () => {
+    await create();
+    load([reviewItem(), reviewItem({ awardId: 6, requestId: 9 })]);
+
+    held.heldIds.set(new Set([6]));
+    fixture.componentInstance.queueDecided(6);
+    fixture.detectChanges();
+
+    expect(store.dispatch).toHaveBeenCalledWith(ReviewsActions.itemsDecided({ awardIds: [6] }));
+    expect(fixture.componentInstance.visible().map((item) => item.awardId)).toEqual([5]);
+    held.heldIds.set(new Set());
+  });
+
+  it('ac6_6_a_decision_that_comes_back_reloads_the_queue', async () => {
+    await create();
+
+    held.returned.next({ awardId: 6, problem: 'reviews.queue.denied', params: {} });
+
+    expect(store.dispatch).toHaveBeenLastCalledWith(
+      ReviewsActions.pageChanged({ pageIndex: 0, pageSize: expect.any(Number) as number }),
+    );
+  });
+
+  it('ac1_3_shows_the_empty_queue', async () => {
+    await create();
+    load([]);
+
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[data-testid="reviews-empty"]'),
+    ).not.toBeNull();
+  });
+
+  it('ac4_6_the_header_selects_the_page_and_the_action_bar_counts_it', async () => {
+    await create();
+    load([reviewItem(), reviewItem({ awardId: 6, requestId: 9 })]);
+
+    expect(element().querySelector('[data-testid="batch-actions"]')).toBeNull();
+    tick('batch-select-all');
+
+    expect(text('batch-selected')).toBe('Вибрано: 2');
+    expect(text('batch-approve')).toBe('Затвердити (2)');
+    expect(text('batch-escalate')).toBe('Передати декану');
+    tick('batch-select-all');
+    expect(element().querySelector('[data-testid="batch-actions"]')).toBeNull();
+  });
+
+  it('ac4_6_a_row_checkbox_does_not_open_the_award', async () => {
+    await create();
+    load([reviewItem()]);
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+
+    tick('batch-select');
+
+    expect(navigate).not.toHaveBeenCalled();
+    expect(text('batch-selected')).toBe('Вибрано: 1');
+  });
+
+  it('ac4_6_mixed_levels_escalate_to_the_next_level_of_each', async () => {
+    await create();
+    load([reviewItem(), reviewItem({ awardId: 6, requestId: 9, level: 'DEAN' })]);
+
+    tick('batch-select-all');
+
+    expect(text('batch-escalate')).toBe('Передати на вищий рівень');
+  });
+
+  it('ac4_1_ac4_7_a_batch_removes_decided_rows_and_keeps_the_failed_selected', async () => {
+    await create();
+    load([
+      reviewItem(),
+      reviewItem({ awardId: 6, requestId: 9, requestVersion: 1 }),
+      reviewItem({ awardId: 7, requestId: 10, titleUk: 'Подяка ректора' }),
+    ]);
+    const results: BatchItemResult[] = [
+      { awardId: 5, outcome: 'DONE', status: 'APPROVED', level: 'FACULTY_SECRETARY' },
+      { awardId: 6, outcome: 'DONE', status: 'APPROVED', level: 'FACULTY_SECRETARY' },
+      { awardId: 7, outcome: 'FAILED', code: 'request-claimed', detail: 'Claimed' },
+    ];
+    reviews.decideBatch.mockReturnValue(of(results));
+    confirmWith();
+    tick('batch-select-all');
+
+    element().querySelector<HTMLElement>('[data-testid="batch-approve"]')?.click();
+    fixture.detectChanges();
+
+    expect(dialog.open.mock.calls[0][1].data).toEqual(
+      expect.objectContaining({
+        decision: 'APPROVE',
+        target: null,
+        documents: 0,
+        count: 3,
+        draft: expect.stringMatching(/^batch:\d+(-\d+){2}$/),
+      }),
+    );
+    expect(reviews.decideBatch).toHaveBeenCalledWith({
+      decision: 'APPROVE',
+      items: [
+        { awardId: 5, requestVersion: 3 },
+        { awardId: 6, requestVersion: 1 },
+        { awardId: 7, requestVersion: 3 },
+      ],
+    });
+    expect(text('batch-done')).toBe('Опрацьовано: 2 з 3');
+    expect(text('batch-failed')).toContain('Подяка ректора');
+    expect(text('batch-reason')).toBe('Взято в роботу іншим рецензентом');
+    expect(element().querySelector('[data-testid="batch-failed"] a')?.getAttribute('href')).toBe(
+      '/awards/7',
+    );
+    expect(element().querySelectorAll('[data-testid="review-item"]').length).toBe(1);
+    expect(text('batch-selected')).toBe('Вибрано: 1');
+    expect(store.dispatch).toHaveBeenCalledWith(
+      ReviewsActions.pageChanged({ pageIndex: 0, pageSize: 20 }),
+    );
+  });
+
+  it('ac4_7_a_batch_without_failures_does_not_reload_the_queue', async () => {
+    await create();
+    load([reviewItem()]);
+    reviews.decideBatch.mockReturnValue(of([{ awardId: 5, outcome: 'DONE' }]));
+    confirmWith();
+    tick('batch-select');
+
+    element().querySelector<HTMLElement>('[data-testid="batch-approve"]')?.click();
+
+    expect(store.dispatch).not.toHaveBeenCalledWith(
+      ReviewsActions.pageChanged({ pageIndex: 0, pageSize: 20 }),
+    );
+  });
+
+  it('ac4_6_a_secretary_level_escalation_names_the_dean_and_sends_the_comment', async () => {
+    await create();
+    load([reviewItem()]);
+    reviews.decideBatch.mockReturnValue(of([{ awardId: 5, outcome: 'DONE' }]));
+    confirmWith('Потребує рішення декана');
+    tick('batch-select');
+
+    element().querySelector<HTMLElement>('[data-testid="batch-escalate"]')?.click();
+
+    expect(dialog.open.mock.calls[0][1].data.target).toBe('DEAN');
+    expect(reviews.decideBatch).toHaveBeenCalledWith(
+      expect.objectContaining({ decision: 'ESCALATE', comment: 'Потребує рішення декана' }),
+    );
+  });
+
+  it('ac4_6_a_cancelled_dialog_sends_nothing', async () => {
+    await create();
+    load([reviewItem()]);
+    dialog.open.mockReturnValue({ afterClosed: () => of(undefined) });
+    tick('batch-select');
+
+    element().querySelector<HTMLElement>('[data-testid="batch-return"]')?.click();
+
+    expect(reviews.decideBatch).not.toHaveBeenCalled();
+  });
+
+  it.each([0, 400, 500])(
+    'ac4_4_a_whole_request_failure_%i_keeps_the_selection_for_the_open_dialog',
+    async (status) => {
+      await create();
+      load([reviewItem()]);
+      reviews.decideBatch.mockReturnValue(throwError(() => new HttpErrorResponse({ status })));
+      confirmWith('Не відповідає положенню');
+      tick('batch-select');
+
+      element().querySelector<HTMLElement>('[data-testid="batch-reject"]')?.click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.busy()).toBe(false);
+      expect(fixture.componentInstance.selection().map((item) => item.awardId)).toEqual([5]);
+      expect(text('batch-done')).toBe('');
+      expect(store.dispatch).not.toHaveBeenCalledWith(
+        ReviewsActions.pageChanged({ pageIndex: 0, pageSize: 20 }),
+      );
+    },
+  );
+
+  it('ac4_8_rows_select_one_by_one_and_all_together', async () => {
+    await create();
+    load([reviewItem(), reviewItem({ awardId: 6, requestId: 9 })]);
+
+    tick('batch-select', 1);
+    expect(text('batch-selected')).toBe('Вибрано: 1');
+    tick('batch-select-all');
+    expect(text('batch-selected')).toBe('Вибрано: 2');
+  });
+});

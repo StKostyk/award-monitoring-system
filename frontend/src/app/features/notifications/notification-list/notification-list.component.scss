@@ -1,0 +1,72 @@
+:host {
+  display: block;
+}
+
+.notifications__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.notifications__side,
+.notifications__main {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  min-width: 0;
+}
+
+.notifications__row--unread ::ng-deep .list-row__title {
+  font-weight: 600;
+}
+
+.notifications__dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mat-sys-primary);
+}
+
+.notifications__empty {
+  display: block;
+  padding: 16px;
+}
+
+.notifications__text {
+  margin: 0 0 4px;
+  font: var(--mat-sys-body-large);
+  overflow-wrap: anywhere;
+}
+
+.notifications__time {
+  margin: 0 0 16px;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.notifications__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.notifications__hint,
+.notifications__problem {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.notifications__problem {
+  padding: 12px 18px;
+}
+
+.notifications__back {
+  justify-self: start;
+}
+
+@media (min-width: 960px) {
+  .notifications__back {
+    display: none;
+  }
+}

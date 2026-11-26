@@ -1,0 +1,135 @@
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  background: var(--app-pane-divider);
+}
+
+.tile {
+  display: flex;
+  gap: 2px;
+  padding: 14px 18px;
+  background: var(--app-pane);
+
+  dt {
+    font: 400 0.75rem / 1.4 var(--app-font-body);
+    color: var(--app-muted);
+  }
+
+  dd {
+    margin: 0;
+  }
+}
+
+.tile__value {
+  font: 800 1.625rem / 1.15 var(--app-font-heading);
+  color: var(--mat-sys-on-surface);
+}
+
+.tile__value--text {
+  font: 800 1rem / 1.3 var(--app-font-heading);
+}
+
+.tile__note {
+  font: 600 0.75rem / 1.4 var(--app-font-body);
+  color: var(--mat-sys-primary);
+}
+
+.tile__against {
+  display: block;
+  margin-top: 2px;
+  font: 500 0.75rem / 1.4 var(--app-font-body);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+:host(.tiles-bento) {
+  .tiles {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    background: transparent;
+  }
+
+  .tile {
+    padding: 18px;
+    border: 1px solid var(--app-pane-border);
+    border-radius: var(--app-card-radius);
+
+    dt {
+      margin-bottom: 10px;
+      font: 700 0.75rem / 1.3 var(--app-font-heading);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+  }
+
+  .tile__value {
+    font: 800 2rem / 1 var(--app-font-heading);
+  }
+
+  .tile__spark {
+    margin-top: 4px;
+
+    svg {
+      display: block;
+      width: 100%;
+      height: 30px;
+    }
+
+    polyline {
+      fill: none;
+      stroke: var(--app-bar);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      vector-effect: non-scaling-stroke;
+    }
+  }
+
+  .tile:first-child {
+    --app-delta-color: var(--app-gold-soft);
+    --app-chip-bg: color-mix(in srgb, var(--app-gold-soft) 18%, transparent);
+    --app-chip-color: var(--app-gold-soft);
+
+    .tile__spark polyline {
+      stroke: var(--app-gold-soft);
+    }
+
+    border-color: var(--app-brand-panel);
+    background: var(--app-brand-panel);
+    color: var(--app-on-brand-panel);
+
+    dt,
+    .tile__note {
+      color: var(--app-gold-soft);
+    }
+
+    .tile__value {
+      color: inherit;
+    }
+  }
+}
+
+.tile {
+  flex-direction: column;
+}
+
+:host(:not(.tiles-bento)) .tile:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+.tile dt {
+  order: 2;
+}
+
+.tile .tile__value {
+  order: 1;
+}
+
+.tile dd:not(.tile__value) {
+  order: 3;
+}
+
+:host(.tiles-bento) .tile dt {
+  order: 0;
+}

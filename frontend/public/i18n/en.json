@@ -1,0 +1,2370 @@
+{
+  "titles": {
+    "signingIn": "Signing in",
+    "home": "Home",
+    "hallOfFame": "Hall of Fame",
+    "register": "Registration",
+    "registrationPending": "Registration sent",
+    "verifyEmail": "Address confirmation",
+    "forgotPassword": "Password recovery",
+    "resetPassword": "New password",
+    "notMe": "It was not me",
+    "confirmEmailChange": "Address change",
+    "profile": "Profile",
+    "forbidden": "No access",
+    "notFound": "Page not found",
+    "offline": "No connection",
+    "privacyNotice": "Privacy notice",
+    "terms": "Terms of use",
+    "privacy": "Privacy",
+    "notifications": "Notifications",
+    "awards": "My awards",
+    "awardNew": "New award",
+    "awardEdit": "Editing a draft",
+    "awardCorrect": "Correcting an award",
+    "awardSubmitted": "Award submitted",
+    "award": "Award",
+    "achievements": "Achievements",
+    "achievement": "Achievement",
+    "unitAchievements": "Unit achievements",
+    "dashboard": "My dashboard",
+    "summary": "Summary",
+    "analytics": "Analytics",
+    "university": "University analytics",
+    "unitAnalytics": "Unit analytics",
+    "reviews": "Award review",
+    "delegations": "Delegations",
+    "compliance": "GDPR compliance",
+    "users": "Users",
+    "user": "User",
+    "commandCentre": "Command centre",
+    "import": "Award import"
+  },
+  "app": {
+    "language": "UK",
+    "languageLabel": "Перейти на українську",
+    "menu": "Menu",
+    "navigation": "Main navigation",
+    "skipLink": "Skip to main content",
+    "offlineNotice": "No connection to the server. Pages that need data will open once the connection returns.",
+    "update": {
+      "available": "A new version of the app is available.",
+      "action": "Update"
+    },
+    "home": "Home",
+    "scheme": {
+      "title": "Theme",
+      "system": "Same as device",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "logout": "Sign out",
+    "clearSearch": "Clear search",
+    "palette": {
+      "open": "Search and go",
+      "label": "Search sections and awards",
+      "placeholder": "Section or award title",
+      "sections": "Sections",
+      "awards": "Awards",
+      "empty": "Nothing found.",
+      "results": "Options: {{count}}",
+      "hint": "↑ ↓ to move · Enter to open · Esc to close"
+    },
+    "newAward": "New award",
+    "login": "Sign in",
+    "loading": "Loading…",
+    "datePlaceholder": "dd/mm/yyyy",
+    "dateInvalid": "Enter the date as dd/mm/yyyy",
+    "paginator": {
+      "itemsPerPage": "Rows per page",
+      "first": "First page",
+      "previous": "Previous page",
+      "next": "Next page",
+      "last": "Last page",
+      "range": "{{from}}–{{to}} of {{total}}"
+    },
+    "datepicker": {
+      "calendar": "Calendar",
+      "open": "Open calendar",
+      "close": "Close calendar",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "prevYear": "Previous year",
+      "nextYear": "Next year",
+      "prevYears": "Previous 24 years",
+      "nextYears": "Next 24 years",
+      "chooseDate": "Choose date",
+      "chooseYear": "Choose month and year"
+    }
+  },
+  "home": {
+    "greeting": "Welcome, {{name}}",
+    "roles": "Your roles",
+    "organization": "Organisation",
+    "noRoles": "No roles assigned yet",
+    "email": "Email",
+    "membership": {
+      "title": "Department membership not confirmed",
+      "text": "Your department membership is not confirmed yet: {{organization}}.",
+      "hint": "Ask your faculty secretary or the head of your department. Once it is confirmed, the roles reach your session after the next sign-in."
+    }
+  },
+  "onboarding": {
+    "title": "First steps",
+    "greeting": "Welcome, {{name}}!",
+    "progress": "{{done}} of {{total}} done",
+    "done": "Done",
+    "allDone": "All first steps are done. This list will not appear again.",
+    "dismiss": "Hide the list",
+    "tourStart": "Show a tour of the screen",
+    "steps": {
+      "NOTICE": {
+        "title": "Read the privacy notice",
+        "hint": "What the system keeps about you and why",
+        "action": "Open"
+      },
+      "PROFILE": {
+        "title": "Check your profile",
+        "hint": "Name, unit and e-mail",
+        "action": "Check"
+      },
+      "FIRST_AWARD": {
+        "title": "Add your first award",
+        "hint": "A draft can be saved and finished later",
+        "action": "Add"
+      },
+      "VISIBILITY": {
+        "title": "Choose who sees your awards",
+        "hint": "Visibility and rankings",
+        "action": "Set up"
+      },
+      "NOTIFICATIONS": {
+        "title": "Set up notifications",
+        "hint": "Which e-mails you receive",
+        "action": "Set up"
+      },
+      "REVIEW_QUEUE": {
+        "title": "Look at the review queue",
+        "hint": "Awards waiting for your decision",
+        "action": "Open"
+      },
+      "DELEGATE": {
+        "title": "Appoint a deputy",
+        "hint": "Who reviews awards while you are away",
+        "action": "Appoint"
+      },
+      "IMPORT": {
+        "title": "Import staff",
+        "hint": "Colleagues from a spreadsheet",
+        "action": "Import"
+      }
+    },
+    "tour": {
+      "count": "Step {{n}} of {{total}}",
+      "back": "Back",
+      "next": "Next",
+      "finish": "Done",
+      "skip": "Skip",
+      "stops": {
+        "search": {
+          "title": "Search",
+          "text": "Finds a page, an award or an action. Also opens with Ctrl K."
+        },
+        "navigation": {
+          "title": "Navigation",
+          "text": "Every page of your roles. The current page is highlighted."
+        },
+        "newAward": {
+          "title": "New award",
+          "text": "Adds an award: fill in the details, attach a document and send it for review."
+        },
+        "views": {
+          "title": "Chart / Table",
+          "text": "Every chart can be read as a table with the same numbers."
+        }
+      }
+    }
+  },
+  "roles": {
+    "EMPLOYEE": "Employee",
+    "FACULTY_SECRETARY": "Faculty secretary",
+    "DEAN": "Dean",
+    "RECTOR_SECRETARY": "Rector's secretary",
+    "RECTOR": "Rector",
+    "SYSTEM_ADMIN": "System administrator",
+    "GDPR_OFFICER": "Data protection officer"
+  },
+  "awards": {
+    "facts": "Details",
+    "title": "My awards",
+    "add": "Add award",
+    "empty": "No awards yet. Add your first one — you can save it as a draft and finish it later.",
+    "noMatch": "No awards match your search.",
+    "resetFilters": "Clear filters",
+    "uploadStep": {
+      "title": "Start with the document",
+      "drop": "Drop the certificate, diploma or letter here",
+      "hint": "PDF, JPG, PNG or WEBP, up to 10 MB",
+      "pick": "Choose a file",
+      "note": "The document will be attached to the award",
+      "skip": "Fill in without a document",
+      "continue": "Continue without a document",
+      "unavailable": "File checking is unavailable. You can fill in the award now and add the document later.",
+      "replace": "Another file",
+      "replaceOf": "Another file instead of {{name}}"
+    },
+    "notFound": "Not found",
+    "notFoundText": "There is no such award, or it is not available to you.",
+    "back": "Back to my awards",
+    "edit": "Edit",
+    "filters": {
+      "status": "Status",
+      "category": "Category",
+      "visibility": "Visibility",
+      "dateFrom": "Date from",
+      "dateTo": "Date to",
+      "search": "Search my awards",
+      "all": "All",
+      "toggle": "Filters",
+      "toggleActive": "Filters: {{count}}"
+    },
+    "status": {
+      "DRAFT": "Draft",
+      "PENDING": "Under review",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "ARCHIVED": "Archived"
+    },
+    "requestStatus": {
+      "SUBMITTED": "Submitted",
+      "IN_REVIEW": "In review",
+      "ESCALATED": "Escalated",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "RETURNED": "Returned for changes",
+      "EXPIRED": "Expired",
+      "WITHDRAWN": "Withdrawn"
+    },
+    "levels": {
+      "FACULTY_SECRETARY": "faculty secretary",
+      "DEAN": "dean",
+      "RECTOR_SECRETARY": "rector's secretary",
+      "RECTOR": "rector"
+    },
+    "fields": {
+      "title": "Title in English",
+      "titleUk": "Title in Ukrainian",
+      "category": "Category",
+      "awardingOrganization": "Awarded by",
+      "awardDate": "Award date",
+      "description": "Description in English",
+      "descriptionUk": "Description in Ukrainian",
+      "externalUrl": "Link to the award",
+      "owner": "Recipient",
+      "organization": "Department",
+      "request": "Request",
+      "impactScore": "Impact score",
+      "status": "Status",
+      "verificationBadge": "Verification badge",
+      "recipient": "Recipient",
+      "enteredBy": "Entered by"
+    },
+    "recipient": {
+      "label": "Recipient",
+      "person": "Me",
+      "unit": "Faculty or department",
+      "unitPicker": "Faculty or department",
+      "unavailable": "A unit no longer available to you",
+      "colleague": "Colleague without an account",
+      "colleagueSearch": "Find a colleague",
+      "colleagueHint": "Name or address, 2+ characters",
+      "withoutAccount": "No account"
+    },
+    "correction": {
+      "title": "Correct the award",
+      "intro": "Correct mistakes in the award details. The recipient and documents stay as the owner entered them; the owner gets an e-mail with the changes and the reason.",
+      "reason": "Reason for the correction",
+      "reasonRequired": "Enter the reason for the correction",
+      "save": "Save",
+      "unavailable": "This award cannot be corrected now: it is not under review or not available to you.",
+      "heldBy": "{{name}} is reviewing this award; only that reviewer can correct it.",
+      "back": "Back to the award",
+      "done": "The award was corrected. The owner gets an e-mail with the changes.",
+      "confirm": {
+        "title": "Send the correction?",
+        "reason": "Reason: {{reason}}",
+        "send": "Send",
+        "cancel": "Cancel"
+      },
+      "problems": {
+        "validation-failed": "Some fields are not valid.",
+        "award-incomplete": "Category, awarding organisation and award date are required for an award under review.",
+        "no-change": "No field was changed.",
+        "award-stale": "The award was changed in another window. Load it again.",
+        "request-stale": "The review changed in another window. Load the award again.",
+        "network": "The server cannot be reached. Try again.",
+        "unknown": "The correction could not be saved."
+      }
+    },
+    "history": {
+      "title": "Change history",
+      "actions": {
+        "BASELINE": "Initial state",
+        "CREATED": "Created",
+        "UPDATED": "Changed",
+        "SUBMITTED": "Submitted",
+        "DECIDED": "Reviewer decision",
+        "CORRECTED": "Corrected by a reviewer"
+      },
+      "correctedBy": "Corrected by reviewer: {{name}}",
+      "reason": "Reason: {{reason}}",
+      "unknownActor": "Unknown user",
+      "system": "System",
+      "view": "View version",
+      "version": "Version {{number}}",
+      "close": "Close",
+      "more": "Show more",
+      "retry": "Try again",
+      "problems": {
+        "failed": "The change history could not be loaded.",
+        "gone": "This award is no longer available to you.",
+        "denied": "You no longer have access to this history."
+      },
+      "empty": "The change history is empty.",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "audit": {
+      "tab": "Audit log",
+      "export": "Export CSV",
+      "problems": {
+        "failed": "The audit log could not be loaded.",
+        "gone": "No audit log is available for this award.",
+        "denied": "You no longer have access to the audit log."
+      },
+      "exportFailed": "The audit log could not be exported.",
+      "truncated": "The file holds only the newest 10,000 entries.",
+      "empty": "Nothing about this award has been logged.",
+      "columns": {
+        "time": "Time",
+        "actor": "Who",
+        "action": "Action",
+        "entity": "Record",
+        "changedFields": "Changed fields",
+        "ipAddress": "IP address",
+        "correlationId": "Request id",
+        "oldValues": "Before",
+        "newValues": "After"
+      }
+    },
+    "hints": {
+      "title": "A title in one language is enough"
+    },
+    "form": {
+      "newTitle": "New award",
+      "editTitle": "Award draft",
+      "noCategory": "Not chosen",
+      "saveDraft": "Save draft",
+      "submit": "Submit",
+      "reload": "Load the current version",
+      "retry": "Try again",
+      "loadProblems": {
+        "network": "The server cannot be reached, so the draft could not be loaded.",
+        "failed": "The draft could not be loaded.",
+        "denied": "You have no access to this draft."
+      },
+      "cancel": "Cancel"
+    },
+    "documents": {
+      "title": "Documents",
+      "drop": "Drag files here or choose a file",
+      "camera": "Take a photo",
+      "type": "Document type",
+      "hint": "PDF, JPG, PNG or WEBP, up to 10 MB, at most 10 files",
+      "offline": "Documents can be added once the connection returns.",
+      "types": {
+        "CERTIFICATE": "Certificate",
+        "DIPLOMA": "Diploma",
+        "SUPPORTING_DOCUMENT": "Supporting document",
+        "PHOTO": "Photo"
+      },
+      "none": "No documents attached",
+      "waiting": "Waiting",
+      "uploading": "Uploading {{name}}",
+      "uploaded": "Uploaded: {{name}}",
+      "kilobytes": "{{size}} KB",
+      "megabytes": "{{size}} MB",
+      "preview": "Preview",
+      "previewOf": "Preview {{name}}",
+      "download": "Download",
+      "downloadOf": "Download {{name}}",
+      "removeOf": "Delete {{name}}",
+      "close": "Close",
+      "retry": "Try again",
+      "dismiss": "Dismiss",
+      "remove": {
+        "action": "Delete",
+        "title": "Delete the document?",
+        "text": "Delete the document “{{name}}”?",
+        "confirm": "Delete",
+        "cancel": "Cancel"
+      },
+      "problems": {
+        "empty-file": "The file is empty",
+        "file-too-large": "The file is larger than 10 MB",
+        "unsupported-type": "Unsupported file format. Use PDF, JPG, PNG or WEBP.",
+        "content-mismatch": "The file content does not match its extension",
+        "duplicate-document": "This file has already been added",
+        "document-limit": "The limit of 10 files has been reached",
+        "malware-detected": "The file contains malicious code and was not uploaded",
+        "storage-quota": "Your documents already take up 50 MB. No more files can be added",
+        "too-many-requests": "Too many uploads. Try again in a minute",
+        "award-not-editable": "The award has been submitted; its documents can no longer be changed",
+        "not-saved": "The draft was not saved. Correct the form and try again",
+        "award-gone": "The draft was deleted in another window. Try again to save a new draft",
+        "failed": "The file could not be uploaded",
+        "gone": "The document is no longer available",
+        "list-failed": "The documents could not be loaded",
+        "download-failed": "The document could not be loaded",
+        "sharing-fixed": "The award is no longer shared with colleagues; the choice was not saved",
+        "sharing-failed": "The choice could not be saved. Try again"
+      },
+      "sharing": {
+        "switch": "Show to colleagues",
+        "switchOf": "Show to colleagues: {{name}}",
+        "hint": "Signed-in colleagues can open and download the documents you show on the achievement page.",
+        "locked": "Share the award with colleagues to show them its documents."
+      }
+    },
+    "submitWithout": {
+      "title": "Submit the award?",
+      "text": "You have not attached any document. The reviewer may ask for a copy of the award.",
+      "confirm": "Submit",
+      "cancel": "Cancel"
+    },
+    "restore": {
+      "question": "Restore unsaved changes?",
+      "accept": "Restore",
+      "discard": "Discard"
+    },
+    "offline": {
+      "notice": "No connection. What you enter is kept on this device and saved as a draft once the connection returns.",
+      "pending": "The draft will be saved once the connection returns.",
+      "titleNeeded": "To save the draft, enter a title in at least one language.",
+      "notStored": "This device does not keep what you enter. Do not close the page.",
+      "submit": "An award can only be submitted with a connection to the server. Save the draft and it will be saved automatically."
+    },
+    "leave": {
+      "title": "You have unsaved changes",
+      "text": "If you leave now, the values you entered will be lost.",
+      "confirm": "Leave without saving",
+      "cancel": "Stay"
+    },
+    "messages": {
+      "saved": "Draft saved.",
+      "reconnected": "The connection is back and the draft is saved.",
+      "removed": "Draft deleted."
+    },
+    "remove": {
+      "action": "Delete draft",
+      "title": "Delete the draft?",
+      "text": "The draft will be deleted and cannot be restored.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    },
+    "withdraw": {
+      "action": "Withdraw",
+      "title": "Withdraw the award?",
+      "text": "It will become a draft again.",
+      "confirm": "Withdraw",
+      "cancel": "Cancel"
+    },
+    "returned": "A reviewer returned the award for changes: {{comment}}",
+    "returnedNoComment": "A reviewer returned the award for changes.",
+    "submitted": {
+      "title": "Award submitted",
+      "text": "Submitted for review to the faculty secretary.",
+      "toList": "Back to my awards"
+    },
+    "errors": {
+      "required": "Required for a submission",
+      "titleRequired": "Enter a title in Ukrainian or English",
+      "too-long": "At most {{max}} characters",
+      "invalid": "Enter an address starting with http:// or https://",
+      "inactive": "The category is no longer available",
+      "future": "The award date cannot be in the future",
+      "too-old": "The award date cannot be more than 50 years ago",
+      "out-of-scope": "You cannot enter awards for this faculty or department",
+      "person-out-of-scope": "You cannot enter awards for this colleague",
+      "person-one-recipient": "An award goes either to a colleague or to a faculty or department"
+    },
+    "warnings": {
+      "RECENT_DATE": "Check the date: it lies within the last 30 days. Is it the date of the award rather than of the submission?",
+      "POSSIBLE_DUPLICATE": "This looks like an award you already entered:"
+    },
+    "duplicate": {
+      "title": "This award may already be entered",
+      "text": "You already have an award with the same date and a similar title:",
+      "confirm": "It is a different award — submit",
+      "cancel": "Cancel"
+    },
+    "problems": {
+      "validation-failed": "Check the marked fields.",
+      "award-incomplete": "To submit, fill in the category, who granted the award and the date.",
+      "award-stale": "The award was changed in another window. Your changes are kept in this browser.",
+      "award-not-editable": "The award was already submitted and can no longer be changed.",
+      "award-deleted": "The draft was deleted in another window. Your values will be saved as a new draft.",
+      "award-possible-duplicate": "This looks like an award you already entered.",
+      "access-denied": "You are not allowed to enter awards.",
+      "network": "The server is not reachable. Your values are kept; please try again.",
+      "unknown": "Something went wrong. Please try again.",
+      "recipient-out-of-scope": "You can no longer submit awards for this faculty or department. Choose “Me” or another unit.",
+      "request-claimed": "A reviewer is already reviewing the award, so it can no longer be withdrawn.",
+      "award-not-pending": "The award is no longer under review, so it cannot be withdrawn.",
+      "award-has-request": "The award was submitted before, so it cannot be deleted: its request and decisions stay in the history.",
+      "visibility-fixed": "Visibility can be changed only for an approved personal award."
+    },
+    "statusPanel": {
+      "title": "Award journey",
+      "now": "Now",
+      "submitted": "Submitted",
+      "resubmitted": "Submitted again",
+      "upcomingBy": "by {{date}}",
+      "estimate": "Expected completion: {{date}}",
+      "overdue": "The review is taking longer than usual (since {{since}}). New expected date: {{date}}",
+      "overdueNoticed": "The review period ended {{since}}; the manager was notified {{noticed}}",
+      "noReviewer": "Nobody currently holds the post of «{{level}}» for your unit. Please contact the dean's office",
+      "returned": "Waiting for your corrections",
+      "completed": "Review completed: {{date}}",
+      "rejectionReason": "Reason for rejection: {{reason}}",
+      "decisions": "Reviewer decisions",
+      "decision": {
+        "APPROVED": "Approved",
+        "REJECTED": "Rejected",
+        "RETURNED": "Returned for revision",
+        "ESCALATED": "Passed to a higher level"
+      },
+      "updated": "Review status updated",
+      "retry": "Try again",
+      "problems": {
+        "failed": "The review status could not be updated.",
+        "gone": "This award is no longer available to you.",
+        "denied": "You no longer have access to the review status of this award."
+      },
+      "skipped": "skipped",
+      "onBehalf": "(on behalf of {{name}})"
+    },
+    "timing": {
+      "expected": "Expected by {{date}}",
+      "delayed": "Delayed"
+    },
+    "visibility": {
+      "title": "Visibility",
+      "options": {
+        "PRIVATE": "Only me and reviewers",
+        "UNIVERSITY": "Show to colleagues",
+        "PUBLIC": "Show publicly"
+      },
+      "hints": {
+        "PRIVATE": "You and those who review the award can see it.",
+        "UNIVERSITY": "The award is on the Achievements page for all university staff.",
+        "PUBLIC": "The award is on the Achievements page and on the university’s public page, open without signing in."
+      },
+      "chips": {
+        "UNIVERSITY": "Colleagues",
+        "PUBLIC": "Public"
+      },
+      "saved": "Visibility saved.",
+      "unit": "Unit award: visible to everyone once approved.",
+      "publish": {
+        "title": "Show the award publicly?",
+        "text": "Anyone who opens the public achievements page will see the award, without signing in.",
+        "shown": "Shown",
+        "kept": "Not shown",
+        "items": {
+          "name": "your first and last name",
+          "department": "department",
+          "title": "award title",
+          "description": "description",
+          "category": "category and level",
+          "awardingOrganization": "awarding organisation",
+          "date": "award date",
+          "link": "link",
+          "verified": "the “Documents verified” mark",
+          "email": "e-mail",
+          "documents": "documents",
+          "reviewers": "who reviewed the award",
+          "comments": "reviewers’ comments"
+        },
+        "confirm": "Show publicly",
+        "cancel": "Cancel"
+      }
+    },
+    "imported": "Imported"
+  },
+  "achievements": {
+    "title": "Achievements",
+    "publicTitle": "University achievements",
+    "publicPage": "Public page",
+    "viewAsStaff": "View as staff",
+    "departments": "Departments",
+    "filters": {
+      "unit": "Unit",
+      "year": "Year",
+      "level": "Level",
+      "recipient": "Recipient",
+      "search": "Search achievements",
+      "all": "All"
+    },
+    "recipients": {
+      "PERSON": "Staff",
+      "UNIT": "Units"
+    },
+    "unitAward": "Unit award",
+    "verified": "Documents verified",
+    "link": "Link",
+    "newTab": "(opens in a new tab)",
+    "empty": "No achievements match these filters yet.",
+    "retry": "Try again",
+    "problems": {
+      "failed": "The achievements could not be loaded.",
+      "gone": "There is no such unit.",
+      "denied": "You have no access to this page."
+    },
+    "detail": {
+      "documents": "Documents",
+      "noDocuments": "The owner shows no documents of this award.",
+      "back": "Back to achievements",
+      "gone": "This achievement is not available. It may no longer be shared."
+    },
+    "personTitle": "Achievements of {{name}}",
+    "highlight": "Highlight of the month",
+    "count": {
+      "one": "{{count}} achievement",
+      "few": "{{count}} achievements",
+      "many": "{{count}} achievements",
+      "other": "{{count}} achievements"
+    },
+    "for": "for",
+    "newestFirst": "newest first"
+  },
+  "notFound": {
+    "home": "Home",
+    "title": "Page not found",
+    "text": "There is no such page, or the address is mistyped.",
+    "publicAchievements": "University achievements"
+  },
+  "offline": {
+    "title": "No connection",
+    "text": "You can sign in as soon as the connection returns.",
+    "retry": "Try again"
+  },
+  "categories": {
+    "suggestions": "Suggested categories",
+    "levels": {
+      "SPECIALITY": "Speciality",
+      "DEPARTMENT": "Department",
+      "COLLEGE": "College",
+      "FACULTY": "Faculty",
+      "LOCAL": "Local",
+      "UNIVERSITY": "University",
+      "REGIONAL": "Regional",
+      "NATIONAL": "National",
+      "INTERNATIONAL": "International"
+    },
+    "reasons": {
+      "KEYWORD": "keywords",
+      "ORGANISATION": "university unit",
+      "HISTORY": "chosen before"
+    }
+  },
+  "admin": {
+    "users": {
+      "title": "Users",
+      "people": "People",
+      "empty": "No users found",
+      "selectionGone": "This person is no longer in the list.",
+      "noRoles": "No roles",
+      "unconfirmedBadge": "Not confirmed",
+      "confirm": "Confirm",
+      "correctDepartment": "Change the department before confirming",
+      "filters": {
+        "q": "Search by name or address",
+        "qHint": "At least 2 characters",
+        "role": "Role",
+        "status": "Status",
+        "anyRole": "Any role",
+        "anyStatus": "Any status",
+        "unconfirmed": "Unconfirmed only"
+      },
+      "linkPerson": "Join the awards of a colleague without an account",
+      "linked": "Awards joined: {{count}}.",
+      "counts": {
+        "total": "Listed: {{count}}",
+        "waiting": "Waiting for a membership check: {{count}}",
+        "blocked": "Blocked: {{count}}"
+      },
+      "columns": {
+        "name": "Name and address",
+        "unit": "Unit",
+        "roles": "Roles",
+        "status": "Status",
+        "lastLogin": "Last sign-in"
+      }
+    },
+    "people": {
+      "add": "Add a colleague without an account",
+      "addAward": "Add an award",
+      "badge": "No account",
+      "unknownAddress": "Address unknown",
+      "awardCount": "awards: {{count}}",
+      "cardTitle": "Colleague without an account",
+      "addedBy": "Added by",
+      "invitation": "Invitation",
+      "invitedAt": "Sent {{at}}",
+      "notInvited": "Invitation not sent: the address is unknown",
+      "notInvitedYet": "Not sent yet",
+      "awards": "Awards",
+      "noAwards": "No awards yet",
+      "change": "Change",
+      "invite": "Send the invitation again",
+      "removeAction": "Remove",
+      "changed": "The changes are saved.",
+      "invited": "The invitation is sent.",
+      "remove": {
+        "title": "Remove the colleague?",
+        "text": "{{name}} and their draft awards will be removed. Awards already submitted keep the person in the system.",
+        "confirm": "Remove",
+        "cancel": "Cancel"
+      },
+      "dialog": {
+        "addTitle": "Add a colleague without an account",
+        "changeTitle": "Change the colleague's details",
+        "lastName": "Last name",
+        "firstName": "First name",
+        "department": "Department",
+        "email": "University email (optional)",
+        "emailHint": "With an address the colleague receives an invitation to claim the account.",
+        "emailKept": "An address once entered can be changed but not removed.",
+        "duplicates": "A colleague with this name already exists in this department:",
+        "addAnyway": "This is a different person, add",
+        "add": "Add",
+        "save": "Save",
+        "cancel": "Cancel"
+      },
+      "validation": {
+        "required": "Required field",
+        "tooLong": "Too long",
+        "name": "Use letters, apostrophes, hyphens and spaces only",
+        "institutional": "Enter a university address",
+        "emailKept": "The address cannot be removed",
+        "taken": "This address is already in use",
+        "outOfScope": "Choose a department of your faculty"
+      },
+      "problems": {
+        "person-has-awards": "The colleague has awards that are not drafts, so they cannot be removed.",
+        "person-claimed": "The colleague has claimed the account in the meantime. The page has been reloaded.",
+        "no-address": "The address is unknown, so no invitation can be sent.",
+        "too-many-requests": "The invitation was sent recently. Try again later.",
+        "version-conflict": "Somebody changed this colleague in the meantime. Close the dialog and try again.",
+        "email-taken": "This address is already in use.",
+        "departments": "The departments could not be loaded.",
+        "access-denied": "You lack the permission for this action.",
+        "network": "The server is unreachable. Try again later.",
+        "unknown": "The action failed. Try again later."
+      }
+    },
+    "status": {
+      "PENDING": "Pending confirmation",
+      "ACTIVE": "Active",
+      "INACTIVE": "Inactive",
+      "SUSPENDED": "Suspended",
+      "RETIRED": "Retired",
+      "MEMORIAL": "Memorial",
+      "DELETED": "Deleted",
+      "UNCLAIMED": "No account"
+    },
+    "detail": {
+      "back": "Back to the user list",
+      "close": "Close the user card",
+      "tabs": {
+        "roles": "Roles",
+        "account": "Account"
+      },
+      "awards": "Awards · {{count}}",
+      "awardsLoading": "Awards",
+      "delegations": "Delegations",
+      "email": "Email",
+      "organization": "Organisation",
+      "status": "Status",
+      "created": "Created",
+      "lastLogin": "Last sign-in",
+      "never": "Never signed in",
+      "currentRoles": "Current roles",
+      "history": "Role history",
+      "noRoles": "No roles assigned yet",
+      "noHistory": "The history is empty",
+      "validity": "valid from {{from}}",
+      "validityUntil": "valid from {{from}} to {{to}}",
+      "ended": "Ended",
+      "assign": "Assign role",
+      "revoke": "Revoke",
+      "assigned": "The role is assigned.",
+      "revoked": "The role is revoked.",
+      "sessionHint": "The new role reaches the user's own session with the next silent token refresh or the next sign-in.",
+      "notFound": "User not found",
+      "notFoundHint": "There is no such user, or the user is outside your scope.",
+      "legalHold": {
+        "title": "Legal hold",
+        "none": "No legal hold",
+        "active": "Active legal hold: the account cannot be erased",
+        "placedBy": "Placed {{at}} by {{name}}",
+        "liftedBy": "Lifted {{at}} by {{name}}",
+        "history": "Earlier holds",
+        "erasure": "Erasure requested, due {{at}}",
+        "place": "Place hold",
+        "lift": "Lift hold",
+        "placed": "The legal hold is placed.",
+        "lifted": "The legal hold is lifted.",
+        "dialog": {
+          "title": {
+            "place": "Place a legal hold",
+            "lift": "Lift the legal hold"
+          },
+          "text": {
+            "place": "While the hold is active, the account of {{name}} cannot be erased. The reason is visible only to GDPR officers.",
+            "lift": "The account of {{name}} can be erased again once the hold is lifted."
+          },
+          "reason": "Reason",
+          "hint": "{{min}}–{{max}} characters, e.g. the case or inspection number",
+          "required": "Enter the reason",
+          "tooShort": "At least {{min}} characters",
+          "tooLong": "At most {{max}} characters",
+          "sending": "Saving",
+          "confirm": {
+            "place": "Place hold",
+            "lift": "Lift hold"
+          },
+          "cancel": "Cancel",
+          "close": "Close"
+        },
+        "problems": {
+          "legal-hold-active": "The account already has an active hold. The card has been reloaded.",
+          "legal-hold-lifted": "This hold has already been lifted. The card has been reloaded.",
+          "legal-hold-not-found": "This hold no longer exists. The card has been reloaded.",
+          "account-erased": "The account has been erased; a hold cannot be placed.",
+          "user-not-found": "There is no such user.",
+          "validation-failed": "The reason must have 10–500 characters.",
+          "access-denied": "You lack the permission for this action.",
+          "network": "The server is unreachable. Try again later.",
+          "load": "The legal holds could not be loaded.",
+          "unknown": "The action failed. Try again later."
+        }
+      }
+    },
+    "confirmDialog": {
+      "title": "Confirm membership",
+      "text": "{{name}} will receive the Employee role in the selected department.",
+      "department": "Department",
+      "submit": "Confirm",
+      "cancel": "Cancel",
+      "samePerson": "This is the same person",
+      "awards": "awards: {{count}}",
+      "linkTitle": "Join the awards of a colleague without an account",
+      "linkText": "The awards of the chosen colleague move to the account of {{name}}; the roles do not change.",
+      "linkSubmit": "Join",
+      "noCandidates": "This department has no colleagues without an account."
+    },
+    "assign": {
+      "title": "Assign role",
+      "role": "Role",
+      "organization": "Organisation",
+      "validFrom": "Valid from",
+      "validTo": "Valid to (optional)",
+      "submit": "Assign",
+      "cancel": "Cancel",
+      "noRoles": "You cannot assign roles.",
+      "validation": {
+        "required": "Required",
+        "past": "The date cannot be in the past",
+        "order": "\"Valid to\" must not be earlier than \"valid from\""
+      }
+    },
+    "revoke": {
+      "title": "Revoke the role?",
+      "text": "The role \"{{role}}\" in {{organization}} will be revoked from {{name}}.",
+      "warning": "The user will be signed out everywhere, so the lost permissions take effect at once.",
+      "confirm": "Revoke",
+      "cancel": "Cancel"
+    },
+    "problems": {
+      "role-above-level": "This role is not below your level in that organisation. University and system roles are granted by the rector's office or the administrator.",
+      "role-organization-mismatch": "The chosen organisation does not fit this role.",
+      "role-already-assigned": "The user already holds this role in that organisation.",
+      "role-last-own": "You cannot revoke your own last role above Employee.",
+      "role-already-revoked": "This role has already been revoked.",
+      "access-denied": "You lack the permission for this action.",
+      "organisation-invalid": "Choose an active organisation.",
+      "user-not-active": "The account is not active.",
+      "role-validity": "The validity period of the role is invalid.",
+      "membership-already-confirmed": "This membership has already been confirmed or changed. The page has been reloaded.",
+      "too-many-requests": "Too many requests. Try again later.",
+      "network": "The server is unreachable. Try again later.",
+      "unknown": "The action failed. Try again later.",
+      "not-found": "The colleague has been joined or removed meanwhile; the list is reloaded.",
+      "version-conflict": "The colleague was changed meanwhile; open the dialog again.",
+      "validation-failed": "This account cannot take the awards."
+    },
+    "forbidden": {
+      "title": "Access denied",
+      "text": "You do not have the permission for this page. Ask your faculty secretary or the administrator if you need access.",
+      "home": "Go to the home page"
+    },
+    "import": {
+      "title": "Award import",
+      "intro": "Bring colleagues and their past awards over from a spreadsheet: pick the file, check the columns, review the rows and import. Colleagues without an account are added, and the awards are stored approved and private.",
+      "template": "Download template",
+      "pick": "Choose file",
+      "fileHint": "An .xlsx or .csv file (UTF-8 or Windows-1251) with headers in the first row.",
+      "steps": {
+        "file": "1. File",
+        "mapping": "2. Columns",
+        "preview": "3. Review"
+      },
+      "mappingHint": "The columns were recognised by their headers. Change a field where a column was read wrongly and review again.",
+      "column": "Column {{n}}",
+      "defaults": "Values for rows that leave a field empty",
+      "department": "Department",
+      "departmentHint": "For rows without a department",
+      "level": "Level",
+      "organization": "Awarded by",
+      "refresh": "Review again",
+      "changed": "The columns changed. Review again before importing.",
+      "row": "Row {{n}}",
+      "willAdd": "Will be added",
+      "noRows": "The file has no rows below the header.",
+      "submit": "Import ({{count}})",
+      "done": "Import finished",
+      "again": "Import another file",
+      "toUsers": "Go to users",
+      "blockedRows": "Rows: {{rows}}.",
+      "counts": {
+        "ready": "To import: {{count}}",
+        "blocked": "With errors: {{count}}",
+        "skipped": "Skipped: {{count}}",
+        "peopleToAdd": "New colleagues: {{count}}",
+        "imported": "Awards imported: {{count}}",
+        "peopleAdded": "Colleagues added without an account: {{count}}"
+      },
+      "fields": {
+        "none": "Do not read",
+        "FULL_NAME": "Full name",
+        "LAST_NAME": "Last name",
+        "FIRST_NAME": "First name",
+        "EMAIL": "Email",
+        "DEPARTMENT": "Department",
+        "TITLE": "Award title",
+        "DATE": "Date",
+        "LEVEL": "Level",
+        "AWARDING_ORGANIZATION": "Awarded by",
+        "NOTES": "Notes"
+      },
+      "codes": {
+        "name-missing": "No name",
+        "name-invalid": "Name not readable",
+        "person-ambiguous": "Several colleagues with this name",
+        "person-initials": "Initials match no colleague",
+        "department-missing": "No department",
+        "department-unknown": "Department not found",
+        "department-out-of-scope": "Department outside your faculty",
+        "title-missing": "No title",
+        "title-too-long": "Title too long",
+        "date-missing": "No date",
+        "date-invalid": "Date not readable",
+        "date-future": "Date in the future",
+        "date-too-old": "Date older than 50 years",
+        "level-missing": "No level",
+        "level-unknown": "Level not recognised",
+        "awarding-organization-missing": "No awarding organisation",
+        "awarding-organization-too-long": "Awarding organisation too long",
+        "notes-too-long": "Notes too long",
+        "person-added": "Colleague will be added",
+        "duplicate-probable": "A similar award exists",
+        "already-stored": "Already stored",
+        "row-repeated": "Row repeated in the file",
+        "owner-is-caller": "Your own award, or one of whoever lent you the role"
+      },
+      "problems": {
+        "file-too-large": "The file is too large.",
+        "unsupported-type": "Only .xlsx and .csv files are accepted.",
+        "file-empty": "The file is empty.",
+        "too-many-rows": "The file has too many rows.",
+        "file-unreadable": "The file could not be read.",
+        "malware-detected": "Malicious content was found in the file.",
+        "scanner-unavailable": "The file cannot be scanned right now. Try again later.",
+        "validation-failed": "The columns or the department are not valid.",
+        "preview-stale": "The file or the columns changed. Review again.",
+        "rows-blocked": "Some rows have errors.",
+        "access-denied": "The import is open to a faculty secretary or dean.",
+        "network": "The server cannot be reached. Try again.",
+        "template": "The template could not be downloaded.",
+        "unknown": "Something went wrong. Try again."
+      }
+    }
+  },
+  "delegations": {
+    "title": "My delegations",
+    "personTitle": "Delegations",
+    "context": "Powers you handed over or received for a period",
+    "personContext": "Powers of this person, handed over and received (read only)",
+    "board": {
+      "sides": "Whose delegations to show",
+      "given": "From me · {{count}}",
+      "received": "To me · {{count}}",
+      "givenBy": "Given · {{count}}",
+      "receivedBy": "Received · {{count}}",
+      "columns": {
+        "active": "Active",
+        "upcoming": "Scheduled",
+        "ended": "Ended"
+      },
+      "empty": {
+        "active": "No active delegations",
+        "upcoming": "No scheduled delegations",
+        "ended": "No ended delegations"
+      },
+      "limits": "Limits of authority",
+      "showAll": "Show all · {{count}}",
+      "showFewer": "Show fewer",
+      "endsIn": {
+        "one": "{{count}} day left",
+        "few": "{{count}} days left",
+        "many": "{{count}} days left",
+        "other": "{{count}} days left"
+      },
+      "startsIn": {
+        "one": "Starts in {{count}} day",
+        "few": "Starts in {{count}} days",
+        "many": "Starts in {{count}} days",
+        "other": "Starts in {{count}} days"
+      }
+    },
+    "capabilities": {
+      "can": {
+        "readDepartment": "View the department's awards",
+        "readFaculty": "View the faculty's awards",
+        "readAll": "View the awards of the whole university",
+        "approveLevel1": "Review requests at department level",
+        "approveLevel2": "Review requests at faculty level",
+        "approveLevel3": "Review requests at university level",
+        "approveFinal": "Give final approval to awards"
+      },
+      "cannot": {
+        "manageUsers": "Add users or change their roles",
+        "analytics": "View the unit's analytics",
+        "delegate": "Pass these powers on"
+      }
+    },
+    "period": "{{from}} — {{to}}",
+    "actingFor": "Acting for: {{name}}",
+    "states": {
+      "active": "Active",
+      "upcoming": "Upcoming",
+      "expired": "Expired",
+      "revoked": "Revoked"
+    },
+    "messages": {
+      "created": "The authority is delegated.",
+      "revoked": "The delegation is revoked."
+    },
+    "create": {
+      "title": "Delegate authority",
+      "role": "Role",
+      "organization": "Organisation",
+      "delegate": "Delegate",
+      "delegateHint": "Start typing a name or an address — at least 2 characters",
+      "validFrom": "Valid from",
+      "validTo": "Valid to",
+      "periodHint": "At most 90 days",
+      "reason": "Reason (optional)",
+      "submit": "Delegate",
+      "cancel": "Cancel",
+      "noRoles": "You hold no approval role of your own to delegate.",
+      "validation": {
+        "required": "Required",
+        "past": "The date cannot be in the past",
+        "order": "\"Valid to\" must not be earlier than \"valid from\"",
+        "range": "The period cannot be longer than 90 days",
+        "reason": "The reason is at most 500 characters"
+      }
+    },
+    "revoke": {
+      "action": "Revoke",
+      "title": "Revoke the delegation?",
+      "text": "The authority of the role \"{{role}}\" in {{organization}} will be revoked from {{name}}.",
+      "warning": "The delegate will be signed out everywhere, so the borrowed authority stops at once.",
+      "confirm": "Revoke",
+      "cancel": "Cancel"
+    },
+    "problems": {
+      "delegation-not-holder": "You do not hold this role in that organisation, or you hold it by delegation yourself.",
+      "delegation-bad-delegate": "This person cannot receive the authority: choose another active colleague inside the organisation.",
+      "delegation-period": "Invalid period: the dates cannot be in the past, \"valid to\" not earlier than \"valid from\" and at most 90 days.",
+      "delegation-overlap": "You have already delegated this role in that organisation for part of the period.",
+      "delegation-not-active": "This delegation has already been revoked or has ended.",
+      "organisation-invalid": "Choose an active organisation.",
+      "access-denied": "You lack the permission for this action.",
+      "user-not-found": "The user was not found, or is outside your scope.",
+      "too-many-requests": "Too many requests. Try again later.",
+      "network": "The server is unreachable. Try again later.",
+      "unknown": "The action failed. Try again later."
+    }
+  },
+  "compliance": {
+    "title": "Compliance",
+    "context": "Data retention, erasure requests and legal holds",
+    "sections": "Sections",
+    "sectionMeta": {
+      "retention": "Retention policies",
+      "erasures": "Open requests",
+      "holds": "Holds in force"
+    },
+    "tabs": {
+      "retention": "Retention",
+      "erasures": "Erasure requests",
+      "holds": "Legal holds"
+    },
+    "retry": "Try again",
+    "columns": {
+      "policy": "Policy",
+      "period": "Retention period",
+      "action": "Action",
+      "affected": "Affected",
+      "held": "Kept for a hold",
+      "outcome": "Outcome",
+      "person": "Person",
+      "origin": "Origin",
+      "status": "Status",
+      "requestedAt": "Requested",
+      "scheduledFor": "Due",
+      "closedAt": "Completed or cancelled",
+      "reason": "Reason",
+      "placed": "Placed",
+      "lifted": "Lifted"
+    },
+    "retention": {
+      "policies": "Policies",
+      "runs": "Nightly runs",
+      "empty": "No retention run yet.",
+      "failures": "Failed policies: {{count}}",
+      "failed": "Failed",
+      "ok": "Done",
+      "durations": "Duration of the latest runs",
+      "started": "Started",
+      "seconds": "Seconds",
+      "durationsDescription": "Runs: {{count}}, longest {{longest}} s, failed: {{failed}}."
+    },
+    "policies": {
+      "notifications": "Notifications",
+      "one-time-tokens": "One-time links",
+      "authorizations": "Sign-in sessions",
+      "devices": "Remembered devices",
+      "audit-partitions": "Audit log partitions ahead",
+      "pending-accounts": "Unconfirmed accounts",
+      "former-staff": "Accounts of former staff",
+      "consent-records": "Consent records",
+      "audit-logs": "Audit log"
+    },
+    "actions": {
+      "delete": "Delete",
+      "erase-account": "Erase the account",
+      "create-partitions": "Create partitions",
+      "drop-partitions": "Drop partitions"
+    },
+    "units": {
+      "years": "{{count}} yr",
+      "months": "{{count}} mo",
+      "weeks": "{{count}} wk",
+      "days": "{{count}} d",
+      "hours": "{{count}} h",
+      "minutes": "{{count}} min",
+      "seconds": "{{count}} s"
+    },
+    "duration": {
+      "hours": "{{hours}} h {{minutes}} min",
+      "minutes": "{{minutes}} min {{seconds}} s",
+      "seconds": "{{seconds}} s"
+    },
+    "runStatus": {
+      "RUNNING": "Running",
+      "COMPLETED": "Completed",
+      "PARTIAL": "Partial",
+      "INTERRUPTED": "Interrupted"
+    },
+    "erasureStatus": {
+      "PENDING": "Pending",
+      "CANCELLED": "Cancelled",
+      "COMPLETED": "Completed"
+    },
+    "origin": {
+      "REQUEST": "Own request",
+      "RETENTION": "Retention"
+    },
+    "erasures": {
+      "filter": "Request status",
+      "all": "All",
+      "postponed": "Postponed",
+      "postponedAt": "postponed {{date}}",
+      "empty": "No erasure requests."
+    },
+    "holds": {
+      "filter": "Holds shown",
+      "active": "Active",
+      "all": "All",
+      "inForce": "In force",
+      "empty": "No legal holds."
+    },
+    "problems": {
+      "failed": "The list could not be loaded.",
+      "denied": "You lack the permission to view this list.",
+      "gone": "The list is no longer available."
+    }
+  },
+  "reviews": {
+    "queue": {
+      "title": "Queue",
+      "left": "{{count}} left",
+      "selectionGone": "This request is no longer in the queue.",
+      "date": "Award date",
+      "awardingOrganization": "Awarded by",
+      "heldBy": "Reviewed by {{name}}",
+      "checklist": "Checks",
+      "checks": {
+        "readable": "The document is readable",
+        "match": "Title and date match",
+        "level": "The level is right"
+      },
+      "shortcuts": "J / K — next / previous · A — approve · R — return",
+      "held": "Decision saved",
+      "undo": "Undo",
+      "denied": "No access",
+      "offline": "No connection",
+      "waiting": "The decision goes out once the connection is back",
+      "signedOut": "Your access changed while the decision was held. Not saved, awards: #{{id}}",
+      "gotIt": "Got it",
+      "empty": "The queue is empty",
+      "submitted": "Sent {{date}}",
+      "due": "Due {{date}}",
+      "handOver": "Hand over to a colleague…",
+      "notWaiting": "This request no longer waits at your level; no decision can be made on it.",
+      "notFound": "Request not found",
+      "notFoundHint": "It may have been removed or is not available to you. Choose another request in the queue.",
+      "loadFailed": "The request could not be loaded",
+      "loadFailedHint": "Check the connection and choose the request again.",
+      "oldestFirst": "oldest first"
+    },
+    "title": "Reviews",
+    "tabs": {
+      "mine": "Mine",
+      "unassigned": "Unassigned",
+      "all": "All",
+      "label": "Which requests to show"
+    },
+    "filters": {
+      "level": "Review level",
+      "unit": "Unit",
+      "all": "All",
+      "noticed": "Manager notified",
+      "lowerOverdue": "Overdue at the level below"
+    },
+    "columns": {
+      "recipient": "Recipient",
+      "organization": "Faculty or department",
+      "category": "Category level",
+      "deadline": "Deadline",
+      "reviewer": "Reviewer"
+    },
+    "overdue": "Overdue",
+    "noticed": "Manager notified {{date}}",
+    "empty": "No awards to review",
+    "back": "Back to reviews",
+    "panel": {
+      "title": "Review",
+      "nobody": "Nobody has claimed it yet",
+      "delegatedFrom": "On behalf of",
+      "claim": "Claim",
+      "release": "Release",
+      "handOver": "Hand over…",
+      "takeOver": "Take over",
+      "approve": "Approve",
+      "return": "Return for corrections",
+      "reject": "Reject",
+      "escalate": "Pass to the {{level}}",
+      "correct": "Correct"
+    },
+    "handOver": {
+      "title": "Hand over to a colleague",
+      "empty": "No other reviewer can take this award.",
+      "delegated": "by delegation",
+      "confirm": "Hand over",
+      "cancel": "Cancel"
+    },
+    "period": {
+      "label": "Review period: {{days}}",
+      "days": {
+        "one": "{{count}} working day",
+        "few": "{{count}} working days",
+        "many": "{{count}} working days",
+        "other": "{{count}} working days"
+      },
+      "default": "(default)",
+      "change": "Change",
+      "dialog": {
+        "title": "Faculty review period",
+        "label": "Working days per faculty level",
+        "hint": "1 to 20. The rector's levels keep the default; deadlines already set stay as they are.",
+        "range": "Enter a whole number from 1 to 20",
+        "reset": "Default period",
+        "save": "Save",
+        "cancel": "Cancel"
+      },
+      "problems": {
+        "validation-failed": "Enter a whole number from 1 to 20",
+        "network": "The server is unreachable. Try again.",
+        "unknown": "The period could not be saved. Try again."
+      }
+    },
+    "takeOver": {
+      "title": "Take over",
+      "text": "{{name}} is reviewing this award. Take it over?",
+      "confirm": "Take over",
+      "cancel": "Cancel"
+    },
+    "messages": {
+      "claimed": "You are now reviewing this award.",
+      "released": "The award is back in the queue.",
+      "handedOver": "The award was handed over.",
+      "APPROVED": "The award is approved.",
+      "REJECTED": "The award is rejected.",
+      "RETURNED": "The award is returned for corrections.",
+      "ESCALATED": "Passed to the {{level}}."
+    },
+    "problems": {
+      "request-claimed": "{{name}} is already reviewing this award",
+      "request-stale": "The data was out of date; the page has been refreshed",
+      "reviewer-not-eligible": "This colleague may not review the award. Choose someone else.",
+      "invalid-parameter": "This filter is outside your authority.",
+      "access-denied": "You are not allowed to review awards.",
+      "network": "The server is unreachable. Try again.",
+      "unknown": "The action failed. Try again.",
+      "request-closed": "The review of this award has already finished",
+      "no-higher-level": "There is no higher review level",
+      "escalation-not-upward": "Your role already covers the next level; decide the award yourself",
+      "validation-failed": "Check the comment and the documents mark"
+    },
+    "decide": {
+      "title": {
+        "APPROVE": "Approve the award",
+        "RETURN": "Return for corrections",
+        "REJECT": "Reject the award",
+        "ESCALATE": "Pass to the {{level}}"
+      },
+      "comment": "Comment",
+      "commentRequired": "Comment for the owner",
+      "commentHint": "The owner sees this comment in the review status",
+      "required": "Say what to correct or why the award is rejected",
+      "tooLong": "At most 2000 characters",
+      "verified": "Documents checked",
+      "confirm": {
+        "APPROVE": "Approve",
+        "RETURN": "Return",
+        "REJECT": "Reject",
+        "ESCALATE": "Pass on"
+      },
+      "cancel": "Cancel",
+      "to": {
+        "FACULTY_SECRETARY": "faculty secretary",
+        "DEAN": "dean",
+        "RECTOR_SECRETARY": "rector's secretary",
+        "RECTOR": "rector",
+        "higher": "next level"
+      },
+      "template": "Response template",
+      "replace": "Replace your edited comment?",
+      "replaceYes": "Replace",
+      "replaceNo": "Keep my text",
+      "sending": "Sending the decision",
+      "close": "Close",
+      "errors": {
+        "claimed": "{{name}} has already taken this award for review",
+        "stale": "The data changed — the page was refreshed, check it and confirm again",
+        "closed": "A decision has already been made",
+        "gone": "The review of this award is no longer available to you",
+        "network": "Could not send, please try again"
+      }
+    },
+    "batch": {
+      "selectAll": "Select all on this page",
+      "selectRow": "Select “{{title}}”",
+      "selected": "Selected: {{count}}",
+      "approve": "Approve ({{count}})",
+      "return": "Return",
+      "reject": "Reject",
+      "escalateTo": "Pass to the {{level}}",
+      "escalate": "Pass to the next level",
+      "clear": "Clear selection",
+      "actions": "Actions on the selected awards",
+      "count": "Awards: {{count}}",
+      "done": "Processed: {{done}} of {{total}}",
+      "failed": "Not processed:",
+      "dismiss": "Close",
+      "reasons": {
+        "request-claimed": "Claimed by another reviewer",
+        "request-stale": "The data changed; open the award again",
+        "request-closed": "The review has already finished",
+        "no-higher-level": "There is no higher review level",
+        "escalation-not-upward": "Your role covers the next level",
+        "validation-failed": "No documents for the “documents verified” mark",
+        "not-found": "The award was not found or is no longer yours to review",
+        "try-again": "A temporary error; try again",
+        "unknown": "The action failed"
+      }
+    }
+  },
+  "authLayout": {
+    "claim": "University awards: submission, review and reports in one place."
+  },
+  "register": {
+    "title": "Registration",
+    "hint": "Registration is open to university addresses @chnu.edu.ua only. After registering, confirm the address with the link from the email.",
+    "email": "Email address",
+    "password": "Password (10 characters or more)",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "department": "Department",
+    "submit": "Register",
+    "haveAccount": "Already have an account?",
+    "signIn": "Sign in",
+    "privacyNotice": "I have read the",
+    "privacyNoticeLink": "privacy notice",
+    "terms": "By using the system you accept the",
+    "termsLink": "terms of use",
+    "validation": {
+      "required": "Required",
+      "institutionalEmail": "An address in the chnu.edu.ua domain is required",
+      "password": "The password must be at least 10 characters and at most 72 bytes",
+      "name": "Letters, apostrophe, hyphen and space only",
+      "tooLong": "At most 100 characters",
+      "privacyNotice": "Confirm that you have read the privacy notice"
+    },
+    "errors": {
+      "institutional-email-required": "Registration is possible only with a @chnu.edu.ua address. Ask your faculty secretary if you do not have one.",
+      "email-taken": "An account with this address already exists.",
+      "organisation-invalid": "Choose an active department.",
+      "password-too-short": "The password is too short.",
+      "password-too-long": "The password is too long.",
+      "password-too-common": "This password is too common; choose another one.",
+      "network": "The server is unreachable. Try again later.",
+      "notice-outdated": "The privacy notice changed while you filled in the form. Read the new version and tick the box again.",
+      "notice-unavailable": "The privacy notice could not be loaded. Try again in a moment.",
+      "unknown": "Registration failed. Try again later."
+    }
+  },
+  "pending": {
+    "title": "Check your inbox",
+    "text": "We sent an email with a link to confirm your address. The link is valid for 24 hours.",
+    "hint": "No email? Check the spam folder or send it again.",
+    "resend": "Send again",
+    "signIn": "Sign in",
+    "resent": "The email was sent again.",
+    "errors": {
+      "too-many-requests": "An email was sent recently. Try again in a minute.",
+      "network": "The server is unreachable. Try again later.",
+      "unknown": "The email could not be sent."
+    }
+  },
+  "verify": {
+    "title": "Address confirmation",
+    "success": "The address {{email}} is confirmed. You can sign in now.",
+    "successWaiting": "The address {{email}} is confirmed. Awards already waiting for you: {{count}}.",
+    "signIn": "Sign in",
+    "invalid": "The link is invalid, expired or already used.",
+    "resendHint": "Request a new link by entering your address.",
+    "resend": "Send a new link",
+    "failed": "The address could not be confirmed. Try again later.",
+    "passwordHint": "Enter the password you chose when registering to confirm that this account is yours.",
+    "password": "Registration password",
+    "submit": "Confirm address",
+    "errors": {
+      "password-mismatch": "The password does not match the one chosen at registration."
+    }
+  },
+  "forgot": {
+    "title": "Password reset",
+    "hint": "Enter your address. If an account exists, we will send a link to set a new password.",
+    "submit": "Send link",
+    "sent": "If {{email}} is registered, an email with a reset link is on its way. The link is valid for 1 hour.",
+    "sentHint": "No email? Check the spam folder or try again in a minute.",
+    "signIn": "Back to sign in",
+    "errors": {
+      "network": "The server is unreachable. Try again later.",
+      "too-many-requests": "Too many requests. Try again in a minute.",
+      "unknown": "The request failed. Try again later."
+    }
+  },
+  "reset": {
+    "title": "New password",
+    "hint": "Choose a new password of at least 10 characters. Every device signed in with the old one will be signed out.",
+    "password": "New password",
+    "submit": "Set password",
+    "done": "The password is changed. Sign in with the new one.",
+    "signIn": "Sign in",
+    "invalid": "The link is invalid, expired or already used.",
+    "requestAgain": "Request a new link",
+    "errors": {
+      "password-too-short": "The password is too short.",
+      "password-too-long": "The password is too long.",
+      "password-too-common": "This password is too common; choose another one.",
+      "password-same-as-current": "The new password must differ from the current one.",
+      "account-not-active": "The account is not active. Contact the administrator.",
+      "network": "The server is unreachable. Try again later.",
+      "unknown": "The password could not be changed. Try again later."
+    }
+  },
+  "notMe": {
+    "title": "Was this you?",
+    "text": "If you did not sign in from the device or change the sign-in address described in the email, confirm below. After an address change the account moves back to the address that received the email. Every session will be ended, the known devices forgotten and the current password disabled; a link to set a new password will be emailed to you.",
+    "confirm": "This was not me",
+    "done": "Access has been revoked. Check your inbox for the link to set a new password; it is valid for 1 hour.",
+    "invalid": "The link is invalid, expired or already used. If you still suspect misuse, reset your password.",
+    "resetPassword": "Reset password",
+    "errors": {
+      "too-many-requests": "Too many requests from this address. Try again in a minute.",
+      "network": "The server is unreachable. Try again later.",
+      "unknown": "The request could not be completed. Try again later."
+    }
+  },
+  "privacy": {
+    "notice": {
+      "title": "Privacy notice",
+      "version": "Version",
+      "acknowledgeHint": "Read version {{version}} of the privacy notice and confirm it to continue.",
+      "acknowledge": "I have read the notice",
+      "signOut": "Sign out",
+      "loadFailed": "The notice could not be loaded. Try again later.",
+      "errors": {
+        "outdated": "The notice changed again. Read the new version and confirm it.",
+        "network": "The server is unreachable. Try again later.",
+        "unknown": "The confirmation failed. Try again later."
+      }
+    },
+    "centre": {
+      "menu": "Privacy and my data",
+      "title": "Privacy and my data",
+      "loadFailed": "This part could not be loaded. Try again later.",
+      "notice": {
+        "title": "Privacy notice",
+        "acknowledged": "You confirmed version {{version}}",
+        "notAcknowledged": "You have not confirmed the notice yet."
+      },
+      "consents": {
+        "ANALYTICS": "Name me in rankings and comparisons of unit reports",
+        "ANALYTICS_purpose": "Without this consent you are counted only in totals. Withdrawing it does not affect earlier reports.",
+        "failed": "The choice could not be saved. Try again later.",
+        "history": "History of consents",
+        "noHistory": "No records yet.",
+        "granted": "given",
+        "withdrawn": "withdrawn",
+        "version": "notice {{version}}",
+        "types": {
+          "DATA_PROCESSING": "Processing of personal data",
+          "ANALYTICS": "Rankings and comparisons"
+        }
+      },
+      "choices": {
+        "awards": {
+          "PRIVATE": "Approved awards seen only by you and reviewers",
+          "UNIVERSITY": "Approved awards shown to colleagues",
+          "PUBLIC": "Approved awards shown publicly"
+        },
+        "documentsTitle": "Documents shown to colleagues",
+        "notificationsLink": "Notification settings"
+      },
+      "data": {
+        "title": "Your data",
+        "downloading": "Preparing the file…",
+        "downloaded": "File downloaded",
+        "lastExport": "Last download: {{date}}",
+        "tooMany": "Too many requests. Try again later.",
+        "failed": "The file could not be prepared. Try again later.",
+        "hint": "A JSON file with everything the system keeps about you: profile, roles, delegations, awards including drafts, document details, consents, devices and the log of your actions with IP addresses. You will get an email about the download."
+      },
+      "status": {
+        "ok": "All fine: the notice is acknowledged and no deletion is requested.",
+        "notice": "Needs your attention: acknowledge the current version of the privacy notice.",
+        "erasure": "Your account will be deleted on {{date}}, days left: {{days}}.",
+        "cancel": "Cancel the request"
+      },
+      "tiles": {
+        "read": "Read",
+        "change": "Change",
+        "download": "Download",
+        "visibility": "Award visibility",
+        "email": "E-mail notifications",
+        "emailAllOn": "E-mails arrive for every event.",
+        "emailOff": "Switched off for event types: {{count}}",
+        "mine": "Mine",
+        "fullLog": "Full log →",
+        "emptyFilter": "No entries of this kind yet."
+      }
+    },
+    "activity": {
+      "title": "Your activity",
+      "empty": "Nothing recorded yet.",
+      "failed": "The activity could not be loaded.",
+      "aboutMe": "About me",
+      "columns": {
+        "who": "Who"
+      },
+      "actions": {
+        "LOGIN_SUCCESS": "Signed in",
+        "LOGIN_FAILED": "Failed sign-in",
+        "ACCOUNT_LOCKED": "Account locked",
+        "LOGOUT": "Signed out",
+        "PASSWORD_RESET_REQUESTED": "Password reset requested",
+        "PASSWORD_RESET": "Password reset",
+        "EMAIL_VERIFIED": "Address confirmed",
+        "SECURITY_REVOKE": "Sessions ended after a security report",
+        "REGISTRATION_REPLACED": "Registration started again",
+        "ACCESS_DENIED": "Access denied",
+        "ROLE_ASSIGNED": "Role assigned",
+        "ROLE_REVOKED": "Role revoked",
+        "DELEGATION_CREATED": "Delegation created",
+        "DELEGATION_REVOKED": "Delegation revoked",
+        "AWARD_SUBMITTED": "Award submitted",
+        "REVIEW_CLAIMED": "Review taken",
+        "REVIEW_RELEASED": "Review released",
+        "REVIEW_HANDED_OVER": "Review handed over",
+        "REVIEW_TAKEN_OVER": "Review taken over",
+        "REVIEW_DECISION": "Review decision",
+        "AWARD_WITHDRAWN": "Award withdrawn",
+        "REVIEW_BATCH": "Batch review",
+        "REVIEW_PERIOD_CHANGED": "Review period changed",
+        "REVIEW_OVERDUE_NOTICED": "Overdue review reported",
+        "AWARD_CORRECTED": "Award corrected",
+        "AWARD_VISIBILITY_CHANGED": "Award visibility changed",
+        "PROFILE_UPDATED": "Profile changed",
+        "EMAIL_CHANGE_REQUESTED": "Address change requested",
+        "EMAIL_CHANGED": "Address changed",
+        "DATA_EXPORT": "Data downloaded",
+        "AUDIT_EXPORT": "Audit log exported",
+        "DOCUMENT_DOWNLOAD": "Document downloaded",
+        "DOCUMENT_REJECTED": "Document rejected",
+        "DOCUMENT_SHARING_CHANGED": "Document sharing changed",
+        "NOTIFICATION_PREFERENCES_CHANGED": "Notification settings changed",
+        "PRIVACY_NOTICE_ACKNOWLEDGED": "Privacy notice confirmed",
+        "CONSENT_GRANTED": "Consent given",
+        "CONSENT_WITHDRAWN": "Consent withdrawn",
+        "LEGAL_HOLD_PLACED": "Legal hold placed",
+        "LEGAL_HOLD_LIFTED": "Legal hold lifted",
+        "ERASURE_REQUESTED": "Account erasure requested",
+        "ERASURE_CANCELLED": "Account erasure cancelled",
+        "ERASURE_POSTPONED": "Account erasure postponed",
+        "UNIT_REMINDED": "Department reminded"
+      }
+    },
+    "erasure": {
+      "title": "Delete my account",
+      "intro": "After a 30-day grace period the system erases your account:",
+      "erased": "Erased: your profile, sign-in data, drafts and pending awards, documents, notifications and settings.",
+      "keptAwards": "Kept: approved awards, under a pseudonym and visible only inside the university records.",
+      "keptAudit": "Kept: audit records, with your name, address and IP addresses removed.",
+      "keptConsents": "Kept: consent records, for seven years after the last change, as the law requires.",
+      "grace": "Until the erasure date you can sign in as usual and cancel the request here.",
+      "open": "Delete my account",
+      "scheduled": "Your account will be erased on {{date}}.",
+      "postponed": "The erasure is postponed because of a legal obligation. It continues once the obligation ends.",
+      "cancelHint": "You can still change your mind: cancelling keeps the account as it is.",
+      "cancel": "Cancel the erasure",
+      "requested": "The request is saved. We sent you an email with the date.",
+      "cancelled": "The erasure is cancelled. Your account stays.",
+      "banner": "Your account will be erased on {{date}}.",
+      "bannerLink": "Cancel in the privacy centre",
+      "dialog": {
+        "title": "Delete my account",
+        "text": "Enter your password to confirm. The account is erased after 30 days unless you cancel the request.",
+        "password": "Current password",
+        "passwordRequired": "Enter your password",
+        "understood": "I understand that my account and data will be erased after the grace period",
+        "understoodRequired": "Tick the box to confirm",
+        "confirm": "Request erasure",
+        "cancel": "Back",
+        "sending": "Sending the request"
+      },
+      "problems": {
+        "password-mismatch": "Wrong password",
+        "account-locked": "The account is locked after failed sign-ins. Try again later.",
+        "erasure-pending": "An erasure is already scheduled. Close the dialog to see its date.",
+        "legal-hold": "Your account cannot be deleted now because of a legal obligation. Contact the data protection officer for details.",
+        "last-administrator": "You are the only system administrator. Appoint another administrator before deleting your account.",
+        "network": "The server is unreachable. Try again later.",
+        "unknown": "The request failed. Try again later.",
+        "erasure-not-pending": "No erasure is pending any more.",
+        "cancelFailed": "The erasure could not be cancelled. Try again later."
+      }
+    }
+  },
+  "terms": {
+    "title": "Terms of use",
+    "loadFailed": "The terms of use could not be loaded. Try again later."
+  },
+  "profile": {
+    "menu": "My profile",
+    "title": "My profile",
+    "email": "Sign-in address",
+    "department": "Department",
+    "faculty": "Faculty",
+    "membership": "Membership",
+    "membershipConfirmed": "Membership confirmed",
+    "membershipPending": "Awaiting confirmation by the secretary",
+    "created": "Account created",
+    "lastLogin": "Last sign-in",
+    "never": "Not signed in yet",
+    "roles": "Roles",
+    "noRoles": "No roles yet",
+    "validity": "from {{from}}",
+    "delegations": "Received delegations",
+    "delegatedBy": "from {{name}}",
+    "namesTitle": "First and last name",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "save": "Save",
+    "saved": "Saved",
+    "addressTitle": "Sign-in address",
+    "addressHint": "A new address has to be confirmed from its mailbox. Confirming ends every session.",
+    "changeAddress": "Change address",
+    "validation": {
+      "required": "The field cannot be empty",
+      "too-long": "At most 100 characters",
+      "invalid": "Letters, apostrophe, hyphen and space only, starting with a letter",
+      "not-allowed": "This field cannot be changed here"
+    },
+    "errors": {
+      "load": "The profile could not be loaded. Try again later.",
+      "network": "The server is unavailable. Try again later.",
+      "failed": "The changes could not be saved. Try again later."
+    },
+    "sections": {
+      "label": "Profile sections",
+      "names": "First and last name",
+      "address": "Sign-in address",
+      "notifications": "Notifications",
+      "privacy": "Privacy and my data",
+      "roles": "Roles",
+      "notificationsSummary": "{{count}} events · e-mail and in app",
+      "privacySummary": "consents, export, deletion",
+      "savedAtOnce": "changes are saved at once",
+      "back": "Back to sections"
+    },
+    "privacy": {
+      "consents": "Consents",
+      "consentsHint": "analytics, consent history",
+      "export": "Export my data",
+      "exportHint": "an archive of your data",
+      "erasure": "Delete my account",
+      "erasureHint": "erasure request"
+    }
+  },
+  "emailChange": {
+    "title": "Change address",
+    "newEmail": "New address",
+    "password": "Current password",
+    "hint": "The confirmation link goes to the new address",
+    "submit": "Send link",
+    "cancel": "Cancel",
+    "sent": "A link was sent to {{email}}. Open it within 1 hour.",
+    "validation": {
+      "email": "Enter a valid address",
+      "password": "Enter your current password"
+    },
+    "errors": {
+      "password-mismatch": "Wrong password",
+      "account-locked": "The account is locked after failed sign-ins. Try again later.",
+      "institutional-email-required": "An address in the chnu.edu.ua domain is required",
+      "email-taken": "This address is already in use",
+      "unchanged": "This is your current address",
+      "too-many-requests": "Too many requests. Try again later.",
+      "network": "The server is unavailable. Try again later.",
+      "failed": "The link could not be sent. Try again later."
+    },
+    "confirmTitle": "Sign-in address change",
+    "changed": "The address was changed. Sign in with {{email}}.",
+    "signIn": "Sign in",
+    "taken": "This address already belongs to another account. The address was not changed.",
+    "invalid": "The link is invalid or expired.",
+    "failed": "The address could not be changed. Try again later."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "bell": "Notifications",
+    "bellUnread": "Notifications, {{count}} unread",
+    "menuTitle": "Notifications",
+    "empty": "No notifications yet",
+    "emptyUnread": "No unread notifications",
+    "markAllRead": "Mark all as read",
+    "seeAll": "See all notifications",
+    "unreadOnly": "Unread only",
+    "unread": "Unread",
+    "loadFailed": "Notifications could not be loaded. Please try again.",
+    "retry": "Try again",
+    "actionFailed": "The notification could not be updated. Please try again.",
+    "until": ", until {{date}}",
+    "lastDay": ", last day {{date}}",
+    "oldest": ", oldest deadline {{date}}",
+    "colleague": "Award of {{person}}: {{text}}",
+    "inbox": {
+      "filters": "Notification filter",
+      "all": "All · {{count}}",
+      "unread": "Unread · {{count}}",
+      "groups": {
+        "awards": "Awards",
+        "review": "Review",
+        "roles": "Roles"
+      },
+      "list": "Inbox",
+      "newestFirst": "Newest first",
+      "emptyGroup": "No notifications in this group",
+      "pane": "Notification",
+      "hint": "Choose a notification in the list to read it here.",
+      "notFound": "Notification not found: it is not on this page of the list or it belongs to someone else.",
+      "read": "Read",
+      "unreadState": "Unread",
+      "markUnread": "Mark as unread",
+      "back": "Back to notifications",
+      "targets": {
+        "award": "Open the award",
+        "reviews": "Go to the review queue",
+        "profile": "Go to the profile",
+        "delegations": "Go to delegations",
+        "awards": "Go to my awards"
+      }
+    },
+    "types": {
+      "AWARD_APPROVED": "«{{title}}» approved by {{reviewer}} at the {{level}} level",
+      "AWARD_REJECTED": "«{{title}}» rejected by {{reviewer}} at the {{level}} level",
+      "AWARD_RETURNED": "«{{title}}» returned for changes by {{reviewer}} at the {{level}} level",
+      "AWARD_ESCALATED": "«{{title}}» passed on to the {{level}} level by {{reviewer}}",
+      "AWARD_CORRECTED": "«{{title}}» corrected by {{reviewer}}: {{fields}}",
+      "REVIEW_OVERDUE": "Requests past their review period: {{count}}{{oldest}}",
+      "REVIEW_TAKEN_OVER": "The review of «{{title}}» was taken over by {{reviewer}}",
+      "ROLE_ASSIGNED": "You have been given the role “{{role}}”: {{organization}}{{until}}",
+      "ROLE_REVOKED": "Your role “{{role}}” has been revoked: {{organization}}{{lastDay}}",
+      "DELEGATION_CREATED": "{{otherParty}} has delegated the role “{{role}}” to you: {{organization}}{{until}}",
+      "DELEGATION_REVOKED": "The delegation of the role “{{role}}” with {{otherParty}} has been revoked: {{organization}}",
+      "AWARDS_REMINDER": "Reminder from {{sender}}: {{unit}} has no award in {{year}}",
+      "unknown": "New notification"
+    },
+    "preferences": {
+      "title": "Notifications",
+      "intro": "Choose how you hear about each event: by e-mail, in the notification centre, or both.",
+      "type": "Event",
+      "email": "E-mail",
+      "inApp": "In app",
+      "groups": {
+        "myAwards": "My awards",
+        "reviewing": "Reviewing",
+        "roles": "Roles and delegations"
+      },
+      "types": {
+        "AWARD_APPROVED": "Award approved",
+        "AWARD_REJECTED": "Award rejected",
+        "AWARD_RETURNED": "Award returned for changes",
+        "AWARD_ESCALATED": "Award passed to the next level",
+        "AWARD_CORRECTED": "Award corrected by a reviewer",
+        "AWARDS_REMINDER": "Awards reminder",
+        "REVIEW_OVERDUE": "Daily list of overdue reviews",
+        "REVIEW_TAKEN_OVER": "Review taken over",
+        "ROLE_ASSIGNED": "Role assigned",
+        "ROLE_REVOKED": "Role revoked",
+        "DELEGATION_CREATED": "Role delegated to me",
+        "DELEGATION_REVOKED": "Delegation revoked"
+      },
+      "lastChannel": "Each event keeps at least one channel, so the last switch that is on cannot be turned off.",
+      "security": "Security e-mails (account verification, password reset, address change, new device, account lock, data export) are always sent.",
+      "saved": "Notification settings saved",
+      "errors": {
+        "load": "The notification settings could not be loaded.",
+        "network": "The server is unavailable. Try again later.",
+        "failed": "The notification settings could not be saved. Try again later."
+      }
+    }
+  },
+  "analytics": {
+    "title": "My dashboard",
+    "failed": "The dashboard could not be loaded.",
+    "retry": "Try again",
+    "period": {
+      "label": "Period",
+      "from": "From",
+      "to": "To",
+      "any": "First award",
+      "now": "This year",
+      "allYears": "All years",
+      "thisYear": "This year",
+      "wholePeriod": "Whole period"
+    },
+    "widgets": {
+      "KPI": "Summary",
+      "TREND": "Awards by year",
+      "LEVEL_STAIRS": "By level",
+      "BY_CATEGORY": "By category",
+      "RANK": "Place in the department",
+      "TIMELINE": "Timeline",
+      "IN_PROGRESS": "In progress",
+      "VISIBILITY": "Who sees my awards",
+      "FACT": "Did you know",
+      "LATEST": "Latest awards"
+    },
+    "thisYear": "Awards this year",
+    "streak": "Awards every year since {{since}}",
+    "inProgress": {
+      "pending": "Under review: {{count}}",
+      "drafts": "Drafts: {{count}}",
+      "empty": "No awards under review",
+      "create": "New award",
+      "failed": "Your submissions could not be loaded."
+    },
+    "visibility": {
+      "PUBLIC": "Public",
+      "UNIVERSITY": "Colleagues only",
+      "PRIVATE": "Only me and the reviewers",
+      "withDocument": "With a document: {{count}}"
+    },
+    "context": {
+      "approved": "Approved: {{count}}",
+      "pending": "Under review now: {{count}}"
+    },
+    "cv": {
+      "menu": "Export for a CV",
+      "pdf": "PDF",
+      "text": "Plain text",
+      "failed": "The list could not be exported."
+    },
+    "summary": {
+      "approved": "Approved awards",
+      "verified": "With documents verified",
+      "highestLevel": "Highest level",
+      "firstAward": "First award",
+      "latestAward": "Latest award"
+    },
+    "bands": {
+      "UNIT": "Unit levels",
+      "UNIVERSITY": "University",
+      "REGIONAL": "Regional",
+      "NATIONAL": "National",
+      "INTERNATIONAL": "International"
+    },
+    "trend": {
+      "title": "Approved awards by year",
+      "cards": "Years compared",
+      "now": "this year",
+      "end": "last year of the period",
+      "previousNow": "last year",
+      "previous": "the year before",
+      "average": "Average",
+      "averageHint": "{{from}}–{{to}}, per year",
+      "noEarlier": "no earlier years yet",
+      "bars": "Awards by year, newest first"
+    },
+    "categories": {
+      "title": "Approved awards by category",
+      "cards": "Three most frequent categories",
+      "rank": "No. {{rank}} · {{level}}",
+      "share": "{{share}}% of all awards",
+      "list": "Other categories, most frequent first"
+    },
+    "levels": {
+      "title": "Approved awards by level",
+      "description": "Bar chart of approved awards by level: {{list}}."
+    },
+    "timeline": {
+      "road": "My journey from the first award to today",
+      "roadNewest": "My newest awards up to today",
+      "none": "No approved awards yet.",
+      "start": "{{year}} · start",
+      "startShown": "from {{year}} · newest",
+      "today": "today",
+      "filter": "Award level",
+      "all": "All",
+      "national": "National and up",
+      "count": {
+        "one": "{{count}} award",
+        "few": "{{count}} awards",
+        "many": "{{count}} awards",
+        "other": "{{count}} awards"
+      },
+      "verified": "verified",
+      "noneNational": "No national or international awards yet.",
+      "allAwards": "All awards →",
+      "truncated": "Only the newest {{count}} awards are shown."
+    },
+    "table": {
+      "year": "Year",
+      "total": "Total",
+      "count": "Awards",
+      "rank": "Rank",
+      "share": "Share",
+      "category": "Category",
+      "level": "Level",
+      "date": "Date",
+      "award": "Award",
+      "organization": "Awarded by"
+    },
+    "rank": {
+      "position": "{{position}} of {{groupSize}} in {{department}}",
+      "sharedWith": "Shared with colleagues who have the same number of awards: {{count}}",
+      "basis": "By the number of approved personal awards in the period, among all active members of the department.",
+      "consentRequired": "Your place in the department is shown only with the consent to rankings and comparisons. You can give it in the privacy centre.",
+      "openPrivacy": "Open the privacy centre",
+      "groupTooSmall": "{{department}} has too few members for a ranking that keeps colleagues anonymous.",
+      "noDepartment": "Your unit is not a department, so there is no place to show."
+    },
+    "empty": {
+      "periodTitle": "No approved awards in this period",
+      "firstTitle": "No approved awards yet",
+      "stepEnter": "Enter the award: title, category, awarding organisation and date.",
+      "stepDocuments": "Attach the supporting documents.",
+      "stepSubmit": "Submit it for review; once approved, it appears here.",
+      "pending": "Awards in review: {{count}}.",
+      "drafts": "Drafts: {{count}}.",
+      "openAwards": "Open my awards",
+      "newAward": "Enter an award"
+    },
+    "report": {
+      "open": "Summary",
+      "title": "Achievement summary",
+      "period": "Period",
+      "awards": "Counted awards",
+      "empty": "No approved awards in this period.",
+      "produced": "Produced",
+      "print": "Print",
+      "back": "Back to the dashboard",
+      "copyLink": "Copy link to my public achievements",
+      "copied": "The link to your public achievements is copied.",
+      "publicHint": "Only awards shared publicly appear on the public page; none of yours is shared publicly yet.",
+      "invalidPeriod": "The period is not valid.",
+      "publicCheckFailed": "It could not be checked whether your awards are public. Reload the page to try again."
+    },
+    "latest": {
+      "all": "All {{count}}",
+      "empty": "No approved awards in this period yet."
+    }
+  },
+  "unitAnalytics": {
+    "title": "Unit analytics",
+    "unit": "Faculty or department",
+    "failed": "The unit analytics could not be loaded.",
+    "unitsFailed": "The list of faculties and departments could not be loaded.",
+    "noUnits": "No faculty or department is open to you for analytics.",
+    "notFound": "This unit is not available.",
+    "notFoundTitle": "Unit not found",
+    "back": "Back to unit analytics",
+    "comparedWith": "{{period}}, compared with {{previous}}.",
+    "partialYear": "{{year}} is not over yet, so its figures are still growing.",
+    "noAwards": "No approved awards in this period or the previous one.",
+    "other": "Other",
+    "export": {
+      "menu": "Export",
+      "pdf": "PDF report",
+      "xlsx": "Excel workbook",
+      "csv": "CSV file"
+    },
+    "exportFailed": "The report could not be exported.",
+    "delta": {
+      "new": "new",
+      "previous": "Previous period: {{count}}",
+      "against": "vs {{previous}}"
+    },
+    "tiles": {
+      "approved": "Approved awards",
+      "awardedPeople": "Awarded people",
+      "unitAwards": "Unit awards",
+      "verified": "Verified",
+      "perHundred": "Awards per 100 members",
+      "members": "Members: {{count}}"
+    },
+    "sections": {
+      "totals": "Summary",
+      "trend": "Awards by year",
+      "comparison": "Department comparison",
+      "byCategory": "By category",
+      "byLevel": "By level",
+      "bySource": "By awarding organisation",
+      "topPerformers": "Top performers",
+      "highlights": "Highlights",
+      "units": "Units"
+    },
+    "trend": {
+      "personal": "Personal awards",
+      "unitAwards": "Unit awards"
+    },
+    "comparison": {
+      "unit": "Unit",
+      "members": "Members",
+      "approved": "Approved",
+      "change": "Change",
+      "awardedPeople": "Awarded people",
+      "perHundred": "Per 100 members",
+      "verified": "Verified",
+      "facultyLevel": "Faculty level",
+      "inactive": "inactive",
+      "perHundredShort": "Per 100",
+      "awardsGroup": "Awards",
+      "peopleGroup": "People",
+      "approvedShort": "Total",
+      "verifiedShort": "Verified",
+      "awardedShort": "Awarded",
+      "perHundredGroup": "Per 100 staff",
+      "facultyTotal": "Whole faculty"
+    },
+    "bars": {
+      "current": "This period",
+      "previous": "Previous period",
+      "key": "Top bar: the previous period; bottom bar: this one."
+    },
+    "sources": {
+      "organisation": "Awarding organisation",
+      "others": "All other organisations",
+      "description": "Approved awards by awarding organisation: {{count}} shown, the most from «{{top}}» with {{topCount}}."
+    },
+    "top": {
+      "highest": "highest level",
+      "note": "Only people who agreed to be named in analytics appear here.",
+      "empty": "Nobody in this unit has agreed to be named yet.",
+      "groupTooSmall": "The unit has fewer members than the minimum group for naming people, so nobody is listed.",
+      "awards": "Awards",
+      "latest": "Latest awards",
+      "periodCount": "Awards in the period: {{count}}",
+      "portfolio": "Portfolio →"
+    },
+    "highlights": {
+      "strengths": "Strengths",
+      "gaps": "Gaps",
+      "none": "Nothing stands out in this period.",
+      "GROWTH": "{{unit}}: more awards than in the previous period",
+      "DECLINE": "{{unit}}: fewer awards than in the previous period",
+      "NO_AWARDS": "{{unit}}: no awards in this period",
+      "NO_AWARDS_EVER": "{{unit}}: no awards in this period or the previous one",
+      "BELOW_AVERAGE": "{{unit}}: under half of the faculty's average per member",
+      "was": "was {{count}}",
+      "showAll": "All {{count}}",
+      "showLess": "Show less"
+    },
+    "wholeUniversity": "Whole university",
+    "approved": "approved awards"
+  },
+  "universityAnalytics": {
+    "title": "University analytics",
+    "failed": "The university analytics could not be loaded.",
+    "boardReport": "Board report",
+    "boardReportFailed": "The report could not be exported.",
+    "sections": {
+      "trend": "Awards by year and projection",
+      "comparison": "Faculty and college comparison",
+      "faculties": "Faculties"
+    },
+    "comparison": {
+      "universityLevel": "University level",
+      "universityTotal": "Whole university"
+    },
+    "projection": {
+      "approved": "Approved awards",
+      "projected": "Projected",
+      "projectedValue": "about {{count}} (projected)",
+      "sentence": "Projected for {{year}}: about {{estimate}} awards, based on {{from}}–{{to}}.",
+      "tooFewYears": "Too few complete years for a projection.",
+      "inProgress": "year in progress"
+    },
+    "highlights": {
+      "GROWTH": "{{unit}}: more awards than in the previous period",
+      "DECLINE": "{{unit}}: fewer awards than in the previous period",
+      "NO_AWARDS": "{{unit}}: no awards in this period",
+      "NO_AWARDS_EVER": "{{unit}}: no awards in this period or the previous one",
+      "BELOW_AVERAGE": "{{unit}}: under half of the university's average per member",
+      "ABOVE_AVERAGE": "{{unit}}: at least one and a half times the university's average per member"
+    },
+    "noFaculties": "No faculty has approved awards in this period."
+  },
+  "hallOfFame": {
+    "title": "Hall of Fame",
+    "approvedIn": "Approved in {{year}}",
+    "topFaculties": "Leading faculties",
+    "topPeople": "Faculty leaders",
+    "universityAnalytics": "University analytics",
+    "facultyAnalytics": "Faculty analytics",
+    "noFaculty": "There is no faculty you are dean of.",
+    "failed": "The Hall of Fame could not be loaded.",
+    "retry": "Try again",
+    "widgets": {
+      "KPI": "Awards this year",
+      "TREND": "Awards by year",
+      "RACE": "This year against last year",
+      "RECORDS": "Records",
+      "FACT": "Did you know",
+      "TOP": "Leaders",
+      "LEVEL_MAP": "Award levels"
+    },
+    "hero": {
+      "ring": "{{months}} of {{total}} months passed",
+      "months": "months"
+    }
+  },
+  "commandCentre": {
+    "title": "Command centre",
+    "failed": "The Command centre could not be loaded.",
+    "retry": "Try again",
+    "topPeople": "Faculty leaders",
+    "topFaculties": "Leading faculties",
+    "widgets": {
+      "TODAY": "Today",
+      "QUEUE": "Review queue",
+      "UNITS": "Units",
+      "TOP": "Leaders"
+    },
+    "today": {
+      "waiting": "waiting for your decision",
+      "decided": "decisions today"
+    },
+    "queue": {
+      "approve": "Approve",
+      "return": "Return",
+      "all": "Whole queue",
+      "empty": "The queue is empty."
+    },
+    "units": {
+      "departments": "Departments that need attention",
+      "faculties": "Faculties that need attention",
+      "none": "No award in {{year}}",
+      "decline": "{{current}} in {{year}} against {{previous}} in {{lastYear}}",
+      "earlier": "{{from}}–{{to}}: {{count}}",
+      "remind": "Remind the head",
+      "reminded": "Reminded {{date}}",
+      "analytics": "Department analytics"
+    },
+    "reminder": {
+      "title": "Remind the head",
+      "text": "{{unit}}: no award in {{year}}. Who should get the reminder?",
+      "recipient": "Colleague of the department",
+      "required": "Choose a colleague",
+      "nobody": "The department has no active colleagues.",
+      "send": "Send",
+      "cancel": "Cancel",
+      "problems": {
+        "has-awards": "The department already has an award this year; no reminder is needed.",
+        "invalid-recipient": "This colleague is not an active member of the department.",
+        "denied": "You may no longer remind this department.",
+        "network": "The server cannot be reached. Try again.",
+        "unknown": "The reminder could not be sent. Try again."
+      }
+    }
+  },
+  "dashboardLayout": {
+    "customise": "Customise",
+    "hint": "Drag the widgets or use the arrows to change the order; the eye hides a widget.",
+    "reset": "Reset",
+    "done": "Done",
+    "listLabel": "Dashboard widgets",
+    "moveUp": "Move “{{widget}}” up",
+    "moveDown": "Move “{{widget}}” down",
+    "hide": "Hide “{{widget}}”",
+    "hiddenLabel": "hidden",
+    "moved": "“{{widget}}”: position {{position}} of {{total}}",
+    "hiddenNow": "“{{widget}}” hidden",
+    "shownNow": "“{{widget}}” shown",
+    "resetDone": "Default order restored, all widgets shown",
+    "saved": "Widget layout saved",
+    "allHidden": "All widgets are hidden. Press “Customise” to bring back the ones you need.",
+    "loadFailed": "The dashboard settings could not be loaded.",
+    "saveFailed": "The dashboard settings could not be saved. Please try again.",
+    "retry": "Try again",
+    "sideList": "Side column widgets",
+    "mainList": "Main column widgets"
+  },
+  "charts": {
+    "showTable": "Show as table",
+    "view": "View",
+    "chart": "Chart",
+    "cards": "Cards",
+    "table": "Table",
+    "ranking": "Ranking"
+  },
+  "widgets": {
+    "data": "Data",
+    "empty": "No data for this period yet.",
+    "year": "Year",
+    "month": "Month",
+    "level": "Level",
+    "awards": "Awards",
+    "note": "Note",
+    "table": {
+      "total": "Total",
+      "scrollHint": "{{shown}} of {{total}} years — scroll →",
+      "scrollLabel": "{{caption}}: table, scrolls sideways"
+    },
+    "kpi": {
+      "up": "up {{percent}}",
+      "down": "down {{percent}}",
+      "same": "no change",
+      "monthsSoFar": "{{count}} in {{months}} {{year}}",
+      "samePeriod": "{{count}} in the same months of {{year}}"
+    },
+    "trend": {
+      "title": "Awards by year",
+      "peak": "Peak",
+      "partial": "Year to date",
+      "running": "year in progress",
+      "peakYear": "{{year}} is the record year: {{count}}.",
+      "peakRunning": "{{year}} is the record: {{count}}, and the year is not over."
+    },
+    "race": {
+      "title": "Running total {{year}} against {{previous}}",
+      "overtookIn": "{{year}} overtook {{previous}} in {{month}}",
+      "ahead": "{{year}} is {{gap}} ahead of {{previous}}",
+      "behind": "{{year}} is {{gap}} behind {{previous}}",
+      "level": "{{year}} and {{previous}} are level"
+    },
+    "focus": {
+      "empty": "Nothing needs your attention."
+    },
+    "stairs": {
+      "list": "Awards by level, from the unit levels up to the international one"
+    },
+    "map": {
+      "title": "Awards by level",
+      "description": "Level map: each area is as large as its number of awards; the largest is “{{level}}” ({{count}})."
+    },
+    "records": {
+      "peakYear": "Record year",
+      "leader": "Most awards",
+      "highestLevel": "Highest level",
+      "count": "{{count}} awards",
+      "period": "in {{period}}"
+    }
+  },
+  "facts": {
+    "records": {
+      "peakYear": "Record year: {{year}} with {{count}} awards",
+      "leader": "Most awards: {{name}} ({{count}})",
+      "highestLevel": "Highest level in {{period}}: {{level}}"
+    },
+    "levelShare": "{{percent}} % of the awards in {{period}} are {{level}}.",
+    "growth": "{{percent}} % more awards so far this year than in the same months of {{year}}.",
+    "bestYear": "The best year was {{year}} with {{count}} awards.",
+    "firstAward": "The first award of {{period}} came in {{year}}.",
+    "streak": "Awards for {{years}} consecutive years so far.",
+    "leads": {
+      "value": "{{value}}",
+      "percent": "{{percent}} %"
+    }
+  }
+}

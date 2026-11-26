@@ -1,0 +1,254 @@
+import { Page, expect, test } from './fixtures';
+
+import {
+  FRESH_PASSWORD,
+  freshContextPage,
+  freshEmployee,
+  registerAndVerify,
+  SEED,
+  seriousViolations,
+  signedIn,
+  signedInAs,
+  signIn,
+  toggleLanguage,
+} from './helpers';
+
+/** US-008 DoD: the dashboard is usable within this time. */
+const USABLE_WITHIN_MS = 3000;
+
+const WIDGETS = [
+  'KPI',
+  'FACT',
+  'TREND',
+  'LEVEL_STAIRS',
+  'IN_PROGRESS',
+  'LATEST',
+  'BY_CATEGORY',
+  'RANK',
+  'VISIBILITY',
+  'TIMELINE',
+];
+
+async function shownWidgets(page: Page): Promise<string[]> {
+  return page
+    .locator('[data-testid^="widget-"]')
+    .evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-testid')!.slice(7)));
+}
+
+async function noHorizontalScroll(page: Page): Promise<boolean> {
+  return page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+}
+
+test.describe('personal dashboard', () => {
+  test('ac2_4 ac2_5 ac2_11 opens from the navigation with every widget in order within 3 s', async ({
+    browser,
+  }) => {
+    const warmUp = await signedIn(browser, SEED.lecturer);
+    await warmUp.goto('/dashboard');
+    await expect(warmUp.getByTestId('widget-RANK')).toBeVisible();
+    await warmUp.context().close();
+
+    const page = await signedIn(browser, SEED.lecturer);
+    const started = Date.now();
+    await page.getByTestId('nav-dashboard').click();
+    await expect(page.getByTestId('widget-KPI')).toBeVisible();
+    await expect(page.getByTestId('widget-RANK')).toBeVisible();
+    expect(Date.now() - started).toBeLessThan(USABLE_WITHIN_MS);
+
+    await expect(page).toHaveURL(/\/dashboard$/);
+    expect(await shownWidgets(page)).toEqual(WIDGETS);
+    await expect(page.getByTestId('tile-approved')).not.toContainText(/^\s*0\s*$/);
+    await expect(page.getByTestId('rank-position')).toContainText(/\d+ з \d+ на кафедрі/);
+    await expect(page.getByTestId('timeline-road')).toBeVisible();
+    expect(await seriousViolations(page)).toEqual([]);
+  });
+
+  test('ac2_5 ac2_8 keeps the period in the address and falls back to guidance', async ({
+    browser,
+  }) => {
+    const page = await signedIn(browser, SEED.lecturer);
+    await page.goto('/dashboard?from=2024&to=2024');
+    await expect(page.getByTestId('widget-TREND')).toBeVisible();
+    await expect(page.getByTestId('period-from')).toContainText('2024');
+    await expect(page.getByTestId('period-to')).toContainText('2024');
+
+    await page.goto('/dashboard?from=1960&to=1961');
+    await expect(page.getByTestId('dashboard-empty-period')).toContainText(
+      'У цьому періоді немає затверджених нагород',
+    );
+    await page.getByTestId('empty-all-years').click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(page.getByTestId('widget-KPI')).toBeVisible();
+  });
+
+  test('ac3_2 ac3_4 draws the timeline as a road whose milestones open the award', async ({
+    browser,
+  }) => {
+    const page = await signedIn(browser, SEED.lecturer);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/dashboard');
+    const timeline = page.getByTestId('widget-TIMELINE');
+    await expect(timeline.getByTestId('timeline-road')).toBeVisible();
+    await expect(timeline.getByTestId('timeline-feed')).toHaveCount(0);
+    await expect(timeline.getByTestId('pane-view-table')).toHaveCount(0);
+    await expect(timeline.getByTestId('timeline-today')).toBeVisible();
+    const years = await timeline.getByTestId('timeline-stop-year').allTextContents();
+    expect(years.length).toBeGreaterThan(0);
+    expect([...years].sort()).toEqual(years);
+    const stop = timeline.getByTestId('timeline-stop').first();
+    await expect(stop).toHaveAttribute('href', /^\/awards\/\d+$/);
+    const href = await stop.getAttribute('href');
+
+    await stop.focus();
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(new RegExp(`${href}$`));
+  });
+
+  test('ac3_3 ac3_4 shows the timeline as a dated feed below 960 px', async ({ browser }) => {
+    const page = await signedIn(browser, SEED.lecturer);
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.goto('/dashboard');
+    const timeline = page.getByTestId('widget-TIMELINE');
+    await expect(timeline.getByTestId('timeline-feed')).toBeVisible();
+    await expect(timeline.getByTestId('timeline-road')).toHaveCount(0);
+    await expect(timeline.getByTestId('timeline-year').first()).toHaveText(/\d{4}\s+\d+/);
+    const all = await timeline.getByTestId('timeline-row').count();
+    expect(all).toBeGreaterThan(0);
+
+    await timeline.getByTestId('timeline-filter-national').click();
+    await expect(timeline.getByTestId('timeline-filter-national')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    for (const level of await timeline.getByTestId('timeline-row-level').allTextContents()) {
+      expect(['Національний', 'Міжнародний', 'National', 'International']).toContain(level.trim());
+    }
+    await timeline.getByTestId('timeline-filter-all').click();
+    await expect(timeline.getByTestId('timeline-row')).toHaveCount(all);
+
+    const row = timeline.getByTestId('timeline-row').first();
+    const href = await row.getAttribute('href');
+    await row.click();
+    await expect(page).toHaveURL(new RegExp(`${href}$`));
+  });
+
+  test('ac2_10 fits 360 px in dark mode and English without serious violations', async ({
+    browser,
+  }) => {
+    const page = await signedIn(browser, SEED.lecturer);
+    await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.goto('/dashboard');
+    await expect(page.getByTestId('widget-LEVEL_STAIRS')).toBeVisible();
+    await toggleLanguage(page);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('My dashboard');
+
+    expect(await noHorizontalScroll(page)).toBe(true);
+    expect(await seriousViolations(page)).toEqual([]);
+  });
+
+  test('ac2_8 guides a new employee without counted awards', async ({ browser }) => {
+    const email = await freshEmployee(browser, 'dashboard');
+    const page = await signedInAs(browser, email, FRESH_PASSWORD);
+    await page.goto('/dashboard');
+    await expect(page.getByTestId('dashboard-empty-first').locator('li')).toHaveCount(3);
+    await expect(page.getByTestId('empty-new-award')).toHaveAttribute('href', '/awards/new');
+  });
+
+  test('ac2_4 an account without a role has no entry and lands on the forbidden page', async ({
+    page,
+  }) => {
+    const email = `e2e.dashboard.norole.${Date.now()}@chnu.edu.ua`;
+    await registerAndVerify(page, email, FRESH_PASSWORD);
+    await signIn(page, email, FRESH_PASSWORD);
+    await expect(page.getByTestId('user-name')).toBeVisible();
+    await expect(page.getByTestId('nav-dashboard')).toHaveCount(0);
+
+    await page.goto('/dashboard');
+    await expect(page).toHaveURL(/\/forbidden$/);
+  });
+});
+
+test.describe('shareable achievement summary', () => {
+  test('ac3_1 ac3_2 ac3_4 ac3_5 the summary prints and shares the public achievements', async ({
+    browser,
+  }) => {
+    const page = await signedIn(browser, SEED.lecturer);
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.goto('/dashboard?from=2020');
+    await page.getByTestId('dashboard-summary').click();
+    await expect(page).toHaveURL(/\/dashboard\/summary\?from=2020$/);
+
+    await expect(page.getByTestId('summary-name')).not.toBeEmpty();
+    await expect(page.getByTestId('summary-department')).not.toBeEmpty();
+    await expect(page.getByTestId('summary-period')).toContainText('2020–');
+    await expect(page.getByTestId('summary-award').first()).toBeVisible();
+    await expect(page.getByTestId('summary-produced')).not.toBeEmpty();
+    expect(await seriousViolations(page)).toEqual([]);
+
+    await page.emulateMedia({ media: 'print' });
+    await expect(page.locator('.shell__toolbar')).toBeHidden();
+    await expect(page.getByTestId('nav-dashboard')).toBeHidden();
+    await expect(page.getByTestId('summary-print')).toBeHidden();
+    await expect(page.getByTestId('summary-award').first()).toHaveCSS('break-inside', 'avoid');
+    await page.emulateMedia({ media: 'screen' });
+
+    await page.getByTestId('summary-copy-link').click();
+    await expect(page.getByTestId('summary-copied')).toBeVisible();
+    const link = await page.evaluate(() => navigator.clipboard.readText());
+    expect(link).toMatch(/^http:\/\/[^/]+\/public\/achievements\?person=\d+$/);
+    const name = (await page.getByTestId('summary-name').textContent())!.trim();
+
+    const visitor = await freshContextPage(browser);
+    await visitor.goto(new URL(link).pathname + new URL(link).search);
+    await expect(visitor.getByTestId('achievements-title')).toContainText(name);
+    await expect(visitor.getByTestId('achievement-card').first()).toBeVisible();
+    const recipients = await visitor.getByTestId('achievement-recipient').allTextContents();
+    expect(recipients.every((recipient) => recipient.includes(name))).toBe(true);
+    expect(await seriousViolations(visitor)).toEqual([]);
+  });
+
+  test('ac3_1 ac3_4 a new employee gets the hint and a period that is not valid is refused', async ({
+    browser,
+  }) => {
+    const email = await freshEmployee(browser, 'summary');
+    const page = await signedInAs(browser, email, FRESH_PASSWORD);
+    await page.goto('/dashboard/summary');
+    await expect(page.getByTestId('summary-empty')).toBeVisible();
+    await expect(page.getByTestId('summary-public-hint')).toBeVisible();
+    await expect(page.getByTestId('summary-copy-link')).toHaveCount(0);
+
+    await page.goto('/dashboard/summary?from=2026&to=2020');
+    await expect(page.getByTestId('summary-invalid')).toBeVisible();
+    await page.getByTestId('summary-back').click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+  });
+
+  test('ac4_1 ac4_3 a future year is refused on both screens and a failed public check is reported', async ({
+    browser,
+  }) => {
+    const nextYear =
+      Number(
+        new Intl.DateTimeFormat('en', { timeZone: 'Europe/Kyiv', year: 'numeric' }).format(
+          new Date(),
+        ),
+      ) + 1;
+    const page = await signedIn(browser, SEED.lecturer);
+    await page.goto(`/dashboard?from=${nextYear}`);
+    await expect(page.getByTestId('dashboard-invalid')).toContainText('Період некоректний.');
+    await expect(page.getByTestId('dashboard-error')).toHaveCount(0);
+    await page.getByTestId('dashboard-invalid').getByRole('button').click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(page.getByTestId('widget-KPI')).toBeVisible();
+
+    await page.goto(`/dashboard/summary?to=${nextYear}`);
+    await expect(page.getByTestId('summary-invalid')).toBeVisible();
+
+    await page.route('**/public/achievements?**', (route) => route.abort());
+    await page.goto('/dashboard/summary');
+    await expect(page.getByTestId('summary')).toBeVisible();
+    await expect(page.getByTestId('summary-public-failed')).toBeVisible();
+    await expect(page.getByTestId('summary-public-hint')).toHaveCount(0);
+    expect(await seriousViolations(page)).toEqual([]);
+  });
+});

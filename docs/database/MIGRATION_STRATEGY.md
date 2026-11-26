@@ -88,11 +88,31 @@ src/main/resources/
         ├── V011__create_notifications_tables.sql
         ├── V012__create_indexes.sql
         ├── V013__create_audit_triggers.sql
+        ├── V014__create_auth_tables.sql
+        ├── V015__users_email_unique_lower.sql
+        ├── V016__audit_logs_partitions_2027.sql
+        ├── V017__user_roles_current_unique.sql
+        ├── V018__create_role_delegations_table.sql
+        ├── V019__role_delegations_no_overlap.sql
+        ├── V020__award_drafts.sql
+        ├── V021__award_category_keywords.sql
+        ├── V022__email_change_tokens.sql
+        ├── V023__award_versions.sql
+        ├── V024__award_request_deadlines.sql
+        ├── V025__document_type_description.sql
+        ├── V026__review_decisions.sql
         ├── R__create_views.sql
         ├── R__create_functions.sql
         ├── R__seed_organizations.sql
         └── R__seed_award_categories.sql
+    └── seed/
+        ├── local/
+        │   └── R__seed_users_dev.sql
+        └── demo/
+            └── R__seed_users_demo.sql
 ```
+
+`db/migration` holds schema and reference data and runs in every environment. `db/seed/local` holds demo accounts and is added to `spring.flyway.locations` only by the `local` and `docker` profiles; the production profile never sees it. `db/seed/demo` holds the fictional `@demo.example` accounts of a deployed demo: it runs only when `FLYWAY_LOCATIONS` names it and inserts nothing unless `DEMO_PASSWORD_HASH` is set (ADR-021, [DEMO_DEPLOYMENT](../deployment/DEMO_DEPLOYMENT.md)). Repeatable scripts run in alphabetical order of their description, so a seed that depends on another is named to sort after it.
 
 ### 1.3 Version Numbering Convention
 
@@ -325,6 +345,8 @@ ALTER TABLE users DROP COLUMN last_name;
 | `consent_records` | 7 years from withdrawal | Age from `withdrawn_at` | Archive to cold storage |
 | `users` (DELETED) | 30 days grace + 7 years | Deletion request | Anonymize + archive |
 
+**As built (Epic 6)**: nothing is archived to cold storage; the nightly retention job (`app.retention.*`, ADR-022 and DATA_DICTIONARY §4.5) deletes. `notifications` go after `P365D`; monthly `audit_logs` partitions that end before `P7Y` are dropped, except a partition holding a row of a person under legal hold; `ANALYTICS` consent rows of a person who withdrew are deleted `P7Y` after the withdrawal, and every consent row of an erased account `P7Y` after the erasure. An erased account stays as a `users` row with status `DELETED`, anonymised by the erasure run 30 days after the request. There is no separate 90-day rule for orphaned documents: documents go with their award or at the erasure.
+
 ### 3.2 Archival Implementation Strategy
 
 ```
@@ -405,6 +427,14 @@ $$ LANGUAGE plpgsql;
 -- Archive old partitions (move to archive schema or drop)
 -- DROP TABLE audit_logs_2018_01;  -- After data exported to cold storage
 ```
+
+Partitions through 2027-12 are created by V016 (`fn_create_audit_partition()` covers the month after that when it is
+scheduled). Flyway runs every migration with `SET TIME ZONE 'UTC'` (`spring.flyway.init-sql`) and V016 writes its bounds with an
+explicit offset (`'2026-07-01 00:00:00+00'`): the JDBC session otherwise runs in the application's time zone, and a
+bare date would shift the boundary and overlap the neighbouring partition.
+When the default partition already holds rows of a month being added, the migration detaches it, creates the months
+and a new default, re-inserts the rows and drops the old default (the parent's no-delete rule does not apply to a
+detached table).
 
 ### 3.4 GDPR Data Deletion Procedures
 

@@ -1,0 +1,55 @@
+@if (sentences().length === 0) {
+  <p class="analytics-note" data-testid="highlights-none">
+    {{ 'unitAnalytics.highlights.none' | transloco }}
+  </p>
+} @else {
+  <div class="highlights">
+    @if (strengths().length > 0) {
+      <section data-testid="highlights-strengths">
+        <h3>{{ 'unitAnalytics.highlights.strengths' | transloco }}</h3>
+        <ul class="highlights__grid">
+          @for (entry of strengths(); track entry.key) {
+            <ng-container *ngTemplateOutlet="item; context: { $implicit: entry }" />
+          }
+        </ul>
+      </section>
+    }
+    @if (gaps().length > 0) {
+      <section data-testid="highlights-gaps">
+        <h3>{{ 'unitAnalytics.highlights.gaps' | transloco }}</h3>
+        <ul class="highlights__grid">
+          @for (entry of gaps(); track entry.key) {
+            <ng-container *ngTemplateOutlet="item; context: { $implicit: entry }" />
+          }
+        </ul>
+      </section>
+    }
+    @if (capped()) {
+      <button
+        type="button"
+        class="highlights__more"
+        [attr.aria-expanded]="expanded()"
+        (click)="toggle()"
+        data-testid="highlights-toggle"
+      >
+        @if (expanded()) {
+          {{ 'unitAnalytics.highlights.showLess' | transloco }}
+        } @else {
+          {{ 'unitAnalytics.highlights.showAll' | transloco: { count: sentences().length } }}
+        }
+      </button>
+    }
+  </div>
+}
+
+<ng-template #item let-entry>
+  <li class="highlight" data-testid="highlight">
+    <span class="highlight__numbers">
+      <b class="highlight__count">{{ entry.current }}</b>
+      <span class="highlight__previous">
+        {{ 'unitAnalytics.highlights.was' | transloco: { count: entry.previous } }}
+      </span>
+    </span>
+    <span class="highlight__text">{{ entry.text }}</span>
+  </li>
+</ng-template>

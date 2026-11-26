@@ -1,0 +1,46 @@
+@let data = view();
+<app-dashboard-layout dashboard="HALL_OF_FAME" labels="hallOfFame.widgets.">
+  <ng-template appDashboardWidget="KPI" wide>
+    <app-pane icon="award" [heading]="'hallOfFame.widgets.KPI' | transloco" tone="brand" flush>
+      <app-hall-of-fame-hero
+        [year]="data.year"
+        [value]="data.approved"
+        [today]="data.today"
+        [delta]="data.delta"
+      />
+    </app-pane>
+  </ng-template>
+  <ng-template appDashboardWidget="TREND">
+    <app-pane icon="chart-bar" [heading]="'hallOfFame.widgets.TREND' | transloco" tableable>
+      <app-trend-widget [years]="data.years" [partialYear]="data.partialYear" />
+    </app-pane>
+  </ng-template>
+  <ng-template appDashboardWidget="RACE">
+    <app-pane icon="chart-line" [heading]="'hallOfFame.widgets.RACE' | transloco" tableable>
+      <app-race-widget [byMonth]="data.byMonth" [year]="data.year" [today]="data.today" />
+    </app-pane>
+  </ng-template>
+  <ng-template appDashboardWidget="RECORDS">
+    <app-pane icon="trophy" [heading]="'hallOfFame.widgets.RECORDS' | transloco" flush>
+      <app-records-widget [records]="data.records" />
+    </app-pane>
+  </ng-template>
+  <ng-template appDashboardWidget="FACT">
+    <app-pane icon="lightbulb" [heading]="'hallOfFame.widgets.FACT' | transloco" tone="ink" flush>
+      <app-fact-widget [facts]="data.facts" />
+    </app-pane>
+  </ng-template>
+  <ng-template appDashboardWidget="TOP">
+    <app-pane
+      icon="crown"
+      [heading]="(university() ? 'hallOfFame.topFaculties' : 'hallOfFame.topPeople') | transloco"
+    >
+      <app-top-widget [people]="data.top" />
+    </app-pane>
+  </ng-template>
+  <ng-template appDashboardWidget="LEVEL_MAP">
+    <app-pane icon="layout-grid" [heading]="'hallOfFame.widgets.LEVEL_MAP' | transloco">
+      <app-level-map-widget [areas]="data.areas" />
+    </app-pane>
+  </ng-template>
+</app-dashboard-layout>

@@ -27,10 +27,17 @@ This Data Governance Framework establishes comprehensive policies and procedures
 
 | **Classification** | **Definition** | **Examples** | **Access Level** | **Retention** |
 |-------------------|----------------|--------------|------------------|---------------|
-| **Public** | Information approved for public disclosure | Published awards, public profiles, achievement records | Anyone who is registered | Permanent |
+| **Public** | Information approved for public disclosure | Published awards, public profiles, achievement records | Anyone, no sign-in required | Permanent |
 | **Internal** | Information for internal university use | Department structures, workflow states, system configurations | Authenticated users | 7 years |
 | **Confidential** | Sensitive information requiring protection | Personal contact details, consent records, audit logs | Authorized roles only | User-controlled/3-7 years |
 | **Restricted** | Highly sensitive requiring special handling | Scanned certificates, assessment documents, appeals | Specific permissions | User-defined (1-10 years) |
+
+As built (Feature 4.3): an award is **Public** only when its owner chose «Показувати публічно» for the approved award
+(`awards.visibility = PUBLIC`) or it is an approved unit award; it is then readable without an account through
+`GET /api/v1/public/achievements`. «Показувати колегам» makes it **Internal** (signed-in users); every other award
+stays with its owner and the reviewers whose scope covers it. The public projection carries the name, department,
+titles, descriptions, category, awarding organisation, date, link and verification mark, never the e-mail address,
+documents, reviewers or comments.
 
 ### **1.2 Data Category Mapping**
 
@@ -89,100 +96,76 @@ system_data:
 | **Data Category** | **Legal Basis** | **Retention Period** | **Auto-Delete** | **User Control** |
 |-------------------|-----------------|---------------------|-----------------|------------------|
 | **Award Records** | Legitimate Interest | Permanent (public record) | No | Read-only after employment |
-| **Employee Profiles** | Legitimate Interest | 7 years post-employment | Yes | Profile visibility control |
+| **Employee Profiles** | Legitimate Interest | 7 years after the account became `RETIRED` or `MEMORIAL` (`app.retention.former-staff`, 6.2.3); then erased as in 6.1.5, approved awards kept `PRIVATE` | Yes | Profile visibility control |
 | **Contact Information** | Consent | User-controlled | No | Full user control |
-| **Scanned Documents** | Explicit Consent | User-defined (1-10 years) | Yes | User-defined periods |
-| **Consent Records** | Legal Obligation | 7 years from withdrawal | Yes | View-only for users |
-| **System Logs** | Legitimate Interest | 3 years | Yes | No user control |
-| **Audit Trails** | Legal Obligation | 7 years | Yes | No user control |
+| **Scanned Documents** | Explicit Consent | With the award; deleted with the award or the account (6.1.5) | Yes | Delete with the award |
+| **Consent Records** | Legal Obligation | 7 years from the withdrawal of the `ANALYTICS` consent (the whole chain), or from the erasure of the account (`app.retention.consent-records`, 6.2.3); acknowledgements of a living account stay | Yes | View-only for users |
+| **Unverified Registrations** | Legitimate Interest | 30 days after registration or the last verification link (`app.retention.pending-accounts`, 6.2.3); then erased as in 6.1.5 | Yes | Verify or re-register |
+| **Notifications** | Legitimate Interest | 365 days from sending (`app.retention.notifications`) | Yes | No user control |
+| **One-time Tokens** | Legitimate Interest | 30 days after use or expiry (`app.retention.one-time-tokens`) | Yes | No user control |
+| **Authorizations** | Legitimate Interest | 1 day after the last expiry (`app.retention.authorizations`) | Yes | Sign out |
+| **Known Devices** | Legitimate Interest | 2 years after last use (`app.retention.devices`) | Yes | "This was not me" removes all |
+| **System Logs** | Legitimate Interest | Application log files 30 days / 1 GB (logback); container logs per the Epic 9 runbook; the database keeps none | Yes | No user control |
+| **Audit Trails** | Legal Obligation | 7 years after the end of the month, by whole monthly partitions (`app.retention.audit-logs`, 6.2.3) | Yes | No user control |
+
+The periods of one-time tokens, authorizations, devices and unverified registrations are assumptions of Feature 6.2 (no regulation names them); each is a property and can be changed without a release.
 
 ### **2.2 Automated Retention Implementation**
 
-```java
-// Data Retention Service Implementation
-@Service
-@Scheduled
-public class DataRetentionService {
-    
-    @Scheduled(cron = "0 0 2 * * ?") // Daily at 2 AM
-    public void processRetentionPolicies() {
-        
-        // Process user-defined document retention
-        processDocumentRetention();
-        
-        // Process employment-based profile retention  
-        processProfileRetention();
-        
-        // Process system log retention
-        processLogRetention();
-        
-        // Process consent record retention
-        processConsentRetention();
-    }
-    
-    private void processDocumentRetention() {
-        List<Document> expiredDocs = documentRepository
-            .findDocumentsWithExpiredRetention(LocalDate.now());
-            
-        for (Document doc : expiredDocs) {
-            if (doc.isEligibleForDeletion()) {
-                securelyDeleteDocument(doc);
-                auditService.logDataDeletion(doc);
-            }
-        }
-    }
-    
-    private void processProfileRetention() {
-        List<User> expiredProfiles = userRepository
-            .findUsersWithExpiredEmployment(LocalDate.now().minusYears(7));
-            
-        for (User user : expiredProfiles) {
-            if (!user.hasActiveAwards()) {
-                anonymizeUserProfile(user);
-                auditService.logProfileAnonymization(user);
-            }
-        }
-    }
-}
-```
+The nightly retention job (Feature 6.2, story 6.2.1) applies every retention policy:
+
+- **Schedule.** `app.retention.cron`, default `0 0 4 * * *` in `Europe/Kyiv`, after the 02:30 erasure run. A session advisory lock keeps one run at a time; a start while another run works is skipped with a log line.
+- **Run record.** Each run is a `retention_runs` row (DATA_DICTIONARY §4.5). A row left `RUNNING` by a stop is marked `INTERRUPTED` by the next run; `results` is saved after each policy.
+- **Policies.** Beans implementing `common.retention.RetentionPolicy` (`key`, `order`, `action`, `period`, `apply`), run in their order:
+
+| Order | Key | Module | Action | Period (property) |
+|-------|-----|--------|--------|-------------------|
+| 10 | `notifications` | notification | delete rows whose `expires_at` has passed | `app.retention.notifications` P365D, written into `expires_at` at sending |
+| 20 | `one-time-tokens` | auth | delete rows used or expired before the period | `app.retention.one-time-tokens` P30D |
+| 30 | `authorizations` | auth | delete rows whose every expiry is null or before the period | `app.retention.authorizations` P1D |
+| 40 | `devices` | auth | delete rows last used before the period | `app.retention.devices` P730D |
+| 50 | `pending-accounts` | gdpr | file a `RETENTION` erasure request, due at once, for `PENDING` accounts created before the period and without a verification link since | `app.retention.pending-accounts` P30D |
+| 60 | `former-staff` | gdpr | file a `RETENTION` erasure request for `RETIRED` and `MEMORIAL` accounts whose status changed before the period | `app.retention.former-staff` P7Y |
+| 70 | `consent-records` | gdpr | delete withdrawn `ANALYTICS` chains and the records of accounts erased before the period (`fn_purge_consent_records`) | `app.retention.consent-records` P7Y |
+| 80 | `audit-partitions` | audit | create the monthly partitions from the current month ahead | `app.retention.audit-partitions-ahead` 3 |
+| 90 | `audit-logs` | audit | detach and drop monthly partitions that ended before the period (`fn_drop_expired_audit_partitions`) | `app.retention.audit-logs` P7Y |
+
+- **Batches.** A policy changes at most `app.retention.batch-size` (default 1000) rows per transaction and repeats until a batch is short, so a large backlog never locks a table for long and a failure keeps the committed batches.
+- **Failures.** A policy that throws is recorded with `failed` and the exception class only (no message, which could name a person); the other policies still run and the run ends `PARTIAL`.
+- **Legal holds.** The set of people under an active hold is read once at the start and given to every policy. The technical rows above go regardless of a hold, since they prove nothing a hold protects; accounts, consent records and audit partitions stay for held people and are counted as `held`.
+- **Accounts.** The two account policies only file requests; the 02:30 erasure run carries them out the next night through the one erasure path of §2.3, with its holds, last-administrator check, rollback and audit redaction, but without any mail. Under the row locks it cancels a request whose account was verified, renewed or returned to service meanwhile.
+- **Report.** The run row, the audit row `RETENTION_RUN_COMPLETED` (status and counts, no actor), the metrics `award_retention_runs_total{outcome}` and `award_retention_rows_total{policy}`, and, only for a `PARTIAL` or `INTERRUPTED` run, one mail to the active data protection officers naming the run, the failed policies and the compliance page.
 
 ### **2.3 Data Deletion Procedures**
 
-```sql
--- Data Deletion Procedures
--- 1. Soft Delete (Initial)
-UPDATE users SET 
-    status = 'DELETED',
-    deletion_requested_at = CURRENT_TIMESTAMP,
-    scheduled_deletion_date = CURRENT_TIMESTAMP + INTERVAL '30 days'
-WHERE user_id = ?;
+Erasure of an account (Art. 17) as built in Feature 6.1 (stories 6.1.4 and 6.1.5):
 
--- 2. Grace Period Warning
-SELECT user_id, email, scheduled_deletion_date 
-FROM users 
-WHERE status = 'DELETED' 
-    AND scheduled_deletion_date <= CURRENT_TIMESTAMP + INTERVAL '7 days'
-    AND deletion_warning_sent = FALSE;
+1. **Request.** The person confirms with their password in the privacy centre; an `erasure_requests` row is
+   `PENDING` with `scheduled_for` 30 days later (`APP_ERASURE_GRACE_PERIOD`). Refused while a legal hold is
+   active or for the only system administrator. The account stays usable and the request can be cancelled.
+2. **Warning.** The nightly job (02:30 Kyiv) mails a reminder seven days before the date
+   (`APP_ERASURE_WARNING_BEFORE`).
+3. **Execution.** At the first nightly run after the date, each due request is locked (`FOR UPDATE SKIP LOCKED`)
+   and erased in one transaction. A legal hold placed meanwhile postpones it (`postponed_at`, one mail, audit
+   `ERASURE_POSTPONED`); so does being the only system administrator by then (audit only). Otherwise every
+   module's erasure contributor runs in order (ADR-022):
+   - sign-in material: one-time tokens, devices, OAuth authorizations; sessions and access tokens end;
+   - current and future roles and open delegations end, audited with the reason `erasure`, without messages;
+   - documents of the person's awards are deleted (stored objects after the commit);
+   - the person's notifications, preferences and undelivered events are deleted; their names in related
+     notifications of others become the pseudonym;
+   - approved awards stay as `PRIVATE` records under the pseudonym; every other award goes with its request,
+     decisions and versions; review claims return to the queue; decisions on others' awards stay;
+   - consent records stay without IP address and user agent;
+   - the account row stays with `account_status` `DELETED`, the pseudonym `Erased #<id>`, the address
+     `erased-<id>@erased.invalid` and an unknown password, so the address can register again.
+4. **Audit.** `ERASURE_COMPLETED` records the counts; `fn_redact_audit_subject` then redacts the person's values
+   in the trail and records `AUDIT_REDACTED` (ADR-024). Rows, actions and times stay.
+5. **Confirmation.** After the commit, a mail goes to the address captured before the scrub. A failure anywhere
+   rolls the erasure back; the request stays pending and the next run retries
+   (`award_erasure_runs_total{outcome}`).
 
--- 3. Hard Delete (After Grace Period)
-BEGIN;
-    -- Anonymize awards (keep achievement records)
-    UPDATE awards SET recipient_name = 'ANONYMIZED_USER_' || user_id 
-    WHERE user_id = ?;
-    
-    -- Delete personal data
-    DELETE FROM user_profiles WHERE user_id = ?;
-    DELETE FROM contact_information WHERE user_id = ?;
-    DELETE FROM consent_records WHERE user_id = ?;
-    
-    -- Update user record to anonymous
-    UPDATE users SET 
-        full_name = NULL,
-        email = NULL,
-        status = 'ANONYMIZED'
-    WHERE user_id = ?;
-COMMIT;
-```
+`legal_holds` and `erasure_requests` rows stay as the record of the obligation and the request.
 
 ---
 
@@ -308,6 +291,10 @@ lawful_basis_assessment:
 | **Restrict Processing (18)** | Account suspension options | 1-3 days | Semi-automated |
 | **Data Portability (20)** | JSON/CSV export functionality | 1 month | Fully automated |
 | **Object (21)** | Opt-out mechanisms | Immediate | Fully automated |
+
+**Implementation notes (Feature 1.3, September 2026)**:
+- Rectification (Art. 16): the `/profile` page corrects first and last name at once; the sign-in address changes after confirmation from the new mailbox. Every change is audited by the application (`PROFILE_UPDATED` with the old and new values of the changed fields only, `EMAIL_CHANGE_REQUESTED`, `EMAIL_CHANGED`), with IP and correlation id, in addition to the trigger row.
+- Audit minimisation: since V022 the audit trigger leaves `password_hash` out of the snapshots of `users` rows, so the seven-year trail keeps no credential material from then on. Rows written before V022 keep the hashes they captured; audit rows are immutable, and whether to purge those values is decided at the end of Epic 1 (thesis sync).
 
 ### **4.4 Cross-Border Transfer Mechanisms**
 

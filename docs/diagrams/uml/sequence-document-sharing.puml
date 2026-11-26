@@ -1,0 +1,73 @@
+@startuml Sequence_Document_Sharing
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Documents Shown to Colleagues Sequence Diagram (story 4.3.8)
+
+actor "Owner\n(award:update:own)" as owner
+actor "Colleague\n(signed in)" as colleague
+participant "Angular app" as webapp
+participant "DocumentSharingController /\nDocumentSharing" as sharing
+participant "SharingController /\nAwardSharing" as visibility
+participant "AchievementController /\nAchievements" as achievements
+participant "DocumentController /\nDocumentService" as download
+participant "AuditService" as audit
+database "PostgreSQL" as db
+database "MinIO" as s3
+
+note over webapp, download
+    Every call carries the bearer access token; @access.require checks the permission.
+    The public chain (/api/v1/public/**) has no document or detail endpoint.
+end note
+
+== The owner shows a document ==
+owner -> webapp: Switch «Показувати колегам» on
+webapp -> sharing: PUT /api/v1/documents/{id}/sharing {shownToColleagues: true}
+sharing -> db: award of the document, row lock (select ... for update)
+alt not the caller's award or no such document
+    sharing --> webapp: 404 document-not-found
+else not APPROVED, unit award or PRIVATE
+    sharing --> webapp: 409 sharing-fixed (awardStatus, visibility)
+else effective change
+    sharing -> db: documents.shown_to_colleagues = true
+    sharing -> audit: DOCUMENT_SHARING_CHANGED (awardId, from false, to true)
+    sharing --> webapp: 200 Document
+end
+
+== A colleague opens the shared award ==
+colleague -> webapp: Open the achievement card
+webapp -> achievements: GET /api/v1/achievements/{id}
+achievements -> db: approved; shared personal award of a live account, or unit award
+alt not shared
+    achievements --> webapp: 404
+else shared
+    achievements -> db: shown documents of the award, oldest first
+    achievements --> webapp: 200 AchievementDetail (Cache-Control: no-store)
+end
+
+colleague -> webapp: Download a shown document
+webapp -> download: GET /api/v1/documents/{id}
+download -> db: document with award and owner
+alt readable award (owner or scoped reviewer)
+    download -> audit: DOCUMENT_DOWNLOAD (awardId)
+else shown and award shared with colleagues
+    download -> audit: DOCUMENT_DOWNLOAD (awardId, via colleague)
+else otherwise
+    download --> webapp: 404 document-not-found
+end
+download -> s3: get object
+download --> webapp: 200 attachment (no-store, sandbox)
+
+== The owner takes the award back ==
+owner -> webapp: Choose «Лише мені та рецензентам»
+webapp -> visibility: PUT /api/v1/awards/{id}/visibility {PRIVATE}
+visibility -> db: awards.visibility = PRIVATE (row lock)
+visibility -> audit: AWARD_VISIBILITY_CHANGED
+visibility -> sharing: clear(award)
+loop every shown document
+    sharing -> db: shown_to_colleagues = false
+    sharing -> audit: DOCUMENT_SHARING_CHANGED (from true, to false)
+end
+visibility --> webapp: 200 Award
+
+@enduml
