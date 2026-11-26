@@ -19,6 +19,7 @@ import { saveFile } from '../../../shared/file-download';
 import { IconComponent } from '../../../shared/icons/icon.component';
 import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { organizationName } from '../../../shared/organization-name';
+import { DocumentThumbnailComponent } from '../../awards/award-documents/document-thumbnail.component';
 import {
   DocumentsService,
   sizeUnit,
@@ -32,7 +33,15 @@ const AWARD_ID = /^\d{1,18}$/;
 /** A shared award as a signed-in colleague sees it, with the documents its owner shows. */
 @Component({
   selector: 'app-achievement-detail',
-  imports: [MatButton, IconComponent, MatProgressBar, RouterLink, TranslocoPipe, KyivDatePipe],
+  imports: [
+    MatButton,
+    IconComponent,
+    MatProgressBar,
+    RouterLink,
+    TranslocoPipe,
+    KyivDatePipe,
+    DocumentThumbnailComponent,
+  ],
   templateUrl: './achievement-detail.component.html',
   styleUrl: './achievement-detail.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,0 +1,61 @@
+.viewer__title {
+  overflow-wrap: anywhere;
+}
+
+.viewer__content {
+  max-height: 72vh;
+}
+
+.viewer__stage {
+  overflow: auto;
+  text-align: center;
+
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary);
+    outline-offset: 2px;
+  }
+}
+
+.viewer__page,
+.viewer__image {
+  display: block;
+  margin: 0 auto;
+  max-width: none;
+  box-shadow: var(--mat-sys-level1);
+}
+
+.viewer__image {
+  height: auto;
+}
+
+.viewer__image--fit {
+  max-width: 100%;
+}
+
+.viewer__failed {
+  margin: 24px 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.viewer__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.viewer__group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.viewer__group--end {
+  margin-left: auto;
+}
+
+.viewer__status {
+  min-width: 9ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}

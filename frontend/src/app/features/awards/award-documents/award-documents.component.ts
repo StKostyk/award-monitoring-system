@@ -38,7 +38,7 @@ import { LanguageService } from '../../../core/i18n/language.service';
 import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { saveFile } from '../../../shared/file-download';
 import { confirmAction } from '../confirm-dialog/confirm-dialog.component';
-import { DocumentPreviewDialogComponent } from './document-preview-dialog.component';
+import { DocumentThumbnailComponent } from './document-thumbnail.component';
 import {
   ACCEPTED_FORMATS,
   AwardDocument,
@@ -102,6 +102,7 @@ export interface QueuedFile {
     MatSlideToggle,
     TranslocoPipe,
     KyivDatePipe,
+    DocumentThumbnailComponent,
   ],
   templateUrl: './award-documents.component.html',
   styleUrl: './award-documents.component.scss',
@@ -290,18 +291,6 @@ export class AwardDocumentsComponent {
     });
   }
 
-  /** Shows an image document in a dialog. */
-  preview(document: AwardDocument): void {
-    this.content(document).subscribe({
-      next: (blob) =>
-        this.dialog.open(DocumentPreviewDialogComponent, {
-          data: { name: document.fileName, url: URL.createObjectURL(blob) },
-          maxWidth: '90vw',
-        }),
-      error: (error: unknown) => this.unavailable(error),
-    });
-  }
-
   /**
    * Shows a document to colleagues or hides it again; a refused choice shows the saved one again.
    *
@@ -351,10 +340,6 @@ export class AwardDocumentsComponent {
           }
         },
       });
-  }
-
-  isImage(document: AwardDocument): boolean {
-    return document.mimeType.startsWith('image/');
   }
 
   /** The size in kilobytes below a megabyte, in megabytes from there on, in the interface language. */

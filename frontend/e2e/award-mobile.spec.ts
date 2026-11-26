@@ -36,9 +36,9 @@ test.describe('award form on a phone', () => {
     await camera.setInputFiles({ name: 'грамота.jpg', mimeType: 'image/jpeg', buffer: photo });
     const stored = page.getByTestId('documents-list').locator('li');
     await expect(stored).toHaveCount(1);
-    await stored.getByTestId('document-name').click();
-    await expect(page.getByTestId('document-preview-image')).toBeVisible();
-    await page.getByTestId('document-preview-close').click();
+    await stored.getByTestId('document-thumbnail').click();
+    await expect(page.getByTestId('document-viewer-image')).toBeVisible();
+    await page.getByTestId('document-viewer-close').click();
 
     await camera.setInputFiles({
       name: 'фото.heic',

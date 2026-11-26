@@ -400,6 +400,19 @@
       "downloadOf": "Download {{name}}",
       "removeOf": "Delete {{name}}",
       "close": "Close",
+      "thumbnail": {
+        "type": "No preview",
+        "failed": "Cannot be shown"
+      },
+      "viewer": {
+        "page": "Page {{page}} of {{pages}}",
+        "pageOf": "{{name}}, page {{page}}",
+        "previous": "Previous page",
+        "next": "Next page",
+        "zoomIn": "Zoom in",
+        "zoomOut": "Zoom out",
+        "failed": "This file cannot be shown. Download it to open it."
+      },
       "retry": "Try again",
       "dismiss": "Dismiss",
       "remove": {

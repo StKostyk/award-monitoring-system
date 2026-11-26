@@ -6,6 +6,7 @@ import { Observable, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { LanguageService } from '../../../core/i18n/language.service';
+import { stubThumbnails } from '../../awards/award-documents/document-thumbnail.testing';
 import { DocumentsService } from '../../awards/award-documents/documents.service';
 import { Achievement, AchievementDetail, AchievementsService } from '../achievements.service';
 import { AchievementDetailComponent } from './achievement-detail.component';
@@ -57,6 +58,7 @@ describe('AchievementDetailComponent', () => {
   const documents = { download: vi.fn() };
 
   async function render(id: string): Promise<void> {
+    stubThumbnails(AchievementDetailComponent);
     await TestBed.configureTestingModule({
       imports: [
         AchievementDetailComponent,
@@ -104,6 +106,7 @@ describe('AchievementDetailComponent', () => {
     expect(byTestId('achievement-detail-description')?.textContent).toContain('За статтю');
     expect(byTestId('shared-document-7')?.textContent).toContain('диплом.pdf');
     expect(byTestId('shared-document-7')?.textContent).toContain('awards.documents.types.DIPLOMA');
+    expect(byTestId('thumbnail-stub')?.textContent?.trim()).toBe('7 application/pdf');
   });
 
   it('ac2_award_without_shown_documents_says_so', async () => {

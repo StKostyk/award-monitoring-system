@@ -80,15 +80,13 @@
   overflow-wrap: anywhere;
 }
 
-.documents__link {
-  padding: 0;
-  border: 0;
-  background: none;
-  font: inherit;
-  text-align: left;
-  color: var(--mat-sys-primary);
-  text-decoration: underline;
-  cursor: pointer;
+.documents__details {
+  display: flex;
+  flex: 1 1 180px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  min-width: 0;
 }
 
 .documents__progress {
