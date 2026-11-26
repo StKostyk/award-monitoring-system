@@ -6,7 +6,7 @@ import { Observable, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { PdfFile, PdfRenderer } from '../../../shared/pdf/pdf-renderer';
-import { DocumentThumbnailComponent } from './document-thumbnail.component';
+import { DocumentThumbnailComponent, ThumbnailSize } from './document-thumbnail.component';
 import { DocumentViewerDialogComponent } from './document-viewer-dialog.component';
 import { DocumentsService } from './documents.service';
 
@@ -17,7 +17,11 @@ describe('DocumentThumbnailComponent', () => {
   const pdf: PdfFile = { pages: 3, render: vi.fn(() => Promise.resolve()), close: vi.fn() };
   const renderer = { open: vi.fn(() => Promise.resolve(pdf)) };
 
-  async function render(fileName: string, mimeType: string): Promise<void> {
+  async function render(
+    fileName: string,
+    mimeType: string,
+    size: ThumbnailSize = 'small',
+  ): Promise<void> {
     await TestBed.configureTestingModule({
       imports: [
         DocumentThumbnailComponent,
@@ -36,6 +40,7 @@ describe('DocumentThumbnailComponent', () => {
     fixture.componentRef.setInput('documentId', 7);
     fixture.componentRef.setInput('fileName', fileName);
     fixture.componentRef.setInput('mimeType', mimeType);
+    fixture.componentRef.setInput('size', size);
     fixture.detectChanges();
     await new Promise((resolve) => setTimeout(resolve));
     fixture.detectChanges();
@@ -71,6 +76,16 @@ describe('DocumentThumbnailComponent', () => {
     expect(pdf.render).toHaveBeenCalledWith(1, canvas, expect.any(Number));
     expect(pdf.close).toHaveBeenCalled();
     expect(byTestId('document-thumbnail')?.classList).toContain('thumbnail--ready');
+  });
+
+  it('stage_draws_the_first_page_large_and_is_ready_to_open', async () => {
+    await render('диплом.pdf', 'application/pdf', 'stage');
+
+    const canvas = byTestId('document-thumbnail-page');
+    expect(pdf.render).toHaveBeenCalledWith(1, canvas, 640);
+    expect(canvas?.style.width).toBe('100%');
+    expect((fixture.nativeElement as HTMLElement).classList).toContain('app-thumbnail--stage');
+    expect(fixture.componentInstance.ready()).toBe(true);
   });
 
   it('ac1_image_shows_inline', async () => {

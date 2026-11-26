@@ -12,17 +12,9 @@ import {
   sql,
   submitWithoutDocuments,
   toggleLanguage,
+  twoPagePdf,
   uniqueToken,
 } from './helpers';
-
-/** A small PDF that differs from every other one, so that no upload is refused as a duplicate. */
-function pdf(): Buffer {
-  const content = Buffer.alloc(2048, 0x20);
-  content.write(`%PDF-1.4
-% ${uniqueToken()}
-`);
-  return content;
-}
 
 /**
  * Submits an award as the owner, with the given PDF documents, and approves it in the database, dated today so
@@ -49,7 +41,7 @@ async function approvedBy(
   for (const name of documents) {
     await page
       .getByTestId('documents-input')
-      .setInputFiles({ name, mimeType: 'application/pdf', buffer: pdf() });
+      .setInputFiles({ name, mimeType: 'application/pdf', buffer: twoPagePdf() });
     await expect(page.getByTestId('documents-list')).toContainText(name, { timeout: 30_000 });
   }
   if (documents.length) {
@@ -404,6 +396,12 @@ test.describe('documents shown to colleagues', () => {
     await expect(colleague.getByTestId('shared-documents')).toContainText('диплом.pdf');
     await expect(colleague.getByTestId('shared-documents')).not.toContainText('довідка.pdf');
     await expect(colleague.getByTestId('award-history-tabs')).toHaveCount(0);
+    await expect(colleague.getByTestId('achievement-detail-open')).toBeVisible();
+    await expect(colleague.getByTestId('review-final')).toContainText('Затверджено');
+    await expect(colleague.getByTestId('review-path')).toHaveCount(0);
+    const stage = await colleague.getByTestId('shared-documents').boundingBox();
+    const facts = await colleague.getByTestId('achievement-detail-title').boundingBox();
+    expect(stage!.y).toBeLessThan(facts!.y);
     expect(
       await colleague.evaluate(() => document.documentElement.scrollWidth),
     ).toBeLessThanOrEqual(360);
@@ -425,5 +423,47 @@ test.describe('documents shown to colleagues', () => {
     await expect(colleague.getByTestId('achievement-detail-error')).toHaveText(
       'Це досягнення недоступне. Можливо, його більше не показують колегам.',
     );
+  });
+
+  test('9.2.7 ac1 ac2 ac3 the owner sees the review path and a colleague only its end', async ({
+    browser,
+  }) => {
+    test.slow();
+    const owner = await freshEmployee(browser, 'path');
+    const title = `Грамота зі шляхом розгляду ${uniqueToken()}`;
+    const id = await approvedBy(browser, owner, title, ['диплом.pdf']);
+    const reviewer = sql(`select user_id from users where email_address = '${SEED.secretary}'`);
+    sql(
+      `insert into review_decisions (request_id, reviewer_id, decision, level, comments, decided_at) ` +
+        `select request_id, ${reviewer}, 'RETURNED', 'FACULTY_SECRETARY', 'Додайте номер наказу', ` +
+        `now() + interval '1 minute' from award_requests where award_id = ${id}; ` +
+        `insert into review_decisions (request_id, reviewer_id, decision, level, decided_at) ` +
+        `select request_id, ${reviewer}, 'APPROVED', 'DEAN', now() + interval '2 minutes' ` +
+        `from award_requests where award_id = ${id}; ` +
+        `update awards set visibility = 'UNIVERSITY' where award_id = ${id}; ` +
+        `update documents set shown_to_colleagues = true where award_id = ${id}`,
+    );
+    const page = await signedInAs(browser, owner, FRESH_PASSWORD);
+
+    await page.goto(`/achievements/${id}`);
+    await expect(page.getByTestId('achievement-detail-title')).toHaveText(title);
+    const steps = page.getByTestId('review-path-step');
+    await expect(steps).toHaveCount(3);
+    await expect(steps.nth(0)).toContainText('Подано');
+    await expect(steps.nth(1)).toContainText('Секретар факультету');
+    await expect(steps.nth(1).getByTestId('review-path-comment')).toHaveText(
+      'Додайте номер наказу',
+    );
+    await expect(steps.nth(2)).toContainText('Декан');
+    await expect(page.getByTestId('review-path')).not.toContainText('fmi');
+    await expect(page.getByTestId('shared-documents')).toContainText('диплом.pdf');
+    expect(await seriousViolations(page)).toEqual([]);
+
+    const colleague = await signedIn(browser, SEED.employee);
+    await colleague.goto(`/achievements/${id}`);
+    await expect(colleague.getByTestId('achievement-detail-title')).toHaveText(title);
+    await expect(colleague.getByTestId('review-final')).toBeVisible();
+    await expect(colleague.getByTestId('review-path')).toHaveCount(0);
+    await expect(colleague.getByText('Додайте номер наказу')).toHaveCount(0);
   });
 });

@@ -11,6 +11,7 @@ import {
   signedInAs,
   sql,
   toggleLanguage,
+  twoPagePdf,
   uniqueToken,
 } from './helpers';
 
@@ -23,36 +24,6 @@ const PHONE_WIDTH = 360;
 
 function user(email: string): string {
   return `(select user_id from users where email_address = '${email}')`;
-}
-
-/** A valid PDF with two A4 pages of text in a standard font, unique per call. */
-function twoPagePdf(): Buffer {
-  const text = (line: string) => `BT /F1 40 Tf 72 720 Td (${line}) Tj ET`;
-  const stream = (content: string) =>
-    `<< /Length ${Buffer.byteLength(content)} >>\nstream\n${content}\nendstream`;
-  const page = (contents: number) =>
-    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents ${contents} 0 R ` +
-    '/Resources << /Font << /F1 7 0 R >> >> >>';
-  const objects = [
-    '<< /Type /Catalog /Pages 2 0 R >>',
-    '<< /Type /Pages /Kids [3 0 R 5 0 R] /Count 2 >>',
-    page(4),
-    stream(text('Page one')),
-    page(6),
-    stream(text('Page two')),
-    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
-  ];
-  let body = `%PDF-1.4\n% ${uniqueToken()}\n`;
-  const offsets = objects.map((object, index) => {
-    const offset = Buffer.byteLength(body);
-    body += `${index + 1} 0 obj\n${object}\nendobj\n`;
-    return offset;
-  });
-  const xref = Buffer.byteLength(body);
-  body += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  body += offsets.map((offset) => `${String(offset).padStart(10, '0')} 00000 n \n`).join('');
-  body += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
-  return Buffer.from(body, 'latin1');
 }
 
 /** Starts with the PDF signature, so the upload accepts it, but has no readable structure. */
