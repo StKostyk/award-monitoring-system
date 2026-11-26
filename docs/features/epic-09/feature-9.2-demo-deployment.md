@@ -96,6 +96,7 @@ not the application.
 | 9.2.4 | Demo server on AWS EC2 with a smoke test | 3 | no | 9.2.2, 9.2.3 | SCRUM-134 | #375 |
 | 9.2.5 | Award form in steps on phones | 5 | no | 9.2.1 | SCRUM-136 | #381 |
 | 9.2.8 | Open a user from anywhere on the table row | 2 | no | - | SCRUM-197 | #538 |
+| 9.2.9 | In-rework tab for awards sent back by the reviewer | 5 | no | - | SCRUM-198 | #539 |
 
 Order: 9.2.2 → 9.2.3 → 9.2.4 (server in mid-November, before the code freeze around 2026-11-22) → 9.2.5. 9.2.5 is
 frontend only and can move ahead of 9.2.4 if provisioning waits; the deploy job ships it either way.
@@ -253,6 +254,22 @@ Carried from AC-3.7 of Feature 8.1, restricted to the two pages of F-2.
   The unit comparison tables of the analytics pages get it for the rows that link to a unit; the narrow users list,
   the review list and the notifications already are whole-row links; the review queue and the delegations are cards
   without a detail page.
+
+### 9.2.9 In-rework tab for awards sent back by the reviewer (SCRUM-198)
+
+- **AC-9.1** (Tab) Given a reviewer, when `/reviews` opens, then a fourth chip "На доопрацюванні" / "In rework"
+  shows the number of awards sent back at the levels of the caller's roles (own and delegated) inside their scopes
+  and not submitted again; `?tab=rework` lists them, the longest waiting first, with the title, the person, who
+  sent it back (and for whom under a delegation), when, the reason and the days waiting
+  (`GET /api/v1/reviews/returned`).
+- **AC-9.2** (Leaving) Given an award in the tab, when its owner submits it again, then it leaves the tab and
+  returns to the queue; a later return shows the latest reason. An owner cannot delete or withdraw a returned award
+  today, so submitting again is the only way out.
+- **AC-9.3** (Read only) Given the tab, then the pane shows the chosen award from the tab's own data, with no
+  decision buttons; returned awards are drafts, which reviewers cannot open, and the access rules stay unchanged.
+  The scope, delegation and self-review rules are those of the queue; an organisation outside the caller's scopes
+  answers 400.
+- **AC-9.4** (Screens) Empty state, paging, light and dark, uk and en, 360 px without a horizontal scroll.
 
 ## 5. Edge cases
 
@@ -507,6 +524,15 @@ Preconditions for 9.2.8: Compose stack from the branch, `admin` (local seed), wi
     in a cell by dragging does not open the card. (AC-8.1, AC-8.2)
 22. `http://localhost/analytics/units/<faculty id>` in the table view. Expected: a click on a department row opens
     that department with the same period; the faculty-level row shows no pointer and does nothing. (AC-8.3)
+
+Preconditions for 9.2.9: Compose stack from the branch, `employee.fmi` and `secretary.fmi` (local seed).
+
+23. As `employee.fmi`, submit a university award; as `secretary.fmi`, open it from `/reviews` and return it with
+    the comment "Додайте скан наказу". Expected: the chip "На доопрацюванні" counts it; `?tab=rework` lists it with
+    «0 дн.», the pane names the secretary, the date and the comment, and has no decision buttons. (AC-9.1, AC-9.3)
+24. As `employee.fmi`, submit the award again. Expected: as `secretary.fmi`, the award is gone from the tab and
+    back in the queue; the count went down by one. At 360 px and in English and dark mode, the tab reads
+    "In rework" and scrolls only vertically; with nothing returned the empty state shows. (AC-9.2, AC-9.4)
 
 ### Detours
 

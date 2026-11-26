@@ -1291,7 +1291,24 @@
       "mine": "Mine",
       "unassigned": "Unassigned",
       "all": "All",
+      "rework": "In rework",
       "label": "Which requests to show"
+    },
+    "rework": {
+      "title": "Sent back for rework",
+      "empty": "No award is waiting for rework",
+      "loadFailed": "The list could not be loaded.",
+      "retry": "Try again",
+      "hint": "Read only: the award comes back to the queue once its owner submits it again.",
+      "person": "Person",
+      "unit": "Unit",
+      "level": "Sent back at",
+      "returnedBy": "Sent back by",
+      "onBehalfOf": "for {{name}}",
+      "returnedAt": "Sent back on",
+      "waiting": "Waiting",
+      "days": "{{count}} d",
+      "reason": "Reason"
     },
     "filters": {
       "level": "Review level",

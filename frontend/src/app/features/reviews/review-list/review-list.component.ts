@@ -17,7 +17,7 @@ import { MatPaginator, MatPaginatorIntl, PageEvent } from '@angular/material/pag
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatOption, MatSelect } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
 import { filter as present, forkJoin, map, tap } from 'rxjs';
@@ -50,6 +50,7 @@ import {
 import { HeldDecisionService } from '../held-decision.service';
 import { ReviewPeriodComponent } from '../review-period/review-period.component';
 import { ReviewQueueComponent } from '../review-queue/review-queue.component';
+import { ReworkListComponent } from '../rework-list/rework-list.component';
 import {
   BatchItemResult,
   DecisionType,
@@ -62,6 +63,9 @@ import { ReviewsActions } from '../store/reviews.actions';
 import { reviewsFeature } from '../store/reviews.feature';
 
 const PAGE_SIZES = [20, 50, 100];
+
+/** The `tab` query parameter of the in-rework tab. */
+const REWORK = 'rework';
 
 /** Failure reasons the batch summary names; any other code reads as `unknown`. */
 const REASONS = [
@@ -111,6 +115,7 @@ const TABS: { assigned: ReviewAssignment | null; label: string }[] = [
     KyivDatePipe,
     ReviewPeriodComponent,
     ReviewQueueComponent,
+    ReworkListComponent,
   ],
   providers: [{ provide: MatPaginatorIntl, useClass: TranslatedPaginatorIntl }],
   templateUrl: './review-list.component.html',
@@ -128,6 +133,8 @@ export class ReviewListComponent implements OnInit {
   private readonly heldDecisions = inject(HeldDecisionService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly transloco = inject(TranslocoService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   protected readonly tabs = TABS;
   protected readonly levels = reviewableLevels(this.auth.permissions()) as ApprovalLevel[];
@@ -162,6 +169,13 @@ export class ReviewListComponent implements OnInit {
   readonly total = this.store.selectSignal(reviewsFeature.selectTotal);
   readonly pageIndex = this.store.selectSignal(reviewsFeature.selectPageIndex);
   readonly pageSize = this.store.selectSignal(reviewsFeature.selectPageSize);
+  /** True on the in-rework tab, kept in the URL as `?tab=rework`. */
+  readonly rework = toSignal(
+    this.route.queryParamMap.pipe(map((params) => params.get('tab') === REWORK)),
+    { initialValue: this.route.snapshot.queryParamMap.get('tab') === REWORK },
+  );
+  /** How many awards wait in rework; null until read or when the read failed. */
+  readonly reworkCount = signal<number | null>(null);
   /** A message handed over by the page the reviewer came from. */
   readonly notice = signal<string | null>(null);
 
@@ -208,6 +222,29 @@ export class ReviewListComponent implements OnInit {
       next: (lists) => this.units.set(this.inScope(lists.flat())),
       error: () => this.units.set([]),
     });
+    this.reviews.returned(0, 1).subscribe({
+      next: (page) => this.reworkCount.set(page.totalElements),
+      error: () => this.reworkCount.set(null),
+    });
+  }
+
+  /**
+   * Shows the queue with an assignment filter, leaving the in-rework tab.
+   *
+   * @param assigned whose requests to show
+   */
+  showQueue(assigned: ReviewAssignment | null): void {
+    if (this.rework()) {
+      this.openTab(null);
+    }
+    this.filter({ assigned });
+  }
+
+  /** Shows the awards sent back for rework instead of the queue. */
+  showRework(): void {
+    if (!this.rework()) {
+      this.openTab(REWORK);
+    }
   }
 
   filter(change: Partial<ReviewFilters>): void {
@@ -359,6 +396,14 @@ export class ReviewListComponent implements OnInit {
     if (failed.length > 0) {
       this.refresh();
     }
+  }
+
+  private openTab(tab: string | null): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab, request: null, returned: null },
+      queryParamsHandling: 'merge',
+    });
   }
 
   /**
