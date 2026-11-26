@@ -107,6 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - A click anywhere on a row of the users table or of the unit comparison tables opens the person or the unit.
+- Shared award page shows the main document on a stage beside the facts, and the review path to the owner and reviewers (9.2.7)
 - Demo mail through Gmail SMTP with an app password instead of Brevo (Feature 9.2)
 - One «Аналітика» section: the university and unit pages share a side rail and layout, and /analytics lands by role (9.7.12).
 - ChNU brand shows logo mark 9; the getting-started checklist is a brand card with a progress ring; switching units on unit analytics keeps the page in place (9.7.11)

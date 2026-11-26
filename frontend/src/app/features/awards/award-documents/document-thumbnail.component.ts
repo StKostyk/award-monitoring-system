@@ -5,6 +5,7 @@ import {
   ElementRef,
   OnDestroy,
   OnInit,
+  computed,
   inject,
   input,
   signal,
@@ -26,7 +27,10 @@ import { DocumentsService } from './documents.service';
 export type ThumbnailState = 'loading' | 'image' | 'pdf' | 'type' | 'failed';
 
 const PREVIEWABLE = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
-const WIDTH = 72;
+/** A small thumbnail in a document list, or the large first page on the stage of an award page. */
+export type ThumbnailSize = 'small' | 'stage';
+
+const WIDTHS: Record<ThumbnailSize, number> = { small: 72, stage: 640 };
 
 /**
  * The first page or the picture of a document, read with the access rules of the download; a click opens the
@@ -38,6 +42,7 @@ const WIDTH = 72;
   templateUrl: './document-thumbnail.component.html',
   styleUrl: './document-thumbnail.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '[class.app-thumbnail--stage]': "size() === 'stage'" },
 })
 export class DocumentThumbnailComponent implements OnInit, OnDestroy {
   /** The document to show. */
@@ -46,6 +51,8 @@ export class DocumentThumbnailComponent implements OnInit, OnDestroy {
   readonly fileName = input.required<string>();
   /** Its media type. */
   readonly mimeType = input.required<string>();
+  /** How large it is drawn. */
+  readonly size = input<ThumbnailSize>('small');
 
   private readonly documents = inject(DocumentsService);
   private readonly renderer = inject(PdfRenderer);
@@ -56,6 +63,8 @@ export class DocumentThumbnailComponent implements OnInit, OnDestroy {
 
   readonly state = signal<ThumbnailState>('loading');
   readonly imageUrl = signal<string | null>(null);
+  /** Whether the file was read and the viewer can open it. */
+  readonly ready = computed(() => this.state() === 'image' || this.state() === 'pdf');
 
   ngOnInit(): void {
     if (!PREVIEWABLE.has(this.mimeType())) {
@@ -115,7 +124,11 @@ export class DocumentThumbnailComponent implements OnInit, OnDestroy {
       if (!canvas) {
         throw new Error('The thumbnail is no longer shown');
       }
-      await file.render(1, canvas, WIDTH);
+      await file.render(1, canvas, WIDTHS[this.size()]);
+      if (this.size() === 'stage') {
+        canvas.style.width = '100%';
+        canvas.style.height = 'auto';
+      }
     } finally {
       file.close();
     }

@@ -5574,7 +5574,8 @@ components:
       type: object
       description: >
         One shared award as a signed-in colleague sees it (4.3.8): the achievement card and the documents its owner
-        shows to colleagues. Never the review history, comments, versions or other documents
+        shows to colleagues, and when the review ended. Never the review history, comments, reviewers, versions or
+        other documents: the owner and the reviewers read those from `/awards/{id}/status` and `/awards/{id}/versions`
       required: [achievement, documents]
       properties:
         achievement:
@@ -5584,6 +5585,11 @@ components:
           description: Oldest first; always empty for a unit award
           items:
             $ref: '#/components/schemas/SharedDocument'
+        approvedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the last reviewer approved the award (9.2.7); null for an award approved without a review
 
     AchievementPage:
       allOf:
