@@ -66,6 +66,8 @@ import {
   User,
   Users,
   X,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-angular';
 
 /**
@@ -139,6 +141,8 @@ export const ICONS = {
   user: User,
   users: Users,
   x: X,
+  'zoom-in': ZoomIn,
+  'zoom-out': ZoomOut,
 } satisfies Record<string, LucideIconData>;
 
 /** A name of an icon in {@link ICONS}. */

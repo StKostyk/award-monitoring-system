@@ -152,27 +152,23 @@
     <ul class="documents__list" data-testid="documents-list">
       @for (document of documents(); track document.id) {
         <li class="documents__row" [attr.data-testid]="'document-' + document.id">
-          @if (isImage(document)) {
-            <button
-              type="button"
-              class="documents__name documents__link"
-              (click)="preview(document)"
-              data-testid="document-name"
-            >
-              {{ document.fileName }}
-            </button>
-          } @else {
+          <app-document-thumbnail
+            [documentId]="document.id"
+            [fileName]="document.fileName"
+            [mimeType]="document.mimeType"
+          />
+          <span class="documents__details">
             <span class="documents__name" data-testid="document-name">{{ document.fileName }}</span>
-          }
-          <span class="documents__meta" data-testid="document-type">{{
-            'awards.documents.types.' + document.type | transloco
-          }}</span>
-          <span class="documents__meta" data-testid="document-size">
-            {{ sizeUnit(document.size) | transloco: { size: sizeValue(document.size) } }}
+            <span class="documents__meta" data-testid="document-type">{{
+              'awards.documents.types.' + document.type | transloco
+            }}</span>
+            <span class="documents__meta" data-testid="document-size">
+              {{ sizeUnit(document.size) | transloco: { size: sizeValue(document.size) } }}
+            </span>
+            <span class="documents__meta" data-testid="document-date">{{
+              document.uploadedAt | kyivDate
+            }}</span>
           </span>
-          <span class="documents__meta" data-testid="document-date">{{
-            document.uploadedAt | kyivDate
-          }}</span>
           @if (sharing() === 'open') {
             <mat-slide-toggle
               class="documents__share"
@@ -187,19 +183,6 @@
             </mat-slide-toggle>
           }
           <span class="documents__actions">
-            @if (isImage(document)) {
-              <button
-                mat-button
-                type="button"
-                (click)="preview(document)"
-                [attr.aria-label]="
-                  'awards.documents.previewOf' | transloco: { name: document.fileName }
-                "
-                data-testid="document-preview"
-              >
-                {{ 'awards.documents.preview' | transloco }}
-              </button>
-            }
             <button
               mat-button
               type="button"

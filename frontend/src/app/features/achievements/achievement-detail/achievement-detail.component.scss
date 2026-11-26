@@ -101,6 +101,15 @@
   border-bottom: 1px solid var(--mat-sys-outline-variant);
 }
 
+.detail__details {
+  display: flex;
+  flex: 1 1 180px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  min-width: 0;
+}
+
 .detail__name {
   flex: 1 1 100%;
   overflow-wrap: anywhere;

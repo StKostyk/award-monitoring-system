@@ -11,6 +11,8 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { RoleScope } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { ReviewsService } from '../../reviews/reviews.service';
+import { AwardDocumentsComponent } from '../award-documents/award-documents.component';
+import { stubThumbnails } from '../award-documents/document-thumbnail.testing';
 import { AwardDocument, DocumentsService } from '../award-documents/documents.service';
 import { Award, AwardRequestSummary, AwardStatusView, AwardsService } from '../awards.service';
 import { AwardSubmittedComponent } from '../award-submitted/award-submitted.component';
@@ -136,6 +138,7 @@ describe('AwardDetailComponent', () => {
   let navigate: MockInstance<Router['navigate']>;
 
   async function open<T>(component: new () => T, id: string): Promise<ComponentFixture<T>> {
+    stubThumbnails(AwardDocumentsComponent);
     await TestBed.configureTestingModule({
       imports: [
         component,

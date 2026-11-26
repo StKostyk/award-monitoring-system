@@ -8,7 +8,7 @@ import { vi } from 'vitest';
 
 import { LanguageService } from '../../../core/i18n/language.service';
 import { AwardDocumentsComponent } from './award-documents.component';
-import { DocumentPreviewDialogComponent } from './document-preview-dialog.component';
+import { stubThumbnails } from './document-thumbnail.testing';
 import { AwardDocument, DocumentsService, MAX_DOCUMENT_SIZE } from './documents.service';
 
 function document(overrides: Partial<AwardDocument> = {}): AwardDocument {
@@ -60,6 +60,7 @@ describe('AwardDocumentsComponent', () => {
   const language = { current: vi.fn(() => 'uk') };
 
   async function render(inputs: Record<string, unknown>): Promise<void> {
+    stubThumbnails(AwardDocumentsComponent);
     await TestBed.configureTestingModule({
       imports: [
         AwardDocumentsComponent,
@@ -512,23 +513,15 @@ describe('AwardDocumentsComponent', () => {
     expect(component.notice()).toBe('awards.documents.problems.award-not-editable');
   });
 
-  it('ac6_image_opens_in_a_preview_dialog', async () => {
+  it('ac2_9_2_6_every_document_has_a_thumbnail_next_to_it', async () => {
     const photo = document({ id: 3, fileName: 'фото.jpg', mimeType: 'image/jpeg' });
-    service.list.mockReturnValue(of([photo]));
-    service.download.mockReturnValue(of(new Blob(['x'], { type: 'image/jpeg' })));
-    const createObjectURL = vi.fn(() => 'blob:preview');
-    vi.stubGlobal('URL', { ...URL, createObjectURL, revokeObjectURL: vi.fn() });
+    service.list.mockReturnValue(of([document(), photo]));
     await render({ awardId: 5 });
 
-    byTestId('document-name')?.click();
-
-    expect(service.download).toHaveBeenCalledWith(3);
-    expect(dialog.open).toHaveBeenCalledWith(DocumentPreviewDialogComponent, {
-      data: { name: 'фото.jpg', url: 'blob:preview' },
-      maxWidth: '90vw',
-    });
-    expect(byTestId('document-preview')).not.toBeNull();
-    vi.unstubAllGlobals();
+    expect(all('thumbnail-stub').map((stub) => stub.textContent?.trim())).toEqual([
+      '1 application/pdf',
+      '3 image/jpeg',
+    ]);
   });
 
   it('ac7_read_only_list_has_no_upload_and_no_delete', async () => {
@@ -584,7 +577,7 @@ describe('AwardDocumentsComponent', () => {
     service.download.mockReturnValue(throwError(() => problem('unknown', 500)));
     await render({ awardId: 5 });
 
-    component.preview(document());
+    component.download(document());
 
     expect(component.notice()).toBe('awards.documents.problems.download-failed');
     expect(service.list).toHaveBeenCalledTimes(1);

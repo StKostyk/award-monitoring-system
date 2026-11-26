@@ -95,12 +95,19 @@
         <ul class="detail__list" data-testid="shared-documents">
           @for (document of detail.documents; track document.id) {
             <li class="detail__row" [attr.data-testid]="'shared-document-' + document.id">
-              <span class="detail__name">{{ document.fileName }}</span>
-              <span class="detail__meta">{{
-                'awards.documents.types.' + document.type | transloco
-              }}</span>
-              <span class="detail__meta">
-                {{ sizeUnit(document.size) | transloco: { size: sizeValue(document.size) } }}
+              <app-document-thumbnail
+                [documentId]="document.id"
+                [fileName]="document.fileName"
+                [mimeType]="document.mimeType"
+              />
+              <span class="detail__details">
+                <span class="detail__name">{{ document.fileName }}</span>
+                <span class="detail__meta">{{
+                  'awards.documents.types.' + document.type | transloco
+                }}</span>
+                <span class="detail__meta">
+                  {{ sizeUnit(document.size) | transloco: { size: sizeValue(document.size) } }}
+                </span>
               </span>
               <button
                 mat-button
