@@ -50,6 +50,7 @@ const translations = {
         submit: 'Призначити',
         cancel: 'Скасувати',
         noRoles: 'Ви не можете призначати ролі.',
+        notAMove: 'Це додає роль, але не переводить особу.',
         validation: {
           required: 'Обовʼязкове поле',
           past: 'Не в минулому',
@@ -142,6 +143,20 @@ describe('AssignRoleDialogComponent', () => {
       fixture.nativeElement.querySelector('[data-testid="assign-no-roles"]').textContent,
     ).toContain('Ви не можете призначати ролі.');
     expect(fixture.nativeElement.querySelector('[data-testid="assign-submit"]')).toBeNull();
+  });
+
+  it('9_2_5_ac3_says_an_employee_role_elsewhere_does_not_move_the_person', async () => {
+    const { fixture } = await build(['DEAN:9']);
+    const hint = (): HTMLElement | null =>
+      fixture.nativeElement.querySelector('[data-testid="assign-not-a-move"]');
+
+    fixture.componentInstance.form.patchValue({ role: 'EMPLOYEE', organizationId: 64 });
+    fixture.detectChanges();
+    expect(hint()).toBeNull();
+
+    fixture.componentInstance.form.patchValue({ organizationId: 65 });
+    fixture.detectChanges();
+    expect(hint()?.textContent).toContain('не переводить особу');
   });
 
   it('ac2_10_refuses_a_validity_that_starts_in_the_past', async () => {

@@ -29,6 +29,11 @@
           <mat-error>{{ 'admin.assign.validation.required' | transloco }}</mat-error>
         }
       </mat-form-field>
+      @if (notAMove()) {
+        <p class="admin__hint" role="note" data-testid="assign-not-a-move">
+          {{ 'admin.assign.notAMove' | transloco }}
+        </p>
+      }
 
       <mat-form-field appearance="outline" class="admin__field">
         <mat-label>{{ 'admin.assign.validFrom' | transloco }}</mat-label>

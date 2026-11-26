@@ -808,6 +808,7 @@
       "validityUntil": "valid from {{from}} to {{to}}",
       "ended": "Ended",
       "assign": "Assign role",
+      "move": "Change department",
       "revoke": "Revoke",
       "assigned": "The role is assigned.",
       "revoked": "The role is revoked.",
@@ -862,6 +863,11 @@
         }
       }
     },
+    "moveDialog": {
+      "title": "Move to another department",
+      "text": "{{name}} moves to the selected department with the Employee role. Drafts are submitted to the new department; awards already submitted stay with the department they were submitted to. The person is signed out.",
+      "submit": "Move"
+    },
     "confirmDialog": {
       "title": "Confirm membership",
       "text": "{{name}} will receive the Employee role in the selected department.",
@@ -877,6 +883,7 @@
     },
     "assign": {
       "title": "Assign role",
+      "notAMove": "This adds a role and does not move the person. To move them, use \"Change department\".",
       "role": "Role",
       "organization": "Organisation",
       "validFrom": "Valid from",

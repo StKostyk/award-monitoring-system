@@ -193,6 +193,24 @@ export class UserDetailComponent implements OnInit {
       });
   }
 
+  /** Moves a confirmed member, with the awards not decided yet, to another department. */
+  moveDepartment(user: UserDetail): void {
+    this.dialog
+      .open(ConfirmMembershipDialogComponent, { data: { ...user, move: true }, width: '480px' })
+      .afterClosed()
+      .subscribe((choice?: MembershipChoice) => {
+        if (choice) {
+          this.store.dispatch(
+            AdminUsersActions.membershipConfirmed({
+              id: user.id,
+              organizationId: choice.organizationId,
+              fromOrganizationId: user.organization.id,
+            }),
+          );
+        }
+      });
+  }
+
   /** Offers the people without an account of a department whose awards this member takes over. */
   linkPerson(user: UserDetail): void {
     this.dialog
