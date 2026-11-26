@@ -95,6 +95,7 @@ not the application.
 | 9.2.3 | Deploy job and production server settings | 3 | no | 9.2.2 (memory of the backup service) | SCRUM-133 | #374 |
 | 9.2.4 | Demo server on AWS EC2 with a smoke test | 3 | no | 9.2.2, 9.2.3 | SCRUM-134 | #375 |
 | 9.2.5 | Award form in steps on phones | 5 | no | 9.2.1 | SCRUM-136 | #381 |
+| 9.2.8 | Open a user from anywhere on the table row | 2 | no | - | SCRUM-197 | #538 |
 
 Order: 9.2.2 → 9.2.3 → 9.2.4 (server in mid-November, before the code freeze around 2026-11-22) → 9.2.5. 9.2.5 is
 frontend only and can move ahead of 9.2.4 if provisioning waits; the deploy job ships it either way.
@@ -242,6 +243,16 @@ Carried from AC-3.7 of Feature 8.1, restricted to the two pages of F-2.
 - **AC-5.6** (Lighthouse) Given the Compose build, when `npm run flow:median` runs in `tools/lighthouse`, then the
   median performance of `/awards/new` is recorded in §10 with the Lighthouse version; target 90, accessibility and
   best practices at 90 or above, the initial bundle within the `angular.json` budget.
+
+### 9.2.8 Open a user from anywhere on the table row (SCRUM-197)
+
+- AC-8.1: A click anywhere on a row of the users table opens that person's card; the name stays a real link, so
+  keyboard focus, Ctrl/Cmd+click and middle-click keep working, and buttons inside the row keep their own action.
+- AC-8.2: The row shows a pointer cursor and a hover state in both themes.
+- AC-8.3: The same behaviour on the other list tables that open a detail, checked and aligned where they differ.
+  The unit comparison tables of the analytics pages get it for the rows that link to a unit; the narrow users list,
+  the review list and the notifications already are whole-row links; the review queue and the delegations are cards
+  without a detail page.
 
 ## 5. Edge cases
 
@@ -487,6 +498,15 @@ Preconditions for 9.2.5: Compose stack from the branch, `employee.fmi` and `secr
     saves; navigate away with a change: the unsaved-changes dialog. Reload `/awards/new`: the restore offer, and
     the restored value on all steps. (AC-5.4)
 20. `npm run flow:median` in `tools/lighthouse`. Expected: median performance of `/awards/new` recorded. (AC-5.6)
+
+Preconditions for 9.2.8: Compose stack from the branch, `admin` (local seed), window at 1280 px.
+
+21. `http://localhost/admin/users` as `admin`, light then dark theme. Expected: the pointer and a light tint over the
+    whole row on hover; a click on the roles or the status cell opens the person beside the list; Ctrl+click and a
+    middle click on a cell open the card in a new tab; Tab reaches the name link and Enter opens it; selecting text
+    in a cell by dragging does not open the card. (AC-8.1, AC-8.2)
+22. `http://localhost/analytics/units/<faculty id>` in the table view. Expected: a click on a department row opens
+    that department with the same period; the faculty-level row shows no pointer and does nothing. (AC-8.3)
 
 ### Detours
 

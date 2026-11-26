@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
+import { vi } from 'vitest';
 
 import { paneStub } from '../../../../shared/layout/pane.testing';
 import { languageStub, translations } from '../../analytics.testing';
@@ -181,6 +182,24 @@ describe('UnitComparisonComponent', () => {
 
     expect(link.getAttribute('href')).toBe('/analytics/units/64?from=2024&to=2026');
     expect(fixture.nativeElement.querySelector('[data-testid="comparison-row-9"] a')).toBeNull();
+  });
+
+  it('9_2_8_ac3_opens_a_department_from_any_cell_and_leaves_the_faculty_level_row_inert', () => {
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+    const department = fixture.nativeElement.querySelector(
+      '[data-testid="comparison-row-64"]',
+    ) as HTMLElement;
+    const facultyLevel = fixture.nativeElement.querySelector(
+      '[data-testid="comparison-row-9"]',
+    ) as HTMLElement;
+
+    facultyLevel.querySelector('td')!.click();
+    expect(navigate).not.toHaveBeenCalled();
+    expect(facultyLevel.classList).not.toContain('app-row-link');
+
+    department.querySelector('td')!.click();
+    expect(department.classList).toContain('app-row-link');
+    expect(String(navigate.mock.calls[0][0])).toBe('/analytics/units/64?from=2024&to=2026');
   });
 
   it('ac3_3_draws_approved_and_per_100_members_as_bars_against_the_largest_department', () => {

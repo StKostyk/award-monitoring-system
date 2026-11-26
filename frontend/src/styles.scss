@@ -94,3 +94,16 @@ app-root {
     padding: 0;
   }
 }
+
+tr.app-row-link {
+  cursor: pointer;
+
+  &:hover > th,
+  &:hover > td,
+  .table-scroll .analytics-table &:hover > th:first-child {
+    background-image: linear-gradient(
+      color-mix(in srgb, var(--mat-sys-on-surface) 4%, transparent),
+      color-mix(in srgb, var(--mat-sys-on-surface) 4%, transparent)
+    );
+  }
+}

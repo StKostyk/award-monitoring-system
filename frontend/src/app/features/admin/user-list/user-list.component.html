@@ -81,7 +81,7 @@
             </thead>
             <tbody>
               @for (user of users(); track user.id) {
-                <tr data-testid="user-row">
+                <tr appRowLink data-testid="user-row">
                   <th scope="row">
                     <a
                       class="users__person"
