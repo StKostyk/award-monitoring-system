@@ -20,7 +20,7 @@ import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
 
 /**
- * Query parts of the reviewer queue.
+ * Query parts of the reviewer queue and of its in-rework tab.
  */
 @Component
 public class ReviewSpecifications {
@@ -62,6 +62,30 @@ public class ReviewSpecifications {
             }
             if (query.noticed()) {
                 predicates.add(builder.isNotNull(root.get("overdueNoticedAt")));
+            }
+            return builder.and(predicates.toArray(Predicate[]::new));
+        };
+    }
+
+    /**
+     * Requests sent back for rework inside one of the reaches and not submitted again, neither owned nor submitted
+     * by the caller.
+     *
+     * @param callerId      the reviewer
+     * @param reaches       where the caller reviews; at least one
+     * @param organizations the organisations of the {@code organizationId} filter, null without it
+     * @return specification
+     */
+    public Specification<AwardRequest> returned(long callerId, List<Reach> reaches, Set<Long> organizations) {
+        return (root, criteria, builder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(builder.equal(root.get("status"), RequestStatus.RETURNED));
+            predicates.add(builder.notEqual(owner(root), callerId));
+            predicates.add(builder.notEqual(root.get(SUBMITTER).get(ID), callerId));
+            predicates.add(builder.or(reaches.stream().map(reach -> reach(root, builder, reach))
+                .toArray(Predicate[]::new)));
+            if (organizations != null) {
+                predicates.add(organization(root).in(organizations));
             }
             return builder.and(predicates.toArray(Predicate[]::new));
         };

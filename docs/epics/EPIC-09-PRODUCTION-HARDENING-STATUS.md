@@ -107,8 +107,9 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 5za | 9.4.8 Logo opens the home of a signed-in person | 9.4 | 1 | SCRUM-170 | #471 | no | Done |
 | 6 | 9.2.4 Demo server on AWS EC2 with a smoke test | 9.2 | 3 | SCRUM-134 | #375 | no | Done |
 | 6a | 9.2.5 Move a confirmed employee to another department | 9.2 | 3 | SCRUM-194 | #535 | no | Done |
-| 6b | 9.2.6 Document preview on award, review and profile screens | 9.2 | 5 | SCRUM-195 | #536 | no | In review |
-| 6c | 9.2.7 Award page with the document stage and review path | 9.2 | 5 | SCRUM-196 | #537 | no | In review |
+| 6b | 9.2.6 Document preview on award, review and profile screens | 9.2 | 5 | SCRUM-195 | #536 | no | Done |
+| 6c | 9.2.7 Award page with the document stage and review path | 9.2 | 5 | SCRUM-196 | #537 | no | Done |
+| 6c | 9.2.9 In-rework tab for awards sent back by the reviewer | 9.2 | 5 | SCRUM-198 | #539 | no | In progress |
 | 7 | 9.1.3 Backend-for-frontend with an HttpOnly session cookie (stretch) | 9.1 | 8 | SCRUM-135 | #376 | no | Planned |
 
 Total: 24 points without the stretch, 32 with it; sprints 7 to 9 (2026-10-29 to 2026-11-15), the server in sprint 9.

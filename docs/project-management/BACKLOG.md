@@ -192,8 +192,9 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.2.4 | Demo server on AWS EC2 with a smoke test | 3 | ✅ Done | SCRUM-134 | [#375](https://github.com/StKostyk/award-monitoring-system/issues/375) |
 | 9.2.6 | Dependency upgrade for critical CVEs | 2 | ✅ Done | SCRUM-137 | [#387](https://github.com/StKostyk/award-monitoring-system/issues/387) |
 | 9.2.5 | Move a confirmed employee to another department | 3 | ✅ Done | SCRUM-194 | [#535](https://github.com/StKostyk/award-monitoring-system/issues/535) |
-| 9.2.6 | Document preview on award, review and profile screens | 5 | 👀 In review (6) | SCRUM-195 | [#536](https://github.com/StKostyk/award-monitoring-system/issues/536) |
-| 9.2.7 | Award page with the document stage and review path | 5 | 👀 In review (6) | SCRUM-196 | [#537](https://github.com/StKostyk/award-monitoring-system/issues/537) |
+| 9.2.6 | Document preview on award, review and profile screens | 5 | ✅ Done | SCRUM-195 | [#536](https://github.com/StKostyk/award-monitoring-system/issues/536) |
+| 9.2.7 | Award page with the document stage and review path | 5 | ✅ Done | SCRUM-196 | [#537](https://github.com/StKostyk/award-monitoring-system/issues/537) |
+| 9.2.9 | In-rework tab for awards sent back by the reviewer | 5 | 🔨 In progress (6) | SCRUM-198 | [#539](https://github.com/StKostyk/award-monitoring-system/issues/539) |
 | 9.3.1 | Theme tokens, fonts and icons | 5 | ✅ Done | SCRUM-138 | [#391](https://github.com/StKostyk/award-monitoring-system/issues/391) |
 | 9.3.2 | Effect components, motion and chart theme | 3 | ✅ Done | SCRUM-139 | [#392](https://github.com/StKostyk/award-monitoring-system/issues/392) |
 | 9.3.3 | Shell, navigation and command palette | 5 | ✅ Done | SCRUM-140 | [#393](https://github.com/StKostyk/award-monitoring-system/issues/393) |
