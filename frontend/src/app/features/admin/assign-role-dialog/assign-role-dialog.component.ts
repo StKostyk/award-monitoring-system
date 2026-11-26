@@ -106,6 +106,17 @@ export class AssignRoleDialogComponent {
     return organizationName(organization, this.language.current());
   }
 
+  /** An Employee role in a department other than the user's own adds a role and does not move them. */
+  notAMove(): boolean {
+    const { role, organizationId } = this.form.getRawValue();
+    return (
+      role === 'EMPLOYEE' &&
+      organizationId !== null &&
+      organizationId !== this.user.organization.id &&
+      this.user.membershipConfirmed
+    );
+  }
+
   submit(): void {
     const value = this.form.getRawValue();
     if (this.form.invalid || this.submitting() || !value.role || !value.organizationId) {

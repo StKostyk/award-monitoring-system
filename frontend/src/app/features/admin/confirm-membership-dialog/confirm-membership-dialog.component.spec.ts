@@ -67,7 +67,7 @@ describe('ConfirmMembershipDialogComponent', () => {
   let http: HttpTestingController;
   const close = vi.fn();
 
-  async function setup(data: object, candidates: Person[] = []): Promise<void> {
+  async function setup(data: object, candidates: Person[] | null = []): Promise<void> {
     close.mockClear();
     await TestBed.configureTestingModule({
       imports: [
@@ -90,6 +90,11 @@ describe('ConfirmMembershipDialogComponent', () => {
                   linkSubmit: 'Приєднати',
                   noCandidates: 'Немає колег',
                 },
+                moveDialog: {
+                  title: 'Перевести на іншу кафедру',
+                  text: '{{name}} переходить на вибрану кафедру.',
+                  submit: 'Перевести',
+                },
               },
             },
           },
@@ -108,7 +113,9 @@ describe('ConfirmMembershipDialogComponent', () => {
     fixture = TestBed.createComponent(ConfirmMembershipDialogComponent);
     fixture.detectChanges();
     http.expectOne(`${environment.apiUrl}/organizations?type=DEPARTMENT`).flush(departments);
-    flushCandidates(64, candidates);
+    if (candidates) {
+      flushCandidates(64, candidates);
+    }
   }
 
   function flushCandidates(organization: number, candidates: Person[]): void {
@@ -176,6 +183,23 @@ describe('ConfirmMembershipDialogComponent', () => {
     submit.click();
 
     expect(close).toHaveBeenCalledWith({ organizationId: 64, person: people[0] });
+  });
+
+  it('9_2_5_ac1_moves_to_another_department_only_without_listing_colleagues', async () => {
+    await setup({ ...user, move: true }, null);
+    const submit: HTMLButtonElement = fixture.nativeElement.querySelector(
+      '[data-testid="confirm-submit"]',
+    );
+
+    expect(fixture.nativeElement.textContent).toContain('Перевести на іншу кафедру');
+    expect(fixture.nativeElement.textContent).toContain('Олена Нова переходить');
+    expect(submit.disabled).toBe(true);
+
+    fixture.componentInstance.department.setValue(20);
+    fixture.detectChanges();
+    submit.click();
+
+    expect(close).toHaveBeenCalledWith({ organizationId: 20, person: null });
   });
 
   it('ac4_1_a_caller_who_cannot_list_people_still_confirms', async () => {

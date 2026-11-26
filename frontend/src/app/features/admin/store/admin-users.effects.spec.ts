@@ -122,6 +122,21 @@ describe('AdminUsersEffects', () => {
     });
   });
 
+  it('9_2_5_ac1_moves_a_confirmed_member_from_their_department', async () => {
+    const subscription = effects.confirmMembership$.subscribe();
+    actions$.next(
+      AdminUsersActions.membershipConfirmed({ id: 7, organizationId: 65, fromOrganizationId: 64 }),
+    );
+    subscription.unsubscribe();
+
+    expect(api.assignRole).toHaveBeenCalledWith(7, {
+      role: 'EMPLOYEE',
+      organizationId: 65,
+      updateOrganization: true,
+      fromOrganizationId: 64,
+    });
+  });
+
   it('ac2_7_keeps_a_refused_confirmation_on_its_own_row', async () => {
     api.assignRole.mockReturnValue(throwError(() => problem('role-already-assigned', 409)));
     const result = firstValueFrom(effects.confirmMembership$);

@@ -60,6 +60,8 @@ export interface RoleAssignmentRequest {
   validFrom?: string;
   validTo?: string | null;
   updateOrganization?: boolean;
+  /** The department the user is moved from; required when the user has already held a role. */
+  fromOrganizationId?: number;
 }
 
 @Injectable({ providedIn: 'root' })

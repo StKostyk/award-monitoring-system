@@ -30,6 +30,8 @@ export interface MembershipDialogData {
   organization: OrganizationRef;
   /** True for an account that already holds a role: only the link is offered, no new role. */
   linkOnly?: boolean;
+  /** True for moving a confirmed member to another department: only the department is offered. */
+  move?: boolean;
 }
 
 /** The department chosen and, when the registrant is a person without an account, that person. */
@@ -94,6 +96,9 @@ export class ConfirmMembershipDialogComponent implements OnInit {
     this.api
       .organizations('DEPARTMENT')
       .subscribe((departments) => this.departments.set(departments));
+    if (this.user.move) {
+      return;
+    }
     this.department.valueChanges
       .pipe(
         startWith(this.department.value),
@@ -116,7 +121,19 @@ export class ConfirmMembershipDialogComponent implements OnInit {
   }
 
   submittable(): boolean {
+    if (this.user.move) {
+      return this.department.valid && this.department.value !== this.user.organization.id;
+    }
     return this.department.valid && (!this.user.linkOnly || this.person.value !== null);
+  }
+
+  /** The translation key of a text that differs between confirming, linking and moving. */
+  text(key: 'title' | 'text' | 'submit'): string {
+    if (this.user.move) {
+      return `admin.moveDialog.${key}`;
+    }
+    const link = { title: 'linkTitle', text: 'linkText', submit: 'linkSubmit' }[key];
+    return `admin.confirmDialog.${this.user.linkOnly ? link : key}`;
   }
 
   submit(): void {
