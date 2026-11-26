@@ -119,6 +119,7 @@ describe('ReviewListComponent', () => {
     decideBatch: vi.fn(),
     reviewPeriod: vi.fn(() => EMPTY),
     item: vi.fn((): Observable<unknown> => EMPTY),
+    returned: vi.fn(() => of({ content: [], totalElements: 3, totalPages: 3, size: 1, number: 0 })),
   };
   const dialog = { open: vi.fn() };
   const held = {
@@ -445,6 +446,47 @@ describe('ReviewListComponent', () => {
     );
     expect(pressed('me')).toBe('true');
     expect(pressed('all')).toBe('false');
+  });
+
+  it('9_2_9_ac3_the_rework_tab_shows_its_count_and_opens_with_the_tab_in_the_url', async () => {
+    await create();
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+
+    expect(reviews.returned).toHaveBeenCalledWith(0, 1);
+    expect(text('review-tab-rework-count')).toBe('3');
+    element().querySelector<HTMLElement>('[data-testid="review-tab-rework"]')?.click();
+
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({
+        queryParams: { tab: 'rework', request: null, returned: null },
+        queryParamsHandling: 'merge',
+      }),
+    );
+  });
+
+  it('9_2_9_ac1_ac3_the_rework_tab_replaces_the_queue_and_a_queue_chip_leaves_it', async () => {
+    query.next(convertToParamMap({ tab: 'rework' }));
+    await create();
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const pressed = (id: string): string | null | undefined =>
+      element().querySelector(`[data-testid="review-tab-${id}"]`)?.getAttribute('aria-pressed');
+
+    expect(element().querySelector('app-rework-list')).not.toBeNull();
+    expect(element().querySelector('[data-testid="review-rows"]')).toBeNull();
+    expect(element().querySelector('[data-testid="batch-select-all"]')).toBeNull();
+    expect(pressed('rework')).toBe('true');
+    expect(pressed('all')).toBe('false');
+
+    element().querySelector<HTMLElement>('[data-testid="review-tab-me"]')?.click();
+
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { tab: null, request: null, returned: null } }),
+    );
+    expect(store.dispatch).toHaveBeenCalledWith(
+      ReviewsActions.filtersChanged({ filters: { ...NO_REVIEW_FILTERS, assigned: 'me' } }),
+    );
   });
 
   it('ac1_2_offers_the_units_and_levels_inside_the_callers_scopes', async () => {

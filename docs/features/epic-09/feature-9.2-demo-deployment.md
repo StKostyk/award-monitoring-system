@@ -95,6 +95,7 @@ not the application.
 | 9.2.3 | Deploy job and production server settings | 3 | no | 9.2.2 (memory of the backup service) | SCRUM-133 | #374 |
 | 9.2.4 | Demo server on AWS EC2 with a smoke test | 3 | no | 9.2.2, 9.2.3 | SCRUM-134 | #375 |
 | 9.2.5 | Award form in steps on phones | 5 | no | 9.2.1 | SCRUM-136 | #381 |
+| 9.2.9 | In-rework tab for awards sent back by the reviewer | 5 | no | - | SCRUM-198 | #539 |
 
 Order: 9.2.2 → 9.2.3 → 9.2.4 (server in mid-November, before the code freeze around 2026-11-22) → 9.2.5. 9.2.5 is
 frontend only and can move ahead of 9.2.4 if provisioning waits; the deploy job ships it either way.
@@ -242,6 +243,22 @@ Carried from AC-3.7 of Feature 8.1, restricted to the two pages of F-2.
 - **AC-5.6** (Lighthouse) Given the Compose build, when `npm run flow:median` runs in `tools/lighthouse`, then the
   median performance of `/awards/new` is recorded in §10 with the Lighthouse version; target 90, accessibility and
   best practices at 90 or above, the initial bundle within the `angular.json` budget.
+
+### 9.2.9 In-rework tab for awards sent back by the reviewer (SCRUM-198)
+
+- **AC-9.1** (Tab) Given a reviewer, when `/reviews` opens, then a fourth chip "На доопрацюванні" / "In rework"
+  shows the number of awards sent back at the levels of the caller's roles (own and delegated) inside their scopes
+  and not submitted again; `?tab=rework` lists them, the longest waiting first, with the title, the person, who
+  sent it back (and for whom under a delegation), when, the reason and the days waiting
+  (`GET /api/v1/reviews/returned`).
+- **AC-9.2** (Leaving) Given an award in the tab, when its owner submits it again, then it leaves the tab and
+  returns to the queue; a later return shows the latest reason. An owner cannot delete or withdraw a returned award
+  today, so submitting again is the only way out.
+- **AC-9.3** (Read only) Given the tab, then the pane shows the chosen award from the tab's own data, with no
+  decision buttons; returned awards are drafts, which reviewers cannot open, and the access rules stay unchanged.
+  The scope, delegation and self-review rules are those of the queue; an organisation outside the caller's scopes
+  answers 400.
+- **AC-9.4** (Screens) Empty state, paging, light and dark, uk and en, 360 px without a horizontal scroll.
 
 ## 5. Edge cases
 
@@ -487,6 +504,15 @@ Preconditions for 9.2.5: Compose stack from the branch, `employee.fmi` and `secr
     saves; navigate away with a change: the unsaved-changes dialog. Reload `/awards/new`: the restore offer, and
     the restored value on all steps. (AC-5.4)
 20. `npm run flow:median` in `tools/lighthouse`. Expected: median performance of `/awards/new` recorded. (AC-5.6)
+
+Preconditions for 9.2.9: Compose stack from the branch, `employee.fmi` and `secretary.fmi` (local seed).
+
+23. As `employee.fmi`, submit a university award; as `secretary.fmi`, open it from `/reviews` and return it with
+    the comment "Додайте скан наказу". Expected: the chip "На доопрацюванні" counts it; `?tab=rework` lists it with
+    «0 дн.», the pane names the secretary, the date and the comment, and has no decision buttons. (AC-9.1, AC-9.3)
+24. As `employee.fmi`, submit the award again. Expected: as `secretary.fmi`, the award is gone from the tab and
+    back in the queue; the count went down by one. At 360 px and in English and dark mode, the tab reads
+    "In rework" and scrolls only vertically; with nothing returned the empty state shows. (AC-9.2, AC-9.4)
 
 ### Detours
 
