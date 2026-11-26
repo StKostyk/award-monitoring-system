@@ -50,6 +50,7 @@ import { watchLeftSelection } from '../../../shared/layout/left-selection';
 import { ListRowComponent, ListRowsDirective } from '../../../shared/layout/list-row.component';
 import { PageHeaderComponent } from '../../../shared/layout/page-header.component';
 import { PaneComponent } from '../../../shared/layout/pane.component';
+import { RowLinkDirective } from '../../../shared/layout/row-link.directive';
 import { SplitComponent } from '../../../shared/layout/split.component';
 import { kyivDateTime } from '../../../shared/date-format';
 import { organizationName } from '../../../shared/organization-name';
@@ -99,6 +100,7 @@ export interface UserCounts {
     PageHeaderComponent,
     PaneComponent,
     RouterLink,
+    RowLinkDirective,
     RouterOutlet,
     SplitComponent,
     TranslocoPipe,

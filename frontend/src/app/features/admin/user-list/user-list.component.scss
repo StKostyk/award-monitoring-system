@@ -91,10 +91,6 @@
   tbody tr:last-child > * {
     border-bottom: 0;
   }
-
-  tbody tr:hover {
-    background: color-mix(in srgb, var(--mat-sys-on-surface) 4%, transparent);
-  }
 }
 
 .users__person {
