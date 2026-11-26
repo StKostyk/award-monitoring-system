@@ -67,7 +67,7 @@ Out:
 | Backups | S3 bucket in `eu-north-1`, 14-day lifecycle rule, put-only IAM user | < 1 USD |
 | Cost guard | AWS Budgets alarm at 10 USD actual cost | 0 |
 | Delivery | GitHub Actions builds, GHCR holds the images, `deploy-demo` deploys over SSH | 0 |
-| Mail | Brevo SMTP relay | 0 (free plan) |
+| Mail | Gmail SMTP with an app password (Brevo until 2026-11-26, see §10 run notes) | 0 |
 
 No load balancer, Auto Scaling group, RDS, ElastiCache or second instance:
 
@@ -206,11 +206,11 @@ Carried from AC-3.7 of Feature 8.1, restricted to the two pages of F-2.
   sign-in off in `sshd_config`); `unattended-upgrades` installs security updates. Automatic recovery is on
   (`aws ec2 describe-instances` shows `AutoRecovery: default`), and a CloudWatch alarm on
   `StatusCheckFailed_Instance` (2 of 2 minutes) reboots the instance.
-- **AC-4.2** (Stack) Given `.env.prod` with `SITE_ADDRESS=<elastic-ip>.sslip.io`, Brevo SMTP and the demo seed,
+- **AC-4.2** (Stack) Given `.env.prod` with `SITE_ADDRESS=<elastic-ip>.sslip.io`, Gmail SMTP and the demo seed,
   when `deploy-demo` runs after its variables and secrets are set, then the job is green and the smoke test of
   AC-3.2 passes against the public address with a Let's Encrypt certificate.
 - **AC-4.3** (Runbook check) Given the public address, when the manual verification of DEMO_DEPLOYMENT runs (steps
-  2 to 10 against `https://<SITE_ADDRESS>`; the reset mail of step 6 to a real mailbox through Brevo), then every
+  2 to 10 against `https://<SITE_ADDRESS>`; the reset mail of step 6 to a real mailbox through Gmail SMTP), then every
   step passes; results recorded in §10.
 - **AC-4.4** (Backups on the server) Given the bucket `award-backups-<suffix>` in `eu-north-1` with the 14-day
   lifecycle rule and an IAM user limited to list, get and put on it, then the first nightly backup appears in the
@@ -299,7 +299,7 @@ None new or changed. The smoke test and the uptime check use `/.well-known/openi
 - GitHub: environment `demo`, variables `DEMO_HOST`, `DEMO_USER`, `DEMO_DIR`, `SITE_ADDRESS`, secrets
   `DEMO_SSH_KEY`, `DEMO_KNOWN_HOSTS`; GHCR images (the server signs in to GHCR with a read-only token kept in its
   Docker configuration).
-- Brevo SMTP (DEMO_DEPLOYMENT §1), Let's Encrypt through Caddy, `sslip.io`.
+- Gmail SMTP (DEMO_DEPLOYMENT §1), Let's Encrypt through Caddy, `sslip.io`.
 
 ## 7. Technical decisions
 
@@ -454,7 +454,7 @@ dump holds it and it falls due before the restore; the nightly job does not run 
    AC-3.5, D-12)
 
 Preconditions for 9.2.4: the EC2 server of the runbook §3, `.env.prod` there, the GitHub environment `demo` filled,
-the bucket and its IAM user, a mailbox I can read for the Brevo test.
+the bucket and its IAM user, a mailbox I can read for the mail test.
 
 10. `ssh -o PasswordAuthentication=yes ubuntu@<ip>` with no key. Expected: refused (`Permission denied
     (publickey)`). `sudo swapon --show` shows 2 GB. (AC-4.1)
@@ -582,7 +582,14 @@ at 200 after a restore and after `up -d --force-recreate app`.
 | 10 | Pass | Sign-in without a key as `ubuntu` and as `root`: `Permission denied (publickey)`; `swapon` 2 G; volume 40 GB gp3, encrypted; `AutoRecovery: default`; IMDSv2 required; reboot alarm on `StatusCheckFailed_Instance`, 2 of 2 minutes; `unattended-upgrades` active; host key of `ssh-keyscan` equal to the console output |
 | 14 (bucket part) | Pass | Versioning on; lifecycle expiry 14 days for objects and for overwritten versions; the backup account can put and list, `rm` and listing other buckets answer `AccessDenied` |
 | 16 (budget part) | Pass | Budget `award-demo-monthly`, 10 USD, mail on actual cost over 100 % |
-| 11–13, 14–16 (rest) | Open | Need the first release to `main` (deploy only runs there) and the night after it |
+| 11 | Pass | Release #533 to `main`, run 45806595746: Trivy, deploy and smoke test green on the first start (ClamAV healthy within the wait); issuer `https://63.178.55.13.sslip.io`; Let's Encrypt certificate (YE1) to 2027-02-24; all services up, every service with a health check `healthy` |
+| 13 | Pass | Runbook steps 2 to 10 on `https://63.178.55.13.sslip.io`: `http://` answers 308 to `https://`; sign-in as `admin@demo.example` stays on `https://` (first sign-in opens the privacy notice acknowledgement); `JSESSIONID` `Secure`, `HttpOnly`, `SameSite=Lax`; Swagger UI and `/v3/api-docs` 404; 0 DEBUG lines; Redis `NOAUTH`; public achievements 200 with `Cache-Control: no-store`; only `award-caddy` publishes ports. Step 6 (reset mail to my mailbox, `employee.fmi` pointed at it through psql and back): first through Brevo, which paused the account for review; then through Gmail SMTP, delivered to the inbox. Both reset tokens marked used afterwards |
+| 12, 14–16 (rest) | Open | 12 needs a second release (one deployed tag so far); 14 and 15 the morning after the first night; 16 the `uptime` runs and the Lighthouse flow |
+
+Mail moved from Brevo to Gmail SMTP: Brevo sends a `@gmail.com` sender from its own servers, which fails Gmail's
+DMARC alignment, and the first message put the account under review. Gmail's own server sends the same address
+aligned, free, up to 500 messages a day; a domain with SPF and DKIM stays out of scope for a demo that ends after
+the defense.
 
 The first boot stopped at `systemctl reload ssh`: Ubuntu 24.04 starts `ssh` through socket activation, so the
 service is inactive until the first sign-in and `reload` fails. The `sshd` settings were already in force (the
@@ -598,7 +605,7 @@ over SSH.
 | R-3 | The AWS account itself lost or locked: server and bucket together | Low | High | `.env.prod`, keys and the latest manifest set also downloaded to my workstation before the defense |
 | R-4 | SSH open to every address | Medium | Medium | Key sign-in only, `unattended-upgrades`; Systems Manager as the production alternative |
 | R-5 | A restore drops a legal hold or a cancellation made after the dump | Low | Medium | `restore.sh` lists due requests before the start; I recheck holds before `app` starts |
-| R-6 | Brevo mail from an unverified domain lands in spam | Medium | Low | Demo accounts use `@demo.example` (no mail); a verified sender; a domain with SPF and DKIM stays out of scope |
+| R-6 | Demo mail lands in spam or the relay blocks the sender | Medium | Low | Demo accounts use `@demo.example` (no mail); Gmail SMTP sends as its own address (DMARC aligned; Brevo paused the account on 2026-11-26); a domain with SPF and DKIM stays out of scope |
 | R-7 | Memory limits too tight cause restarts under the demo | Medium | Medium | Limits from measured peaks with 1.5 headroom (AC-3.5); swap; `docker events` checked after the demo rehearsal |
 | R-8 | The award form steps do not reach Lighthouse 90 | Medium | Low | Result recorded either way (AC-5.6); the remaining gap goes to the thesis as a measured limit |
 
