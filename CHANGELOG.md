@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Demo server on AWS EC2: server user data, uptime workflow every 30 minutes, versioned backup bucket with a put-only account, budget and reboot alarms (SCRUM-134)
 - Privacy notice 1.1 with a section on cookies and browser storage, terms of use at /terms linked from sign-up, the notice and the sign-in page, and a List-Unsubscribe header on notification mails
 - A getting-started checklist per role on My dashboard (landing page for the administrator and the data protection officer) with an optional spotlight tour; progress kept by GET|PUT /users/me/onboarding
 - Privacy page as a control panel: a status line with the deletion countdown and its cancel, tiles for the notice, rankings consent, award visibility, e-mails, data download, activity (mine / about me, full log; GET /users/me/activity byMe filter) and deletion

@@ -189,7 +189,7 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.2.1 | Signed-in pages reach Lighthouse mobile performance 90 | 3 | ✅ Done | SCRUM-131 | [#372](https://github.com/StKostyk/award-monitoring-system/issues/372) |
 | 9.2.2 | Nightly backups with a restore drill | 5 | ✅ Done | SCRUM-132 | [#373](https://github.com/StKostyk/award-monitoring-system/issues/373) |
 | 9.2.3 | Deploy job and production server settings | 3 | ✅ Done | SCRUM-133 | [#374](https://github.com/StKostyk/award-monitoring-system/issues/374) |
-| 9.2.4 | Demo server on AWS EC2 with a smoke test | 3 | 9 | SCRUM-134 | [#375](https://github.com/StKostyk/award-monitoring-system/issues/375) |
+| 9.2.4 | Demo server on AWS EC2 with a smoke test | 3 | 👀 In review (9) | SCRUM-134 | [#375](https://github.com/StKostyk/award-monitoring-system/issues/375) |
 | 9.2.6 | Dependency upgrade for critical CVEs | 2 | ✅ Done | SCRUM-137 | [#387](https://github.com/StKostyk/award-monitoring-system/issues/387) |
 | 9.3.1 | Theme tokens, fonts and icons | 5 | ✅ Done | SCRUM-138 | [#391](https://github.com/StKostyk/award-monitoring-system/issues/391) |
 | 9.3.2 | Effect components, motion and chart theme | 3 | ✅ Done | SCRUM-139 | [#392](https://github.com/StKostyk/award-monitoring-system/issues/392) |
