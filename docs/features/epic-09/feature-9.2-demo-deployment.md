@@ -574,6 +574,21 @@ restarted with the limits on. Under the first run a restore left `/login` at 502
 backend's address while `app` was stopped, and nginx kept the old one (D-12); with the fixed address `/login` stays
 at 200 after a restore and after `up -d --force-recreate app`.
 
+**9.2.4 server, 2026-11-26.** Instance `m7i-flex.large` in `eu-central-1`, Ubuntu 24.04.5 LTS, Elastic IP
+`63.178.55.13`, `SITE_ADDRESS=63.178.55.13.sslip.io`; bucket `award-backups-aec71b` in `eu-north-1`.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 10 | Pass | Sign-in without a key as `ubuntu` and as `root`: `Permission denied (publickey)`; `swapon` 2 G; volume 40 GB gp3, encrypted; `AutoRecovery: default`; IMDSv2 required; reboot alarm on `StatusCheckFailed_Instance`, 2 of 2 minutes; `unattended-upgrades` active; host key of `ssh-keyscan` equal to the console output |
+| 14 (bucket part) | Pass | Versioning on; lifecycle expiry 14 days for objects and for overwritten versions; the backup account can put and list, `rm` and listing other buckets answer `AccessDenied` |
+| 16 (budget part) | Pass | Budget `award-demo-monthly`, 10 USD, mail on actual cost over 100 % |
+| 11–13, 14–16 (rest) | Open | Need the first release to `main` (deploy only runs there) and the night after it |
+
+The first boot stopped at `systemctl reload ssh`: Ubuntu 24.04 starts `ssh` through socket activation, so the
+service is inactive until the first sign-in and `reload` fails. The `sshd` settings were already in force (the
+drop-in is read per connection); `server-init.sh` now uses `try-reload-or-restart`, and the rest of the script ran
+over SSH.
+
 ## 11. Risks
 
 | # | Risk | Likelihood | Impact | Mitigation |

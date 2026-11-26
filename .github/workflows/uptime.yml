@@ -1,0 +1,30 @@
+name: uptime
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+jobs:
+  discovery:
+    name: Discovery document answers
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: vars.DEMO_HOST != ''
+    env:
+      DEMO_HOST: ${{ vars.DEMO_HOST }}
+    steps:
+      - name: Request the discovery document
+        run: |
+          set -eu
+          url="https://${DEMO_HOST}.sslip.io/.well-known/openid-configuration"
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "$url") || true
+          echo "$url answered $code"
+          [ "$code" = 200 ] || { echo "::error::$url answered $code instead of 200 within 20 s"; exit 1; }

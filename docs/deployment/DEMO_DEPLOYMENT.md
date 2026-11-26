@@ -138,6 +138,55 @@ only. Install Docker Engine with the Compose plugin and a 2 GB swap file, sign D
 token (`docker login ghcr.io`), create the deploy directory (`DEMO_DIR`) and put `.env.prod` there (section 1).
 Set up the backup bucket and its account (section 4) before the first start.
 
+The steps with the AWS CLI (profile with EC2, S3, IAM, CloudWatch and Budgets rights; Git Bash needs
+`MSYS_NO_PATHCONV=1` for `/dev/sda1`). `infra/demo/server-init.sh` is the user data: swap file, `sshd` with key
+sign-in only and no root sign-in, `unattended-upgrades`, Docker Engine with the Compose plugin, the user `deploy`
+(group `docker`, the deploy key in `authorized_keys`) and `/opt/award`.
+
+The commands run in Git Bash in a directory outside the repository, so the private keys can never be committed;
+`REPO` is the repository checkout.
+
+```bash
+mkdir -p ~/award-demo && cd ~/award-demo && export AWS_REGION=eu-central-1
+ssh-keygen -t ed25519 -N "" -f admin_ed25519; ssh-keygen -t ed25519 -N "" -f deploy_ed25519
+sed "s|__DEPLOY_PUBKEY__|$(cat deploy_ed25519.pub)|" "$REPO/infra/demo/server-init.sh" > user-data.sh
+aws ec2 import-key-pair --key-name award-demo-admin --public-key-material fileb://admin_ed25519.pub
+SG=$(aws ec2 create-security-group --group-name award-demo --description "Award demo: web and SSH" \
+  --vpc-id <default-vpc> --query GroupId --output text)
+aws ec2 authorize-security-group-ingress --group-id $SG --ip-permissions \
+  'IpProtocol=tcp,FromPort=80,ToPort=80,IpRanges=[{CidrIp=0.0.0.0/0}]' \
+  'IpProtocol=tcp,FromPort=443,ToPort=443,IpRanges=[{CidrIp=0.0.0.0/0}]' \
+  'IpProtocol=udp,FromPort=443,ToPort=443,IpRanges=[{CidrIp=0.0.0.0/0}]' \
+  'IpProtocol=tcp,FromPort=22,ToPort=22,IpRanges=[{CidrIp=0.0.0.0/0}]'
+aws ec2 run-instances --image-id <ubuntu-24.04-amd64-ami> --instance-type m7i-flex.large \
+  --key-name award-demo-admin --security-group-ids $SG --user-data file://user-data.sh \
+  --block-device-mappings 'DeviceName=/dev/sda1,Ebs={VolumeSize=40,VolumeType=gp3,Encrypted=true}' \
+  --metadata-options HttpTokens=required --maintenance-options AutoRecovery=default
+aws ec2 allocate-address --domain vpc; aws ec2 associate-address --instance-id <id> --allocation-id <eipalloc>
+aws cloudwatch put-metric-alarm --alarm-name award-demo-reboot-on-instance-check --namespace AWS/EC2 \
+  --metric-name StatusCheckFailed_Instance --dimensions Name=InstanceId,Value=<id> --statistic Maximum \
+  --period 60 --evaluation-periods 2 --datapoints-to-alarm 2 --threshold 1 \
+  --comparison-operator GreaterThanOrEqualToThreshold --alarm-actions arn:aws:automate:eu-central-1:ec2:reboot
+aws budgets create-budget --account-id <account> --budget '{"BudgetName":"award-demo-monthly",
+  "BudgetLimit":{"Amount":"10","Unit":"USD"},"TimeUnit":"MONTHLY","BudgetType":"COST"}' \
+  --notifications-with-subscribers '[{"Notification":{"NotificationType":"ACTUAL",
+  "ComparisonOperator":"GREATER_THAN","Threshold":100,"ThresholdType":"PERCENTAGE"},
+  "Subscribers":[{"SubscriptionType":"EMAIL","Address":"<my address>"}]}]'
+```
+
+`cloud-init status` on the server says `done` when the user data finished (log in
+`/var/log/cloud-init-output.log`). Check the host key before pinning it: the ed25519 line of
+`ssh-keyscan -t ed25519 <ip>` must match the one between `BEGIN SSH HOST KEY KEYS` and `END` in
+`aws ec2 get-console-output --instance-id <id> --latest`. `.env.prod` goes to `/opt/award` with mode 600, and the GHCR
+token goes in on standard input: `docker login ghcr.io -u <github-user> --password-stdin` as `deploy`.
+
+**Uptime.** `.github/workflows/uptime.yml` requests `https://<DEMO_HOST>.sslip.io/.well-known/openid-configuration`
+every 30 minutes and fails when it does not answer 200 within 20 seconds; GitHub mails a failed scheduled run. It
+reads the repository variable `DEMO_HOST`, not the `demo` environment, so it needs no approval, and is skipped
+while `DEMO_HOST` is empty. Scheduled runs use the workflow file on the default branch (`main`), so it starts with
+the release that also runs the first deploy; until that deploy is approved and green the runs fail. It assumes
+`SITE_ADDRESS=<DEMO_HOST>.sslip.io`; with a real domain, change the address in the workflow too.
+
 **Deploy job.** `deploy-demo` in `.github/workflows/ci-cd.yml` runs after every push to `main` whose images were
 built and scanned. It needs:
 
@@ -213,14 +262,38 @@ no run succeeded in the last 26 hours (`docker compose ps backup`).
 | `BACKUP_CRON` | `30 4 * * *` | same |
 
 **Bucket and account.** One S3 bucket in `eu-north-1` (a second EU region), public access blocked, default
-encryption on, and a lifecycle rule that expires every object 14 days after its upload. The backup's IAM user has
-one policy: `s3:ListBucket` on the bucket and `s3:GetObject`, `s3:PutObject` on its objects; no delete. A stolen
-server key can add files but neither read old ones in clear nor remove them.
+encryption on, versioning on, and a lifecycle rule that expires every object 14 days after its upload and every
+overwritten version 14 days after the overwrite. The backup's IAM user has one policy: `s3:ListBucket` on the
+bucket and `s3:GetObject`, `s3:PutObject` on its objects; no delete and no access to older versions. A stolen
+server key can add files but neither read old ones in clear nor remove them: an overwrite keeps the earlier version,
+which my own account restores.
+
+```bash
+B=award-backups-$(openssl rand -hex 3); R="--region eu-north-1"
+aws s3api create-bucket --bucket $B $R --create-bucket-configuration LocationConstraint=eu-north-1
+aws s3api put-public-access-block --bucket $B $R --public-access-block-configuration \
+  BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+aws s3api put-bucket-encryption --bucket $B $R --server-side-encryption-configuration \
+  '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+aws s3api put-bucket-versioning --bucket $B $R --versioning-configuration Status=Enabled
+aws s3api put-bucket-lifecycle-configuration --bucket $B $R --lifecycle-configuration \
+  '{"Rules":[{"ID":"expire-14-days","Status":"Enabled","Filter":{},"Expiration":{"Days":14},
+  "NoncurrentVersionExpiration":{"NoncurrentDays":14}},{"ID":"drop-delete-markers","Status":"Enabled",
+  "Filter":{},"Expiration":{"ExpiredObjectDeleteMarker":true}}]}'
+aws iam create-user --user-name award-demo-backup
+aws iam put-user-policy --user-name award-demo-backup --policy-name award-demo-backup-bucket --policy-document \
+  "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"s3:ListBucket\",
+  \"Resource\":\"arn:aws:s3:::$B\"},{\"Effect\":\"Allow\",\"Action\":[\"s3:GetObject\",\"s3:PutObject\"],
+  \"Resource\":\"arn:aws:s3:::$B/*\"}]}"
+aws iam create-access-key --user-name award-demo-backup   # the RCLONE_CONFIG_S3_* pair of .env.prod
+```
 
 **Keys apart.** `age-keygen -o backup.key` on my workstation; the public key goes into `.env.prod`, the file
 `backup.key` into my password manager next to `.env.prod` and a copy of `MINIO_KMS_SECRET_KEY`, and never to the
-server or the bucket. The archive holds the plain document content (inside `age`), so a restore to a new server
-works with a new `MINIO_KMS_SECRET_KEY`.
+server or the bucket. On Windows without `age`, the backup image generates the pair in Git Bash (a PowerShell
+5 redirect writes UTF-16, which `age` cannot read):
+`docker run --rm --entrypoint age-keygen award-backup:prod > backup.key`. The archive holds the plain document
+content (inside `age`), so a restore to a new server works with a new `MINIO_KMS_SECRET_KEY`.
 
 **Erased and expired data.** Backups are never edited: an erased account or an expired record leaves every backup
 at most 14 days after the nightly job removed it. A restored database may hold erasure requests that fell due after
