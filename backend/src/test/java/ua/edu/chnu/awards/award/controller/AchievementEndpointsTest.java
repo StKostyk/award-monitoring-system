@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -104,14 +105,16 @@ class AchievementEndpointsTest extends AbstractAwardEndpointsTest {
             "МОН України", LocalDate.of(2025, 5, 1), null, true, new AchievementRecipient(RecipientType.PERSON,
             "Анастасія Коваль", new UnitRef(64L, "Algebra", "Кафедра алгебри", OrganizationType.DEPARTMENT)));
         when(achievements.detail(5L)).thenReturn(new AchievementDetail(achievement, List.of(
-            new SharedDocument(7L, "диплом.pdf", "DIPLOMA", "application/pdf", 3L, null))));
+            new SharedDocument(7L, "диплом.pdf", "DIPLOMA", "application/pdf", 3L, null)),
+            Instant.parse("2025-06-04T08:25:00Z")));
 
         mockMvc.perform(get(ACHIEVEMENTS + "/5").with(employee()))
             .andExpect(status().isOk())
             .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "no-store"))
             .andExpect(jsonPath("$.achievement.awardId").value(5))
             .andExpect(jsonPath("$.documents[0].id").value(7))
-            .andExpect(jsonPath("$.documents[0].storageKey").doesNotExist());
+            .andExpect(jsonPath("$.documents[0].storageKey").doesNotExist())
+            .andExpect(jsonPath("$.approvedAt").value("2025-06-04T08:25:00Z"));
         mockMvc.perform(get(ACHIEVEMENTS + "/5")).andExpect(status().isUnauthorized());
     }
 

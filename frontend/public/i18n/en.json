@@ -646,9 +646,12 @@
     },
     "detail": {
       "documents": "Documents",
-      "noDocuments": "The owner shows no documents of this award.",
       "back": "Back to achievements",
-      "gone": "This achievement is not available. It may no longer be shared."
+      "gone": "This achievement is not available. It may no longer be shared.",
+      "open": "Open",
+      "reviewPath": "Review path",
+      "approvedOn": "Approved on {{date}}",
+      "source": "Source"
     },
     "personTitle": "Achievements of {{name}}",
     "highlight": "Highlight of the month",

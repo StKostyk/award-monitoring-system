@@ -63,6 +63,8 @@ export interface SharedDocument {
 export interface AchievementDetail {
   achievement: Achievement;
   documents: SharedDocument[];
+  /** When the review of the award ended; null for an award that never went through one. */
+  approvedAt: string | null;
 }
 
 export interface AchievementFilters {
