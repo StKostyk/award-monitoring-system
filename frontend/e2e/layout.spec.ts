@@ -1,6 +1,9 @@
 import { expect, test } from './fixtures';
-import { SEED, settled, signInAsSeed } from './helpers';
+import { SEED, settled, signInAsSeed, sql } from './helpers';
 import { deanRoutes, openRoute } from './routes';
+
+/** The demo employee whose approved awards the seed provides; only read here. */
+const SEED_EMPLOYEE_WITH_AWARDS = 'employee.fmi@chnu.edu.ua';
 
 const DESKTOP = { width: 1280, height: 900 };
 const PHONE = { width: 360, height: 780 };
@@ -128,6 +131,67 @@ test.describe('page layout and shell (9.5.1)', () => {
     await expect(page.getByTestId('dashboard-summary')).toHaveAccessibleName('Підсумок');
     await expect(page.getByTestId('cv-export')).toHaveAccessibleName('Експорт для резюме');
   });
+});
+
+test.describe('widget and shell redesign (9.6)', () => {
+  test('9.6 ac7_1 an award shows its facts beside the journey at 1280 and above it at 360', async ({
+    page,
+  }) => {
+    const id = sql(
+      `select a.award_id from awards a join users u on u.user_id = a.user_id
+       where u.email_address = '${SEED_EMPLOYEE_WITH_AWARDS}' and a.status = 'APPROVED'
+       order by a.award_id limit 1`,
+    );
+    expect(id).not.toBe('');
+    await page.setViewportSize(DESKTOP);
+    await signInAsSeed(page, SEED_EMPLOYEE_WITH_AWARDS);
+    await page.goto(`/awards/${id}`);
+    await expect(page.getByTestId('award-status-panel')).toBeVisible();
+    const main = page.locator('.award-detail__main');
+    const journey = page.getByTestId('award-status-panel');
+
+    const wideMain = (await main.boundingBox())!;
+    const wideJourney = (await journey.boundingBox())!;
+    expect(wideJourney.x).toBeGreaterThanOrEqual(wideMain.x + wideMain.width);
+    expect(wideJourney.y).toBeLessThan(wideMain.y + wideMain.height);
+
+    await page.setViewportSize(PHONE);
+    await expect(async () => {
+      const narrowMain = (await main.boundingBox())!;
+      const narrowJourney = (await journey.boundingBox())!;
+      expect(narrowJourney.y).toBeGreaterThanOrEqual(narrowMain.y + narrowMain.height);
+    }).toPass();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      PHONE.width,
+    );
+  });
+
+  for (const scheme of ['light', 'dark'] as const) {
+    test(`9.6 ac1_7 a filled outlined field keeps its label clear of the border, ${scheme}`, async ({
+      page,
+    }) => {
+      await page.emulateMedia({ colorScheme: scheme });
+      await page.setViewportSize(DESKTOP);
+      await signInAsSeed(page, SEED.employee);
+      await page.goto('/profile?section=names');
+      const field = page
+        .locator('mat-form-field')
+        .filter({ has: page.getByTestId('profile-first-name') });
+      await expect(page.getByTestId('profile-first-name')).not.toHaveValue('');
+
+      const geometry = await field.evaluate((host) => {
+        const box = (selector: string) => host.querySelector(selector)!.getBoundingClientRect();
+        const label = box('.mdc-floating-label');
+        const notch = box('.mdc-notched-outline__notch');
+        const input = box('input');
+        return { label, notch, input };
+      });
+      expect(geometry.label.width).toBeGreaterThan(0);
+      expect(geometry.label.left).toBeGreaterThanOrEqual(geometry.notch.left - 0.5);
+      expect(geometry.label.right).toBeLessThanOrEqual(geometry.notch.right + 0.5);
+      expect(geometry.label.bottom).toBeLessThanOrEqual(geometry.input.top + 0.5);
+    });
+  }
 });
 
 test.describe('back from a narrow pane (9.5.10)', () => {

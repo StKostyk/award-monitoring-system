@@ -2,7 +2,7 @@
 
 > **Epic**: 9 Production hardening (SCRUM-128) · **Tracker**: `docs/epics/EPIC-09-PRODUCTION-HARDENING-STATUS.md`
 > **Sprint**: 11 (2026-11-23 to 2026-11-29) and 12 (2026-11-30 to 2026-12-06) · **Points**: 29
-> **Status**: Approved 2026-11-23
+> **Status**: Done 2026-11-26 (manual run of §10: 26 of 27, step 25 accepted on `highlights.component.spec`)
 > **Governing docs**: ADR-014 and ADR-016 (9.3 addenda: tokens, effect components, chart theme), ADR-015 (NgRx per
 > feature), `docs/frontend/UI_GUIDELINES.md` §1-8, Feature 9.3 (the look), Feature 9.4 (widget kit, role
 > dashboards, `dashboard_preferences`), Feature 9.5 (page kit: page header, split, bento, pane, list row);
@@ -387,7 +387,7 @@ Compose stack rebuilt from develop 2b7bf38 (app + frontend), default settings; P
 | 22 | PASS | rector tab on /profile?section=notifications since 22:02:45 UTC (access token 15 min); at 22:19:26 «Е-пошта: Нагороду погоджено» on → PUT /users/me/notification-preferences 200, on after reload; the token had been refreshed in the background before the click (no 401, no sign-in page) |
 | 23 | PASS | employee.fmi browser A: «E-mail: Award rejected» off; browser B (new context) reload /profile?section=notifications: «Е-пошта: Нагороду відхилено» off; switched back on in A |
 | 24 | PASS | step text corrected (no-data dashboard is one page-level empty state): fresh employee mr96.empty2 /dashboard: «Затверджених нагород поки немає» with three steps and «Внести нагороду», no panes, «Графік / Таблиця» switches 0; getting-started card 1/5 |
-| 25 | BLOCKED | seed data cannot produce ≤ 4 university highlights: every active faculty without awards adds a NO_AWARDS entry (1995: 0 awards, 9 highlights; 2000, 2005, 2011: 9); covered by highlights.component.spec ac4_5_offers_no_toggle_when_the_list_fits |
+| 25 | ACCEPTED (unit spec) | accepted on `highlights.component.spec` ac4_5_offers_no_toggle_when_the_list_fits; seed data cannot produce ≤ 4 university highlights: every active faculty without awards adds a NO_AWARDS entry (1995: 0 awards, 9 highlights; 2000, 2005, 2011: 9); covered by highlights.component.spec ac4_5_offers_no_toggle_when_the_list_fits |
 | 26 | PASS | step text corrected (fresh holder instead of the seed rector; revoke signs out): mr96.rsec RECTOR_SECRETARY on ChNU (role 2079) on /analytics/university; admin DELETE /users/2225/roles/2079 → 204; next request 401, sign-in page; after sign-in no «Аналітика» in the sidebar, /analytics/university → /forbidden; dean.fmi /analytics/units/9 still 200 (147) |
 | 27 | PASS | step text corrected (delegated roles do not widen unit analytics, own roles only; revoke signs the delegate out): delegation 61 dean.fmi → secretary.fmi (DEAN, FMI) active, secretary on /analytics/units/9; dean DELETE /delegations/61 → 204; next request 401, sign-in page; after sign-in GET /analytics/units = 5 departments, faculty export 404 |
 
@@ -409,3 +409,87 @@ Compose stack rebuilt from develop 2b7bf38 (app + frontend), default settings; P
 - `UI_GUIDELINES.md` (widget header, chart rules, shell), CHANGELOG lines,
   tracker and BACKLOG rows.
 - The manual run of §10 recorded in this PRD.
+
+## Validation (2026-11-26)
+
+Result: **PASSED WITH NOTES**. Stories 9.6.1 to 9.6.7 merged (#492-#498); manual run of §10 on 2026-11-26: 26 of 27
+steps, step 25 blocked (the seed always gives at least nine university highlights) and covered by
+`highlights.component.spec` ac4_5_offers_no_toggle_when_the_list_fits. Several 9.6 screens were reworked by Feature 9.7
+(one analytics page, spreadsheet tables, sign-in themes, privacy panel); the run checked the merged code and the step
+texts follow it.
+
+Suite on `develop` plus the tests of this PR: unit 1 502, IT/FT 646, JaCoCo 98.2 % lines (7 394/7 529),
+Checkstyle/PMD/SpotBugs 0; frontend lint, 1 610 unit tests, production build 930 kB; Playwright 283/283: 276 in the full run
+on two workers (52 min), the other 7 in a one-worker rerun (four failed on worker crashes and a step timeout under
+memory pressure, three were left unrun); `mobile-layout.spec` ac3_1 ac3_2 (reviewers and officers) timed out in the
+rerun too and passed alone in 2 min.
+
+| AC | Evidence (all passing) |
+|----|------------------------|
+| 1.1 | `shell.component.spec` ac1_1_puts_the_tools_and_the_bell_after_the_user_at_the_foot_of_the_sidebar, ac1_1_ac1_2_makes_the_sidebar_the_banner_and_a_phone_the_slim_bar, ac3_4 palette from the toolbar; e2e `layout.spec` ac1_1 ac1_4 (no sideways scroll), `theme.spec` ac1_4 (named icon-only controls), `keyboard.spec` ac1_5 (focus indicator); manual 1 |
+| 1.2 | `shell.component.spec` ac1_2_keeps_the_scheme_and_sign_out_in_the_drawer_on_a_phone, ac3_1 no bottom bar; e2e `shell.spec` ac1_2; manual 2 |
+| 1.3 | `shell.component.spec` hides the user controls when anonymous, ac2_5_offers_an_anonymous_visitor_to_sign_in; e2e `accessibility.spec` pages without a session; manual 18 |
+| 1.4 | `layout.spec` (page kit) ac1_2_pane_names_its_region_after_its_heading; e2e `theme.spec` ac7_1 (Lucide icons, heading font); manual 3, 17 |
+| 1.5 | `chart.component.spec` ac2_6_switches_to_the_projected_table_and_back, `trend-widget`/`race-widget`/`year-trend-chart` ac2_6 table views (pane state from `pane.testing`); manual 3, 21 |
+| 1.6 | e2e `theme.spec` ac1_1 (Aurora in the dark), ac6 ac1_5 axe in both schemes; manual 1, 5 |
+| 1.7 | e2e `layout.spec` 9.6 ac1_7 (label inside the notch and above the input, light and dark; added here); manual 13 |
+| 2.1, 2.2, 2.4 | `year-trend-chart.component.spec` ac2_4_summarises_the_last_year_the_year_before_and_the_earlier_average, ac2_4_shows_a_dash_for_the_average_without_earlier_years, ac2_5_draws_one_bar_per_year_newest_on_top, ac2_6_shows_the_same_figures_as_a_table; e2e `dashboard.spec` ac2_4 ac2_5 ac2_11; manual 3 |
+| 2.3 | `category-chart.component.spec` ac2_5_shows_the_most_frequent_categories_as_cards, ac4_5_puts_three_cards_and_the_rest_as_bars; manual 4 |
+| 3.1 | `unit-charts.spec` ac2_3_ac4_2_draws_one_small_chart_per_department, ac2_4_the_faculty_grid_shows_the_numbers; e2e `unit-analytics.spec` 9.7 ac2_1 ac2_2 ac2_4; manual 6 |
+| 3.2 | `top-performers.component.spec` ac3_5_puts_the_first_three_on_a_podium_and_ranks_the_rest, ac2_5_shows_one_person_without_a_position; manual 6 |
+| 3.3 | `unit-comparison.component.spec` ac3_3_draws_approved_and_per_100_members_as_bars, ac3_3_shows_every_figure_in_the_full_table, `delta-tiles.component.spec` ac4_2 chips; manual 6 (names wrap, 9.7 D5) |
+| 3.4 | `highlights.component.spec` ac2_6_shows_each_highlight_with_its_count_the_previous_one_and_a_sentence; manual 6 |
+| 3.5 | `unit-charts.spec` ac2_3_draws_this_period_beside_the_previous_one_with_a_table; manual 6 |
+| 4.1 | `faculty-bars.component.spec` ac4_2_sizes_bars_and_ticks, ac4_2_marks_no_change_and_a_new_faculty, ac4_2_draws_no_ticks_or_key_without_a_previous_period; manual 7 |
+| 4.2 | `UniversityAnalyticsServiceTest` ac1_3_ac1_4 and `UnitAnalyticsServiceTest` ac1_5 (`approved.previous` per row), `UnitAnalyticsIT` ac1_4, `UniversityAnalyticsIT`; e2e `university-analytics.spec` 9.7 ac12_7 (numbers of the API) |
+| 4.3 | `highlights.component.spec` ac4_5_caps_the_list_and_expands_it_in_place, ac4_5_offers_no_toggle_when_the_list_fits; manual 8 (25 blocked) |
+| 4.4 | `projection-trend-chart.component.spec` ac4_3_draws_a_column_per_year_with_its_number_and_hatches_the_projected_rest, ac4_3_shows_no_key_when_nothing_is_hatched; manual 7 (main column since 9.7.12) |
+| 4.5 | `delta-tiles.component.spec` ac4_1_shows_a_detailed_chip_and_the_sparkline_on_the_bento_tiles, ac4_1_draws_no_sparkline_from_a_single_year; manual 7 |
+| 5.1 | `hall-of-fame-hero.component.spec` ac5_1 (count, ring share, chip; added here); manual 9 |
+| 5.2 | `trend-widget.component.spec` ac5_2_draws_a_thick_bar_per_year_and_hatches_the_running_year; e2e `hall-of-fame.spec` ac5_2; manual 9 |
+| 5.3 | `race-widget.component.spec` ac5_3 (four: score, overtaking month, behind with a gap, level); manual 9 |
+| 5.4 | `records-widget.component.spec` ac5_4, `facts.spec` ac3_lists_up_to_four_facts; manual 9 |
+| 5.5 | `hall-of-fame.component.spec` ac3_5 layout; e2e `hall-of-fame.spec` ac3_5 (stacks at 360); manual 9 |
+| 6.1, 6.2 | `profile.component.spec` ac6_1 banner, ac6_2 (three: names first, section from the address, old anchor); manual 10, 11, 20 |
+| 6.3 | `notification-preferences.component.spec` ac3_6 groups, ac6_3 (four: one PUT per switch, last channel refused, stored choices, failed save turns back); e2e `profile.spec` ac3_6 ac6_3; manual 11, 12, 22, 23 |
+| 6.4 | `profile.component.spec` ac2_5_links_the_privacy_section_to_the_privacy_centre; manual 14 |
+| 7.1 | e2e `layout.spec` 9.6 ac7_1 (added here); manual 15 |
+| 7.2 | e2e `privacy-centre.spec` ac2_7 ac8_4 (phone and desktop); manual 14 |
+| 7.3 | `not-found.component.spec` ac2_4; e2e `keyboard.spec` ac1_2 (unknown path keeps its address); manual 19 |
+| 7.4 | e2e `people.spec` ac5_4 (360 full width); manual 16 |
+| 7.5 | e2e `command-centre.spec` ac5_7 (44 px buttons, axe); manual 17 |
+| 7.6 | `LoginPageFT` ac1 (brand logo path), e2e `theme.spec` (logo per brand); manual 18 |
+
+Edge cases (§5): zero data as one page-level empty state (`trend-widget`/`race-widget`/`records-widget` ac2_5
+empty states, manual 24); a department without awards draws zeros (`unit-charts.spec` ac2_4); one department or
+faculty (`top-performers` ac2_5 one person); previous period without data (`faculty-bars` ac4_2 «нове» and
+no ticks); long names wrap below 960 (manual 6, 9.7 D5); notification switch with an expired token (manual 22,
+`notification-preferences` failed save turns back); theme and language from the sidebar redraw the charts
+(`chart.component.spec` ac2_4, e2e `university-analytics.spec` 9.3 ac2_4, manual 5).
+
+Security: no backend logic and no endpoint changed (the only backend file is the sign-in logo SVG). A01 the routes
+keep their guards; a revoked role or delegation signs the holder out and the analytics routes refuse afterwards
+(manual 26, 27). A02 nothing new. A03 no new `innerHTML` or sanitiser bypass in the 9.6 diff; notification switches
+use the existing `PUT /users/me/notification-preferences`. A07 a switch saved after the access token expired goes
+through the refresh (manual 22).
+
+Integration: the Compose stack rebuilt from `develop` 2b7bf38 starts clean (manual run); no migration and no
+`openapi.yml` change in this feature (§8).
+
+Scenario review: the detours of §10 (20-27) cover the checklist items that apply to a front-end redesign (direct
+URL, reload after a choice, token expiry in an open tab, second browser, revoked role and delegation, hidden empty
+states); the feature creates nothing, matches no text and schedules nothing, so the lost-create, NFC and cron
+items do not apply. No separate refactor sweep: the 9.7 validation sweep of 2026-11-25 covered the same widget and
+analytics code (tracker technical notes).
+
+Findings:
+1. AC-5.1 (Hall of Fame hero) and AC-1.7, AC-7.1 had no automated test; added in this PR
+   (`hall-of-fame-hero.component.spec`, e2e `layout.spec` 9.6 ac1_7 and ac7_1).
+2. Accepted deviations from the reviews of #495-#497: the sparkline only on the approved KPI tile (the others have
+   no series); the hero ring counts months begun and its chip compares complete months, the scoreboard includes the
+   running month; the two Hall of Fame year widgets pair from 960 px; the first profile section is `aria-current`
+   before a choice; the last channel is refused on the client before any request.
+3. ACs reworded by later stories: AC-1.1 search at the top of the sidebar (9.6.1), AC-3.3 names wrap in the 503 px
+   pane (9.7 D5), AC-4.4 years and forecast in the main column (9.7.12 AC-12.7), AC-6.4 and AC-7.6 through the 9.7
+   privacy panel and sign-in themes.
+4. Step 25 accepted on the unit spec `highlights.component.spec` ac4_5_offers_no_toggle_when_the_list_fits: the seed cannot produce four or fewer university highlights.
