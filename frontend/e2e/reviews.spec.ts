@@ -257,6 +257,46 @@ test.describe('reviewer queue', () => {
     ).toBe('SUBMITTED FACULTY_SECRETARY');
   });
 
+  test('9_2_9 ac1 ac3 ac4 a returned award waits in the in-rework tab with who, when and why', async ({
+    browser,
+  }) => {
+    sql(
+      `update award_requests r set status = 'EXPIRED', completed_at = now() from awards a
+       where a.award_id = r.award_id and r.status = 'RETURNED' and r.updated_at < now() - interval '1 hour'
+       and a.organization_id in (select org_id from organizations where org_id = ${FACULTY} or parent_org_id = ${FACULTY})`,
+    );
+    const title = `Грамота у доопрацюванні ${uniqueToken()}`;
+    const comment = 'Додайте скан наказу';
+    const id = await submittedBy(browser, owner, title, UNIVERSITY);
+    const page = await signedInAs(browser, first, FRESH_PASSWORD);
+    await openAward(page, id);
+    await page.getByTestId('review-return').click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByTestId('decision-comment').fill(comment);
+    await dialog.getByTestId('decision-confirm').click();
+    await expect(page).toHaveURL(/\/reviews$/);
+
+    await expect(page.getByTestId('review-tab-rework-count')).not.toHaveText('');
+    await page.getByTestId('review-tab-rework').click();
+    await expect(page).toHaveURL(/tab=rework/);
+    const row = page.locator(`[data-testid="rework-item"][data-award="${id}"]`);
+    await row.click();
+    const card = page.getByTestId('rework-card');
+    await expect(card).toContainText(title);
+    await expect(page.getByTestId('rework-card-returned-by')).toContainText('Перша');
+    await expect(page.getByTestId('rework-card-reason')).toHaveText(comment);
+    await expect(page.getByTestId('rework-card-days')).toHaveText('0 дн.');
+    await expect(card.getByRole('button')).toHaveCount(0);
+    await expect(page.getByTestId('review-rows')).toHaveCount(0);
+
+    await page.setViewportSize({ width: 360, height: 800 });
+    await expect(page.getByTestId('rework-back')).toBeVisible();
+    const width = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(width).toBeLessThanOrEqual(360);
+    expect(await seriousViolations(page)).toEqual([]);
+    await page.context().close();
+  });
+
   test('ac4_2 ac4_3 a conflict keeps the dialog and the comment, which survives a reload', async ({
     browser,
   }) => {

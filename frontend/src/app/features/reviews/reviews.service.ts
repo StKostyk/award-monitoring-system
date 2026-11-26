@@ -47,6 +47,25 @@ export interface ReviewItem {
   canEscalate: boolean | null;
 }
 
+/** An award sent back for rework that its owner has not submitted again. */
+export interface ReturnedItem {
+  awardId: number;
+  requestId: number;
+  title: string | null;
+  titleUk: string | null;
+  recipient: AwardRecipient;
+  owner: UserRef;
+  organization: OrganizationRef | null;
+  category: CategoryRef | null;
+  level: ApprovalLevel;
+  returnedAt: string | null;
+  returnedBy: UserRef | null;
+  /** Whose delegated role the reviewer acted under, null under an own role. */
+  returnedFor: UserRef | null;
+  comment: string | null;
+  daysWaiting: number;
+}
+
 /** A colleague the request can be handed over to. */
 export interface ReviewerCandidate extends UserRef {
   delegated: boolean;
@@ -145,6 +164,12 @@ export class ReviewsService {
       }
     }
     return this.http.get<Page<ReviewItem>>(`${environment.apiUrl}/reviews`, { params });
+  }
+
+  /** Awards sent back for rework in the caller's scope, the longest waiting first. */
+  returned(page = 0, size = 20): Observable<Page<ReturnedItem>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<Page<ReturnedItem>>(`${environment.apiUrl}/reviews/returned`, { params });
   }
 
   /** The open request of an award; 404 when the caller may not review it. */

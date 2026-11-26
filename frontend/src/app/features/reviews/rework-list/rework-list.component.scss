@@ -1,0 +1,64 @@
+.rework__side,
+.rework__main {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.rework__problem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--mat-sys-error);
+}
+
+.rework__rows {
+  display: grid;
+}
+
+.rework__row-chips {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  max-width: 120px;
+
+  .app-st {
+    white-space: normal;
+    text-align: end;
+  }
+}
+
+.rework__hint {
+  margin: 0 0 12px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.rework__facts {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  gap: 8px 16px;
+  margin: 0;
+
+  dt {
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+.rework__reason-title {
+  margin: 16px 0 4px;
+  font: var(--mat-sys-title-small);
+}
+
+.rework__reason {
+  margin: 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
