@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -33,9 +34,12 @@ import ua.edu.chnu.awards.award.dto.AchievementQuery;
 import ua.edu.chnu.awards.award.dto.RecipientType;
 import ua.edu.chnu.awards.award.dto.SharedDocument;
 import ua.edu.chnu.awards.award.entity.Award;
+import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.AwardVisibility;
+import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
+import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.AwardSpecifications;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.organization.entity.Organization;
@@ -53,8 +57,9 @@ class AchievementsTest {
     private final AwardRepository awards = mock(AwardRepository.class);
     private final OrganizationRepository organizations = mock(OrganizationRepository.class);
     private final AwardDocuments documents = mock(AwardDocuments.class);
+    private final AwardRequestRepository requests = mock(AwardRequestRepository.class);
     private final Achievements achievements = new Achievements(awards, new OrganizationLookup(organizations),
-        new AwardSpecifications(), documents, TestAwards.search(awards, new AwardSpecifications()));
+        new AwardSpecifications(), documents, TestAwards.search(awards, new AwardSpecifications()), requests);
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(21L, "owner@chnu.edu.ua", department);
 
@@ -76,6 +81,40 @@ class AchievementsTest {
 
         assertThat(detail.achievement().awardId()).isEqualTo(TestAwards.AWARD_ID);
         assertThat(detail.documents()).extracting(SharedDocument::fileName).containsExactly("диплом.pdf");
+    }
+
+    @Test
+    void ac3_theDetailCarriesWhenTheReviewOfTheAwardEnded() {
+        Award award = TestAwards.award(owner, department).status(AwardStatus.APPROVED)
+            .visibility(AwardVisibility.UNIVERSITY).build();
+        Instant approved = Instant.parse("2025-06-04T08:25:00Z");
+        when(awards.findWithDetailsById(TestAwards.AWARD_ID)).thenReturn(Optional.of(award));
+        when(requests.findByAwardId(TestAwards.AWARD_ID))
+            .thenReturn(Optional.of(AwardRequest.builder().award(award).status(RequestStatus.APPROVED)
+                .completedAt(approved).build()));
+
+        assertThat(achievements.detail(TestAwards.AWARD_ID).approvedAt()).isEqualTo(approved);
+    }
+
+    @Test
+    void ac3_aRequestThatEndedOtherwiseGivesNoApprovalTime() {
+        Award award = TestAwards.award(owner, department).status(AwardStatus.APPROVED)
+            .visibility(AwardVisibility.UNIVERSITY).build();
+        when(awards.findWithDetailsById(TestAwards.AWARD_ID)).thenReturn(Optional.of(award));
+        when(requests.findByAwardId(TestAwards.AWARD_ID))
+            .thenReturn(Optional.of(AwardRequest.builder().award(award).status(RequestStatus.REJECTED)
+                .completedAt(Instant.parse("2025-06-04T08:25:00Z")).build()));
+
+        assertThat(achievements.detail(TestAwards.AWARD_ID).approvedAt()).isNull();
+    }
+
+    @Test
+    void ac3_anAwardApprovedWithoutAReviewHasNoApprovalTime() {
+        Award award = TestAwards.award(owner, department).status(AwardStatus.APPROVED)
+            .recipientOrganizationId(department.getId()).build();
+        when(awards.findWithDetailsById(TestAwards.AWARD_ID)).thenReturn(Optional.of(award));
+
+        assertThat(achievements.detail(TestAwards.AWARD_ID).approvedAt()).isNull();
     }
 
     @Test

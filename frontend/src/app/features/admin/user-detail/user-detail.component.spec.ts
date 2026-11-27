@@ -402,6 +402,24 @@ describe('UserDetailComponent', () => {
     );
   });
 
+  it('9_2_5_ac1_moves_a_confirmed_member_to_the_chosen_department', () => {
+    store.dispatch(AdminUsersActions.userLoaded({ user: { ...user, membershipConfirmed: true } }));
+    fixture.detectChanges();
+    dialog.open.mockReturnValue({ afterClosed: () => of({ organizationId: 65, person: null }) });
+    const dispatch = vi.spyOn(store, 'dispatch');
+
+    fixture.nativeElement.querySelector('[data-testid="move-department-open"]').click();
+
+    expect(dialog.open.mock.calls[0][1].data.move).toBe(true);
+    expect(dispatch).toHaveBeenCalledWith(
+      AdminUsersActions.membershipConfirmed({
+        id: 7,
+        organizationId: 65,
+        fromOrganizationId: user.organization.id,
+      }),
+    );
+  });
+
   it('ac2_7_renders_a_refused_confirmation_and_hides_the_actions_once_confirmed', () => {
     store.dispatch(AdminUsersActions.userLoaded({ user: { ...user, membershipConfirmed: false } }));
     store.dispatch(

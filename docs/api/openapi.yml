@@ -1190,6 +1190,46 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
 
+  /reviews/returned:
+    get:
+      tags: [Workflows]
+      summary: Awards in rework
+      description: >
+        Requests sent back for rework (`RETURNED`) that their owners have not submitted again, under the same reach
+        as the reviewer queue: the levels of the caller's roles, own or delegated, inside their scopes, without
+        awards the caller owns or submitted or, for a delegated role, the delegator's. Read-only; the longest
+        waiting first (request update time, then request id). `totalElements` of a page of size 1 gives the count
+        of the tab (9.2.9).
+      security:
+        - bearerAuth: []
+      operationId: listReturnedReviews
+      parameters:
+        - name: organizationId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: A faculty or department inside the caller's scopes, sub-units included
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: A page of the tab; empty for an approver with nothing in rework
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReturnedReviewItemPage'
+        '400':
+          description: "`urn:awards:problem:invalid-parameter` naming `organizationId` (outside the caller's scopes)"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
   /reviews/templates:
     get:
       tags: [Workflows]
@@ -5574,7 +5614,8 @@ components:
       type: object
       description: >
         One shared award as a signed-in colleague sees it (4.3.8): the achievement card and the documents its owner
-        shows to colleagues. Never the review history, comments, versions or other documents
+        shows to colleagues, and when the review ended. Never the review history, comments, reviewers, versions or
+        other documents: the owner and the reviewers read those from `/awards/{id}/status` and `/awards/{id}/versions`
       required: [achievement, documents]
       properties:
         achievement:
@@ -5584,6 +5625,11 @@ components:
           description: Oldest first; always empty for a unit award
           items:
             $ref: '#/components/schemas/SharedDocument'
+        approvedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the last reviewer approved the award (9.2.7); null for an award approved without a review
 
     AchievementPage:
       allOf:
@@ -6439,6 +6485,62 @@ components:
             Whether the caller may escalate the request: false at the rector's level and when the caller already
             reviews at the next level; set on `GET /awards/{id}/reviewer`, null on queue pages and on `PUT`
             responses
+
+    ReturnedReviewItem:
+      type: object
+      description: An award sent back for rework and not submitted again, in the in-rework tab of the queue
+      properties:
+        awardId:
+          type: integer
+          format: int64
+        requestId:
+          type: integer
+          format: int64
+        title:
+          type: [string, 'null']
+        titleUk:
+          type: [string, 'null']
+        recipient:
+          $ref: '#/components/schemas/AwardRecipient'
+        owner:
+          $ref: '#/components/schemas/UserRef'
+        organization:
+          $ref: '#/components/schemas/OrganizationRef'
+        category:
+          $ref: '#/components/schemas/AwardCategoryRef'
+        level:
+          $ref: '#/components/schemas/ApprovalLevel'
+        returnedAt:
+          type: [string, 'null']
+          format: date-time
+          description: When the latest return was decided
+        returnedBy:
+          description: Who sent it back
+          oneOf:
+            - $ref: '#/components/schemas/UserRef'
+            - type: 'null'
+        returnedFor:
+          description: Whose delegated role the reviewer acted under; null under an own role
+          oneOf:
+            - $ref: '#/components/schemas/UserRef'
+            - type: 'null'
+        comment:
+          type: [string, 'null']
+          description: The reason given with the return
+        daysWaiting:
+          type: integer
+          format: int64
+          description: Whole days since the return
+
+    ReturnedReviewItemPage:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReturnedReviewItem'
 
     ReviewDay:
       type: object

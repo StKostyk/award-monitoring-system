@@ -42,6 +42,21 @@ public interface ReviewDecisionRepository extends JpaRepository<ReviewDecision, 
                                                                                      ReviewDecisionType decision);
 
     /**
+     * The decisions of one kind on several requests, latest first, with their reviewers and delegators loaded.
+     *
+     * @param requestIds the requests
+     * @param decision   the kind
+     * @return the decisions
+     */
+    @Query("""
+        select d from ReviewDecision d join fetch d.reviewer left join fetch d.delegator
+        where d.requestId in :requestIds and d.decision = :decision
+        order by d.decidedAt desc, d.id desc
+        """)
+    List<ReviewDecision> findLatestFirst(@Param("requestIds") Collection<Long> requestIds,
+                                         @Param("decision") ReviewDecisionType decision);
+
+    /**
      * Whether a reviewer decided on the request at one of the given levels.
      *
      * @param requestId the request

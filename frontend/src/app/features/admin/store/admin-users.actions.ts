@@ -12,7 +12,11 @@ export const AdminUsersActions = createActionGroup({
     'Page Changed': props<{ page: number; size: number }>(),
     'Users Loaded': props<{ page: UserPage }>(),
     'Users Load Failed': props<{ problem: string }>(),
-    'Membership Confirmed': props<{ id: number; organizationId: number }>(),
+    'Membership Confirmed': props<{
+      id: number;
+      organizationId: number;
+      fromOrganizationId?: number;
+    }>(),
     'Membership Linked': props<{ id: number; personId: number; version: number }>(),
     'Membership Confirm Failed': props<{ id: number; problem: string }>(),
     'User Opened': props<{ id: number }>(),

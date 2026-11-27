@@ -37,6 +37,15 @@ describe('ReviewsService', () => {
     request.flush({ content: [], totalElements: 0, totalPages: 0, size: 50, number: 1 });
   });
 
+  it('9_2_9_ac1_ac3_reads_a_page_of_the_in_rework_tab', () => {
+    service.returned(2, 1).subscribe();
+
+    const request = http.expectOne((r) => r.url.endsWith('/reviews/returned'));
+    expect(request.request.params.get('page')).toBe('2');
+    expect(request.request.params.get('size')).toBe('1');
+    request.flush({ content: [], totalElements: 0, totalPages: 0, size: 1, number: 2 });
+  });
+
   it('ac1_4_ac1_6_ac1_8_claims_takes_over_and_hands_over_with_the_version', () => {
     service.claim(5, 3).subscribe();
     service.claim(5, 3, true).subscribe();

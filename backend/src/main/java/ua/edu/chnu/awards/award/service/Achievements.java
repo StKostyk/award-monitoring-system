@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards.award.service;
 
+import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -19,10 +20,13 @@ import ua.edu.chnu.awards.award.dto.SharedDocument;
 import ua.edu.chnu.awards.award.dto.UnitRef;
 import ua.edu.chnu.awards.award.dto.YearRange;
 import ua.edu.chnu.awards.award.entity.Award;
+import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.AwardVisibility;
+import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.mapper.AwardMapper;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
+import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.AwardSpecifications;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.organization.service.OrganizationLookup;
@@ -45,6 +49,7 @@ public class Achievements {
     private final AwardSpecifications specifications;
     private final AwardDocuments documents;
     private final AwardSearch search;
+    private final AwardRequestRepository requests;
 
     /**
      * A page of the achievements colleagues may see, newest award date first.
@@ -77,7 +82,8 @@ public class Achievements {
     }
 
     /**
-     * One shared award as a colleague sees it, with the documents its owner shows to colleagues.
+     * One shared award as a colleague sees it, with the documents its owner shows to colleagues and the time its
+     * review ended.
      *
      * @param id the award
      * @return the achievement and its shown documents
@@ -91,7 +97,11 @@ public class Achievements {
             .orElseThrow(() -> new AwardNotFoundException(id));
         List<SharedDocument> shown = award.isUnitAward() ? List.of()
             : documents.shownToColleagues(id);
-        return new AchievementDetail(of(award), shown);
+        Instant approvedAt = requests.findByAwardId(id)
+            .filter(request -> request.getStatus() == RequestStatus.APPROVED)
+            .map(AwardRequest::getCompletedAt)
+            .orElse(null);
+        return new AchievementDetail(of(award), shown, approvedAt);
     }
 
     private Page<Achievement> page(Set<AwardVisibility> visibilities, AchievementQuery query, int page, int size) {

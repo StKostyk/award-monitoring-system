@@ -251,12 +251,12 @@ test.describe('accessibility of every route', () => {
         'base64',
       ),
     });
-    const stored = page.getByTestId('documents-list').getByTestId('document-name');
+    const stored = page.getByTestId('documents-list').getByTestId('document-thumbnail');
     await expect(stored).toBeVisible({ timeout: UPLOAD_MS });
     await stored.click();
-    await expect(page.getByTestId('document-preview-image')).toBeVisible();
+    await expect(page.getByTestId('document-viewer-image')).toBeVisible();
     await check('documents preview dialog');
-    await page.getByTestId('document-preview-close').click();
+    await page.getByTestId('document-viewer-close').click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
 
     await page.getByTestId('award-remove').click();

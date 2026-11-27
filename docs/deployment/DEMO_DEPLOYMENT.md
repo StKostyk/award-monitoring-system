@@ -1,7 +1,7 @@
 # Demo Deployment Runbook
 
 Single-host deployment for the thesis defense (ADR-021, addendum 2026-11-11): Docker Compose with
-`docker-compose.prod.yml` on one AWS EC2 instance, Caddy for TLS, Brevo for mail, backups to S3 in a second region.
+`docker-compose.prod.yml` on one AWS EC2 instance, Caddy for TLS, Gmail SMTP for mail, backups to S3 in a second region.
 The same configuration is rehearsed on a workstation with `SITE_ADDRESS=localhost`.
 
 ---
@@ -17,8 +17,8 @@ Copy `.env.prod.example` to `.env.prod` (ignored by git) and fill it in.
 | `POSTGRES_*`, `REDIS_PASSWORD`, `MINIO_ROOT_*` | Generated random values (`openssl rand -base64 24`) |
 | `MINIO_APP_USER`, `MINIO_APP_PASSWORD` | The backend's MinIO account, created by the one-shot `minio-init` service with rights on the objects of `award-documents` only (no bucket settings, policies or admin); the root account stays with MinIO |
 | `MINIO_KMS_SECRET_KEY` | Encryption key of the document objects, see below |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD` | Brevo SMTP relay: `smtp-relay.brevo.com`, `587`, the SMTP login and key from the Brevo account |
-| `MAIL_FROM` | A sender verified in Brevo |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD` | Gmail SMTP: `smtp.gmail.com`, `587`, the Gmail address and an app password (Google Account → Security → App passwords; needs 2-Step Verification), revoked after the defense |
+| `MAIL_FROM` | The same Gmail address; a relay such as Brevo sending as a `@gmail.com` address fails Gmail's DMARC check, and Brevo paused the account after the first such mail (2026-11-26) |
 | `ALLOWED_EMAIL_DOMAINS` | Domains accepted at registration (default `chnu.edu.ua`) |
 | `APP_BRAND` | Brand of the sign-in and error pages (`chnu` default, `neutral`); keep it equal to the `id` in the frontend's `brand.json` |
 | `APP_SIGN_IN_THEME` | Look of the sign-in, error and 429 pages: `catalogue` (default), `sky` or `rushnyk`; read at start (`docker compose up -d app` applies it, no rebuild); any other value stops the start |

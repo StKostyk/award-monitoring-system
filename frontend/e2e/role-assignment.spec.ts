@@ -1,3 +1,4 @@
+import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from './fixtures';
 
 import {
@@ -57,6 +58,42 @@ test.describe('role assignment', () => {
     await expect(page).toHaveURL(/\/admin\/users$/);
     await expect(row.getByTestId('user-roles')).toContainText('Працівник');
     await expect(row.getByTestId('unconfirmed-badge')).toHaveCount(0);
+  });
+
+  test('9_2_5 the secretary moves a confirmed member to another department', async ({ page }) => {
+    const email = `mover.${Date.now()}@chnu.edu.ua`;
+    await registerAndVerify(page, email, password);
+    await signIn(page, secretary, DEMO_PASSWORD);
+    await page.goto('/admin/users');
+    await page.getByTestId('filter-q').fill(email);
+    await userRow(page, email).click();
+    await page.getByTestId('confirm-membership').click();
+    await expect(page.getByTestId('current-roles')).toContainText('Кафедра алгебри');
+
+    await page.getByTestId('assign-role-open').click();
+    await page.getByTestId('assign-role').click();
+    await page.getByRole('option', { name: 'Працівник' }).click();
+    const other = page.getByRole('option', { name: 'Кафедра диференціальних рівнянь' });
+    await expect(async () => {
+      await page.getByTestId('assign-organization').click();
+      await expect(other).toBeVisible({ timeout: 2000 });
+    }).toPass();
+    await other.click();
+    await expect(page.getByTestId('assign-not-a-move')).toContainText('Змінити кафедру');
+    await page.getByTestId('assign-cancel').click();
+
+    await page.getByTestId('move-department-open').click();
+    await expect(page.getByTestId('confirm-submit')).toBeDisabled();
+    const axe = await new AxeBuilder({ page }).include('mat-dialog-container').analyze();
+    expect(axe.violations.map((violation) => violation.id)).toEqual([]);
+    await page.getByTestId('confirm-department').click();
+    await page.getByRole('option', { name: 'Кафедра диференціальних рівнянь' }).click();
+    await page.getByTestId('confirm-submit').click();
+
+    await expect(page.getByTestId('current-roles')).toContainText(
+      'Кафедра диференціальних рівнянь',
+    );
+    await expect(page.getByTestId('current-roles')).not.toContainText('Кафедра алгебри');
   });
 
   test('ac210 the dean assigns a role and revokes it after the confirmation', async ({ page }) => {

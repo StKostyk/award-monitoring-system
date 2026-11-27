@@ -75,7 +75,10 @@
       </thead>
       <tbody>
         @for (entry of sorted(); track entry.row.unit.id + '-' + entry.row.facultyLevel) {
-          <tr [attr.data-testid]="'comparison-full-row-' + entry.row.unit.id">
+          <tr
+            [appRowLink]="entry.link"
+            [attr.data-testid]="'comparison-full-row-' + entry.row.unit.id"
+          >
             <th scope="row">
               <ng-container *ngTemplateOutlet="unitName; context: { $implicit: entry }" />
             </th>
@@ -146,7 +149,7 @@
       </thead>
       <tbody>
         @for (entry of sorted(); track entry.row.unit.id + '-' + entry.row.facultyLevel) {
-          <tr [attr.data-testid]="'comparison-row-' + entry.row.unit.id">
+          <tr [appRowLink]="entry.link" [attr.data-testid]="'comparison-row-' + entry.row.unit.id">
             <th scope="row">
               <ng-container *ngTemplateOutlet="unitName; context: { $implicit: entry }" />
             </th>

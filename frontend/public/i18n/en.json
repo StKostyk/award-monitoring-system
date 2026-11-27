@@ -400,6 +400,19 @@
       "downloadOf": "Download {{name}}",
       "removeOf": "Delete {{name}}",
       "close": "Close",
+      "thumbnail": {
+        "type": "No preview",
+        "failed": "Cannot be shown"
+      },
+      "viewer": {
+        "page": "Page {{page}} of {{pages}}",
+        "pageOf": "{{name}}, page {{page}}",
+        "previous": "Previous page",
+        "next": "Next page",
+        "zoomIn": "Zoom in",
+        "zoomOut": "Zoom out",
+        "failed": "This file cannot be shown. Download it to open it."
+      },
       "retry": "Try again",
       "dismiss": "Dismiss",
       "remove": {
@@ -633,9 +646,12 @@
     },
     "detail": {
       "documents": "Documents",
-      "noDocuments": "The owner shows no documents of this award.",
       "back": "Back to achievements",
-      "gone": "This achievement is not available. It may no longer be shared."
+      "gone": "This achievement is not available. It may no longer be shared.",
+      "open": "Open",
+      "reviewPath": "Review path",
+      "approvedOn": "Approved on {{date}}",
+      "source": "Source"
     },
     "personTitle": "Achievements of {{name}}",
     "highlight": "Highlight of the month",
@@ -808,6 +824,7 @@
       "validityUntil": "valid from {{from}} to {{to}}",
       "ended": "Ended",
       "assign": "Assign role",
+      "move": "Change department",
       "revoke": "Revoke",
       "assigned": "The role is assigned.",
       "revoked": "The role is revoked.",
@@ -862,6 +879,11 @@
         }
       }
     },
+    "moveDialog": {
+      "title": "Move to another department",
+      "text": "{{name}} moves to the selected department with the Employee role. Drafts are submitted to the new department; awards already submitted stay with the department they were submitted to. The person is signed out.",
+      "submit": "Move"
+    },
     "confirmDialog": {
       "title": "Confirm membership",
       "text": "{{name}} will receive the Employee role in the selected department.",
@@ -877,6 +899,7 @@
     },
     "assign": {
       "title": "Assign role",
+      "notAMove": "This adds a role and does not move the person. To move them, use \"Change department\".",
       "role": "Role",
       "organization": "Organisation",
       "validFrom": "Valid from",
@@ -1268,7 +1291,24 @@
       "mine": "Mine",
       "unassigned": "Unassigned",
       "all": "All",
+      "rework": "In rework",
       "label": "Which requests to show"
+    },
+    "rework": {
+      "title": "Sent back for rework",
+      "empty": "No award is waiting for rework",
+      "loadFailed": "The list could not be loaded.",
+      "retry": "Try again",
+      "hint": "Read only: the award comes back to the queue once its owner submits it again.",
+      "person": "Person",
+      "unit": "Unit",
+      "level": "Sent back at",
+      "returnedBy": "Sent back by",
+      "onBehalfOf": "for {{name}}",
+      "returnedAt": "Sent back on",
+      "waiting": "Waiting",
+      "days": "{{count}} d",
+      "reason": "Reason"
     },
     "filters": {
       "level": "Review level",

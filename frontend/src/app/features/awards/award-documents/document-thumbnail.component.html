@@ -1,0 +1,22 @@
+@if (state() === 'type' || state() === 'failed') {
+  <span class="thumbnail thumbnail--tile" data-testid="document-thumbnail-tile">
+    <app-icon name="file-text" />
+    <span class="thumbnail__reason">{{ 'awards.documents.thumbnail.' + state() | transloco }}</span>
+  </span>
+} @else {
+  <button
+    type="button"
+    class="thumbnail"
+    [class.thumbnail--ready]="state() !== 'loading'"
+    [attr.aria-busy]="state() === 'loading'"
+    [attr.aria-label]="'awards.documents.previewOf' | transloco: { name: fileName() }"
+    (click)="open()"
+    data-testid="document-thumbnail"
+  >
+    @if (imageUrl(); as url) {
+      <img class="thumbnail__image" [src]="url" alt="" data-testid="document-thumbnail-image" />
+    } @else {
+      <canvas #page class="thumbnail__page" data-testid="document-thumbnail-page"></canvas>
+    }
+  </button>
+}

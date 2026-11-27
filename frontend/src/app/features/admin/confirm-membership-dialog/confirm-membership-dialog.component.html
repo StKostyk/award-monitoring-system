@@ -1,12 +1,7 @@
-<h2 mat-dialog-title>
-  {{ (user.linkOnly ? 'admin.confirmDialog.linkTitle' : 'admin.confirmDialog.title') | transloco }}
-</h2>
+<h2 mat-dialog-title>{{ text('title') | transloco }}</h2>
 <mat-dialog-content>
   <p>
-    {{
-      (user.linkOnly ? 'admin.confirmDialog.linkText' : 'admin.confirmDialog.text')
-        | transloco: { name: user.firstName + ' ' + user.lastName }
-    }}
+    {{ text('text') | transloco: { name: user.firstName + ' ' + user.lastName } }}
   </p>
   <mat-form-field appearance="outline" class="admin__field">
     <mat-label>{{ 'admin.confirmDialog.department' | transloco }}</mat-label>
@@ -54,8 +49,6 @@
     (click)="submit()"
     data-testid="confirm-submit"
   >
-    {{
-      (user.linkOnly ? 'admin.confirmDialog.linkSubmit' : 'admin.confirmDialog.submit') | transloco
-    }}
+    {{ text('submit') | transloco }}
   </button>
 </mat-dialog-actions>

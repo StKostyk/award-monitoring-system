@@ -130,9 +130,9 @@ test.describe('award documents', () => {
     );
     await page.getByTestId('documents-dismiss').click();
 
-    await row(page, 'фото.png').getByTestId('document-name').click();
-    await expect(page.getByTestId('document-preview-image')).toBeVisible();
-    await page.getByTestId('document-preview-close').click();
+    await row(page, 'фото.png').getByTestId('document-thumbnail').click();
+    await expect(page.getByTestId('document-viewer-image')).toBeVisible();
+    await page.getByTestId('document-viewer-close').click();
 
     const download = page.waitForEvent('download');
     await row(page, 'диплом.pdf').getByTestId('document-download').click();

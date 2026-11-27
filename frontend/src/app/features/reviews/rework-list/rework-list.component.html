@@ -1,0 +1,115 @@
+<app-split mode="detail" [detailOpen]="selectedId() !== null">
+  <div splitSide class="rework__side">
+    @if (loading()) {
+      <mat-progress-bar
+        [attr.aria-label]="'app.loading' | transloco"
+        mode="indeterminate"
+        data-testid="rework-loading"
+      />
+    }
+    @if (failed()) {
+      <p class="rework__problem" role="alert" data-testid="rework-error">
+        {{ 'reviews.rework.loadFailed' | transloco }}
+        <button mat-button type="button" (click)="load()" data-testid="rework-retry">
+          {{ 'reviews.rework.retry' | transloco }}
+        </button>
+      </p>
+    }
+
+    <app-pane icon="refresh-cw" [heading]="'reviews.rework.title' | transloco" flush>
+      <span paneMeta>{{ 'reviews.queue.oldestFirst' | transloco }}</span>
+      @if (!loading() && !failed() && items().length === 0) {
+        <app-empty-state
+          icon="check-check"
+          [text]="'reviews.rework.empty' | transloco"
+          data-testid="rework-empty"
+        />
+      }
+      <nav
+        class="rework__rows"
+        appListRows
+        [attr.aria-label]="'reviews.rework.title' | transloco"
+        data-testid="rework-rows"
+      >
+        @for (item of items(); track item.requestId) {
+          <button
+            appListRow
+            class="list-row--wrap"
+            type="button"
+            [initials]="initialsOf(item)"
+            [rowTitle]="title(item)"
+            [meta]="recipient(item) + (item.returnedAt ? ' · ' + (item.returnedAt | kyivDate) : '')"
+            [selected]="isShown(item)"
+            (click)="select(item.awardId)"
+            [attr.data-award]="item.awardId"
+            data-testid="rework-item"
+          >
+            <span rowEnd class="rework__row-chips">
+              <span class="app-st app-st--wait" data-testid="rework-days">{{
+                'reviews.rework.days' | transloco: { count: item.daysWaiting }
+              }}</span>
+              @if (item.returnedBy; as returnedBy) {
+                <span class="app-st" data-testid="rework-returned-by">{{ returnedBy.name }}</span>
+              }
+            </span>
+          </button>
+        }
+      </nav>
+    </app-pane>
+
+    @if (total() > 0) {
+      <mat-paginator
+        [length]="total()"
+        [pageIndex]="pageIndex()"
+        [pageSize]="pageSize()"
+        [pageSizeOptions]="pageSizes"
+        (page)="page($event)"
+        data-testid="rework-paginator"
+      />
+    }
+  </div>
+
+  <div splitMain class="rework__main">
+    @if (selectedId() !== null) {
+      <button mat-button type="button" (click)="select(null)" data-testid="rework-back">
+        {{ 'reviews.back' | transloco }}
+      </button>
+    }
+    @if (current(); as item) {
+      <app-pane icon="file-text" [heading]="title(item)" data-testid="rework-card">
+        <p class="rework__hint">{{ 'reviews.rework.hint' | transloco }}</p>
+        <dl class="rework__facts">
+          <dt>{{ 'reviews.rework.person' | transloco }}</dt>
+          <dd data-testid="rework-card-person">{{ recipient(item) }}</dd>
+          @if (unit(item); as unit) {
+            <dt>{{ 'reviews.rework.unit' | transloco }}</dt>
+            <dd>{{ unit }}</dd>
+          }
+          <dt>{{ 'reviews.rework.level' | transloco }}</dt>
+          <dd>{{ 'roles.' + item.level | transloco }}</dd>
+          @if (item.returnedBy; as returnedBy) {
+            <dt>{{ 'reviews.rework.returnedBy' | transloco }}</dt>
+            <dd data-testid="rework-card-returned-by">
+              {{ returnedBy.name }}
+              @if (item.returnedFor; as returnedFor) {
+                {{ 'reviews.rework.onBehalfOf' | transloco: { name: returnedFor.name } }}
+              }
+            </dd>
+          }
+          @if (item.returnedAt) {
+            <dt>{{ 'reviews.rework.returnedAt' | transloco }}</dt>
+            <dd data-testid="rework-card-returned-at">{{ item.returnedAt | kyivDate }}</dd>
+          }
+          <dt>{{ 'reviews.rework.waiting' | transloco }}</dt>
+          <dd data-testid="rework-card-days">
+            {{ 'reviews.rework.days' | transloco: { count: item.daysWaiting } }}
+          </dd>
+        </dl>
+        @if (item.comment) {
+          <h3 class="rework__reason-title">{{ 'reviews.rework.reason' | transloco }}</h3>
+          <p class="rework__reason" data-testid="rework-card-reason">{{ item.comment }}</p>
+        }
+      </app-pane>
+    }
+  </div>
+</app-split>

@@ -67,7 +67,7 @@ Out:
 | Backups | S3 bucket in `eu-north-1`, 14-day lifecycle rule, put-only IAM user | < 1 USD |
 | Cost guard | AWS Budgets alarm at 10 USD actual cost | 0 |
 | Delivery | GitHub Actions builds, GHCR holds the images, `deploy-demo` deploys over SSH | 0 |
-| Mail | Brevo SMTP relay | 0 (free plan) |
+| Mail | Gmail SMTP with an app password (Brevo until 2026-11-26, see §10 run notes) | 0 |
 
 No load balancer, Auto Scaling group, RDS, ElastiCache or second instance:
 
@@ -95,6 +95,8 @@ not the application.
 | 9.2.3 | Deploy job and production server settings | 3 | no | 9.2.2 (memory of the backup service) | SCRUM-133 | #374 |
 | 9.2.4 | Demo server on AWS EC2 with a smoke test | 3 | no | 9.2.2, 9.2.3 | SCRUM-134 | #375 |
 | 9.2.5 | Award form in steps on phones | 5 | no | 9.2.1 | SCRUM-136 | #381 |
+| 9.2.8 | Open a user from anywhere on the table row | 2 | no | - | SCRUM-197 | #538 |
+| 9.2.9 | In-rework tab for awards sent back by the reviewer | 5 | no | - | SCRUM-198 | #539 |
 
 Order: 9.2.2 → 9.2.3 → 9.2.4 (server in mid-November, before the code freeze around 2026-11-22) → 9.2.5. 9.2.5 is
 frontend only and can move ahead of 9.2.4 if provisioning waits; the deploy job ships it either way.
@@ -206,11 +208,11 @@ Carried from AC-3.7 of Feature 8.1, restricted to the two pages of F-2.
   sign-in off in `sshd_config`); `unattended-upgrades` installs security updates. Automatic recovery is on
   (`aws ec2 describe-instances` shows `AutoRecovery: default`), and a CloudWatch alarm on
   `StatusCheckFailed_Instance` (2 of 2 minutes) reboots the instance.
-- **AC-4.2** (Stack) Given `.env.prod` with `SITE_ADDRESS=<elastic-ip>.sslip.io`, Brevo SMTP and the demo seed,
+- **AC-4.2** (Stack) Given `.env.prod` with `SITE_ADDRESS=<elastic-ip>.sslip.io`, Gmail SMTP and the demo seed,
   when `deploy-demo` runs after its variables and secrets are set, then the job is green and the smoke test of
   AC-3.2 passes against the public address with a Let's Encrypt certificate.
 - **AC-4.3** (Runbook check) Given the public address, when the manual verification of DEMO_DEPLOYMENT runs (steps
-  2 to 10 against `https://<SITE_ADDRESS>`; the reset mail of step 6 to a real mailbox through Brevo), then every
+  2 to 10 against `https://<SITE_ADDRESS>`; the reset mail of step 6 to a real mailbox through Gmail SMTP), then every
   step passes; results recorded in §10.
 - **AC-4.4** (Backups on the server) Given the bucket `award-backups-<suffix>` in `eu-north-1` with the 14-day
   lifecycle rule and an IAM user limited to list, get and put on it, then the first nightly backup appears in the
@@ -242,6 +244,32 @@ Carried from AC-3.7 of Feature 8.1, restricted to the two pages of F-2.
 - **AC-5.6** (Lighthouse) Given the Compose build, when `npm run flow:median` runs in `tools/lighthouse`, then the
   median performance of `/awards/new` is recorded in §10 with the Lighthouse version; target 90, accessibility and
   best practices at 90 or above, the initial bundle within the `angular.json` budget.
+
+### 9.2.8 Open a user from anywhere on the table row (SCRUM-197)
+
+- AC-8.1: A click anywhere on a row of the users table opens that person's card; the name stays a real link, so
+  keyboard focus, Ctrl/Cmd+click and middle-click keep working, and buttons inside the row keep their own action.
+- AC-8.2: The row shows a pointer cursor and a hover state in both themes.
+- AC-8.3: The same behaviour on the other list tables that open a detail, checked and aligned where they differ.
+  The unit comparison tables of the analytics pages get it for the rows that link to a unit; the narrow users list,
+  the review list and the notifications already are whole-row links; the review queue and the delegations are cards
+  without a detail page.
+
+### 9.2.9 In-rework tab for awards sent back by the reviewer (SCRUM-198)
+
+- **AC-9.1** (Tab) Given a reviewer, when `/reviews` opens, then a fourth chip "На доопрацюванні" / "In rework"
+  shows the number of awards sent back at the levels of the caller's roles (own and delegated) inside their scopes
+  and not submitted again; `?tab=rework` lists them, the longest waiting first, with the title, the person, who
+  sent it back (and for whom under a delegation), when, the reason and the days waiting
+  (`GET /api/v1/reviews/returned`).
+- **AC-9.2** (Leaving) Given an award in the tab, when its owner submits it again, then it leaves the tab and
+  returns to the queue; a later return shows the latest reason. An owner cannot delete or withdraw a returned award
+  today, so submitting again is the only way out.
+- **AC-9.3** (Read only) Given the tab, then the pane shows the chosen award from the tab's own data, with no
+  decision buttons; returned awards are drafts, which reviewers cannot open, and the access rules stay unchanged.
+  The scope, delegation and self-review rules are those of the queue; an organisation outside the caller's scopes
+  answers 400.
+- **AC-9.4** (Screens) Empty state, paging, light and dark, uk and en, 360 px without a horizontal scroll.
 
 ## 5. Edge cases
 
@@ -299,7 +327,7 @@ None new or changed. The smoke test and the uptime check use `/.well-known/openi
 - GitHub: environment `demo`, variables `DEMO_HOST`, `DEMO_USER`, `DEMO_DIR`, `SITE_ADDRESS`, secrets
   `DEMO_SSH_KEY`, `DEMO_KNOWN_HOSTS`; GHCR images (the server signs in to GHCR with a read-only token kept in its
   Docker configuration).
-- Brevo SMTP (DEMO_DEPLOYMENT §1), Let's Encrypt through Caddy, `sslip.io`.
+- Gmail SMTP (DEMO_DEPLOYMENT §1), Let's Encrypt through Caddy, `sslip.io`.
 
 ## 7. Technical decisions
 
@@ -454,7 +482,7 @@ dump holds it and it falls due before the restore; the nightly job does not run 
    AC-3.5, D-12)
 
 Preconditions for 9.2.4: the EC2 server of the runbook §3, `.env.prod` there, the GitHub environment `demo` filled,
-the bucket and its IAM user, a mailbox I can read for the Brevo test.
+the bucket and its IAM user, a mailbox I can read for the mail test.
 
 10. `ssh -o PasswordAuthentication=yes ubuntu@<ip>` with no key. Expected: refused (`Permission denied
     (publickey)`). `sudo swapon --show` shows 2 GB. (AC-4.1)
@@ -487,6 +515,24 @@ Preconditions for 9.2.5: Compose stack from the branch, `employee.fmi` and `secr
     saves; navigate away with a change: the unsaved-changes dialog. Reload `/awards/new`: the restore offer, and
     the restored value on all steps. (AC-5.4)
 20. `npm run flow:median` in `tools/lighthouse`. Expected: median performance of `/awards/new` recorded. (AC-5.6)
+
+Preconditions for 9.2.8: Compose stack from the branch, `admin` (local seed), window at 1280 px.
+
+21. `http://localhost/admin/users` as `admin`, light then dark theme. Expected: the pointer and a light tint over the
+    whole row on hover; a click on the roles or the status cell opens the person beside the list; Ctrl+click and a
+    middle click on a cell open the card in a new tab; Tab reaches the name link and Enter opens it; selecting text
+    in a cell by dragging does not open the card. (AC-8.1, AC-8.2)
+22. `http://localhost/analytics/units/<faculty id>` in the table view. Expected: a click on a department row opens
+    that department with the same period; the faculty-level row shows no pointer and does nothing. (AC-8.3)
+
+Preconditions for 9.2.9: Compose stack from the branch, `employee.fmi` and `secretary.fmi` (local seed).
+
+23. As `employee.fmi`, submit a university award; as `secretary.fmi`, open it from `/reviews` and return it with
+    the comment "Додайте скан наказу". Expected: the chip "На доопрацюванні" counts it; `?tab=rework` lists it with
+    «0 дн.», the pane names the secretary, the date and the comment, and has no decision buttons. (AC-9.1, AC-9.3)
+24. As `employee.fmi`, submit the award again. Expected: as `secretary.fmi`, the award is gone from the tab and
+    back in the queue; the count went down by one. At 360 px and in English and dark mode, the tab reads
+    "In rework" and scrolls only vertically; with nothing returned the empty state shows. (AC-9.2, AC-9.4)
 
 ### Detours
 
@@ -582,7 +628,14 @@ at 200 after a restore and after `up -d --force-recreate app`.
 | 10 | Pass | Sign-in without a key as `ubuntu` and as `root`: `Permission denied (publickey)`; `swapon` 2 G; volume 40 GB gp3, encrypted; `AutoRecovery: default`; IMDSv2 required; reboot alarm on `StatusCheckFailed_Instance`, 2 of 2 minutes; `unattended-upgrades` active; host key of `ssh-keyscan` equal to the console output |
 | 14 (bucket part) | Pass | Versioning on; lifecycle expiry 14 days for objects and for overwritten versions; the backup account can put and list, `rm` and listing other buckets answer `AccessDenied` |
 | 16 (budget part) | Pass | Budget `award-demo-monthly`, 10 USD, mail on actual cost over 100 % |
-| 11–13, 14–16 (rest) | Open | Need the first release to `main` (deploy only runs there) and the night after it |
+| 11 | Pass | Release #533 to `main`, run 45806595746: Trivy, deploy and smoke test green on the first start (ClamAV healthy within the wait); issuer `https://63.178.55.13.sslip.io`; Let's Encrypt certificate (YE1) to 2027-02-24; all services up, every service with a health check `healthy` |
+| 13 | Pass | Runbook steps 2 to 10 on `https://63.178.55.13.sslip.io`: `http://` answers 308 to `https://`; sign-in as `admin@demo.example` stays on `https://` (first sign-in opens the privacy notice acknowledgement); `JSESSIONID` `Secure`, `HttpOnly`, `SameSite=Lax`; Swagger UI and `/v3/api-docs` 404; 0 DEBUG lines; Redis `NOAUTH`; public achievements 200 with `Cache-Control: no-store`; only `award-caddy` publishes ports. Step 6 (reset mail to my mailbox, `employee.fmi` pointed at it through psql and back): first through Brevo, which paused the account for review; then through Gmail SMTP, delivered to the inbox. Both reset tokens marked used afterwards |
+| 12, 14–16 (rest) | Open | 12 needs a second release (one deployed tag so far); 14 and 15 the morning after the first night; 16 the `uptime` runs and the Lighthouse flow |
+
+Mail moved from Brevo to Gmail SMTP: Brevo sends a `@gmail.com` sender from its own servers, which fails Gmail's
+DMARC alignment, and the first message put the account under review. Gmail's own server sends the same address
+aligned, free, up to 500 messages a day; a domain with SPF and DKIM stays out of scope for a demo that ends after
+the defense.
 
 The first boot stopped at `systemctl reload ssh`: Ubuntu 24.04 starts `ssh` through socket activation, so the
 service is inactive until the first sign-in and `reload` fails. The `sshd` settings were already in force (the
@@ -598,7 +651,7 @@ over SSH.
 | R-3 | The AWS account itself lost or locked: server and bucket together | Low | High | `.env.prod`, keys and the latest manifest set also downloaded to my workstation before the defense |
 | R-4 | SSH open to every address | Medium | Medium | Key sign-in only, `unattended-upgrades`; Systems Manager as the production alternative |
 | R-5 | A restore drops a legal hold or a cancellation made after the dump | Low | Medium | `restore.sh` lists due requests before the start; I recheck holds before `app` starts |
-| R-6 | Brevo mail from an unverified domain lands in spam | Medium | Low | Demo accounts use `@demo.example` (no mail); a verified sender; a domain with SPF and DKIM stays out of scope |
+| R-6 | Demo mail lands in spam or the relay blocks the sender | Medium | Low | Demo accounts use `@demo.example` (no mail); Gmail SMTP sends as its own address (DMARC aligned; Brevo paused the account on 2026-11-26); a domain with SPF and DKIM stays out of scope |
 | R-7 | Memory limits too tight cause restarts under the demo | Medium | Medium | Limits from measured peaks with 1.5 headroom (AC-3.5); swap; `docker events` checked after the demo rehearsal |
 | R-8 | The award form steps do not reach Lighthouse 90 | Medium | Low | Result recorded either way (AC-5.6); the remaining gap goes to the thesis as a measured limit |
 

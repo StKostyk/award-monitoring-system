@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Review queue: an «In rework» tab lists awards sent back for rework in the reviewer's scope, with who returned them, when, why and the days waiting (9.2.9).
+- Document thumbnails and an in-place viewer for images and PDFs (pages, zoom, download) on the award page, the review queue and shared achievements (SCRUM-195)
 - Demo server on AWS EC2: server user data, uptime workflow every 30 minutes, versioned backup bucket with a put-only account, budget and reboot alarms (SCRUM-134)
 - Privacy notice 1.1 with a section on cookies and browser storage, terms of use at /terms linked from sign-up, the notice and the sign-in page, and a List-Unsubscribe header on notification mails
 - A getting-started checklist per role on My dashboard (landing page for the administrator and the data protection officer) with an optional spotlight tour; progress kept by GET|PUT /users/me/onboarding
@@ -105,6 +107,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User domain entities (`User`, `Organization`, `UserRole`) and repositories over the existing schema; V014 adds the authorization-server tables, `one_time_tokens` and `user_devices`; demo accounts seeded in the `local` and `docker` profiles
 
 ### Changed
+- A click anywhere on a row of the users table or of the unit comparison tables opens the person or the unit.
+- Shared award page shows the main document on a stage beside the facts, and the review path to the owner and reviewers (9.2.7)
+- Demo mail through Gmail SMTP with an app password instead of Brevo (Feature 9.2)
 - One «Аналітика» section: the university and unit pages share a side rail and layout, and /analytics lands by role (9.7.12).
 - ChNU brand shows logo mark 9; the getting-started checklist is a brand card with a progress ring; switching units on unit analytics keeps the page in place (9.7.11)
 - Award detail and privacy in two columns, the users toolbar under the title, command centre panes with the widget header, a 404 tile, and the gold logo on the sign-in page.
@@ -156,6 +161,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README rewritten as a plain project description: scope, delivered epics, technology, local start and a map of the main documents; the phase-by-phase lists of the planning stage are left to the documents themselves
 
 ### Fixed
+- A secretary or administrator can move a confirmed employee to another department from the user card; the role dialog notes that an extra Employee role does not move the person.
 - User and people searches find names typed with combining marks, and registration, profile and added-person names accept them (stored composed).
 - Back from a person's, request's or delegation's pane at phone width returns to the list at the same scroll position, with the focus on the chosen row.
 - Dashboard header shows approved and under-review counts and keeps the period and actions beside the title at 1280 px

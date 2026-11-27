@@ -17,6 +17,14 @@
       "resources": {
         "files": ["/media/*.(woff|woff2)"]
       }
+    },
+    {
+      "name": "pdf-viewer",
+      "installMode": "lazy",
+      "updateMode": "lazy",
+      "resources": {
+        "files": ["/pdfjs/**"]
+      }
     }
   ],
   "dataGroups": [

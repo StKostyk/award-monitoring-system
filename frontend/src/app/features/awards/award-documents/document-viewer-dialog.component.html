@@ -1,0 +1,99 @@
+<h2 mat-dialog-title class="viewer__title">{{ data.fileName }}</h2>
+<mat-dialog-content class="viewer__content">
+  <div
+    #stage
+    class="viewer__stage"
+    tabindex="0"
+    role="region"
+    [attr.aria-label]="data.fileName"
+    data-testid="document-viewer"
+  >
+    @if (failed()) {
+      <p class="viewer__failed" role="alert" data-testid="document-viewer-failed">
+        {{ 'awards.documents.viewer.failed' | transloco }}
+      </p>
+    } @else if (imageUrl) {
+      <img
+        class="viewer__image"
+        [src]="imageUrl"
+        [alt]="data.fileName"
+        [class.viewer__image--fit]="zoom() === 1"
+        [style.width.%]="zoom() === 1 ? null : zoom() * 100"
+        data-testid="document-viewer-image"
+      />
+    } @else {
+      <canvas
+        #sheet
+        class="viewer__page"
+        role="img"
+        [attr.aria-label]="
+          'awards.documents.viewer.pageOf' | transloco: { name: data.fileName, page: page() }
+        "
+        data-testid="document-viewer-page"
+      ></canvas>
+    }
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions class="viewer__actions">
+  @if (!imageUrl && !failed()) {
+    <span class="viewer__group">
+      <button
+        mat-icon-button
+        type="button"
+        [disabled]="page() <= 1"
+        (click)="previous()"
+        [attr.aria-label]="'awards.documents.viewer.previous' | transloco"
+        data-testid="document-viewer-previous"
+      >
+        <app-icon name="arrow-left" />
+      </button>
+      <span class="viewer__status" aria-live="polite" data-testid="document-viewer-status">
+        @if (pages()) {
+          {{ 'awards.documents.viewer.page' | transloco: { page: page(), pages: pages() } }}
+        }
+      </span>
+      <button
+        mat-icon-button
+        type="button"
+        [disabled]="page() >= pages()"
+        (click)="next()"
+        [attr.aria-label]="'awards.documents.viewer.next' | transloco"
+        data-testid="document-viewer-next"
+      >
+        <app-icon name="arrow-right" />
+      </button>
+    </span>
+  }
+  @if (!failed()) {
+    <span class="viewer__group">
+      <button
+        mat-icon-button
+        type="button"
+        [disabled]="zoomStep() === 0"
+        (click)="zoomOut()"
+        [attr.aria-label]="'awards.documents.viewer.zoomOut' | transloco"
+        data-testid="document-viewer-zoom-out"
+      >
+        <app-icon name="zoom-out" />
+      </button>
+      <button
+        mat-icon-button
+        type="button"
+        [disabled]="largest()"
+        (click)="zoomIn()"
+        [attr.aria-label]="'awards.documents.viewer.zoomIn' | transloco"
+        data-testid="document-viewer-zoom-in"
+      >
+        <app-icon name="zoom-in" />
+      </button>
+    </span>
+  }
+  <span class="viewer__group viewer__group--end">
+    <button mat-button type="button" (click)="download()" data-testid="document-viewer-download">
+      {{ 'awards.documents.download' | transloco }}
+    </button>
+    <button mat-button type="button" mat-dialog-close data-testid="document-viewer-close">
+      {{ 'awards.documents.close' | transloco }}
+    </button>
+  </span>
+</mat-dialog-actions>

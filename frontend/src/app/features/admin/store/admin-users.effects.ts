@@ -41,9 +41,14 @@ export class AdminUsersEffects {
   readonly confirmMembership$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AdminUsersActions.membershipConfirmed),
-      mergeMap(({ id, organizationId }) =>
+      mergeMap(({ id, organizationId, fromOrganizationId }) =>
         this.users
-          .assignRole(id, { role: 'EMPLOYEE', organizationId, updateOrganization: true })
+          .assignRole(id, {
+            role: 'EMPLOYEE',
+            organizationId,
+            updateOrganization: true,
+            ...(fromOrganizationId === undefined ? {} : { fromOrganizationId }),
+          })
           .pipe(
             mergeMap(() => this.afterMembership(id)),
             catchError((error: unknown) => {
