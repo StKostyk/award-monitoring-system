@@ -516,13 +516,14 @@ Preconditions for 9.2.5: Compose stack from the branch, `employee.fmi` and `secr
     the restored value on all steps. (AC-5.4)
 20. `npm run flow:median` in `tools/lighthouse`. Expected: median performance of `/awards/new` recorded. (AC-5.6)
 
-Preconditions for 9.2.8: Compose stack from the branch, `admin` (local seed), window at 1280 px.
+Preconditions for 9.2.8: Compose stack from the branch, `admin` and `dean.iptcs` (local seed), window at 1280 px.
 
 21. `http://localhost/admin/users` as `admin`, light then dark theme. Expected: the pointer and a light tint over the
-    whole row on hover; a click on the roles or the status cell opens the person beside the list; Ctrl+click and a
-    middle click on a cell open the card in a new tab; Tab reaches the name link and Enter opens it; selecting text
+    whole row on hover; a click on the roles or the status cell opens the person's card as its own page; Ctrl+click
+    and a middle click on a cell open the card in a new tab; Tab reaches the name link and Enter opens it; selecting text
     in a cell by dragging does not open the card. (AC-8.1, AC-8.2)
-22. `http://localhost/analytics/units/<faculty id>` in the table view. Expected: a click on a department row opens
+22. `http://localhost/analytics/units/<faculty id>` as the faculty's dean (unit analytics need
+    `analytics:read:department`, which `admin` does not hold), table view of «Порівняння кафедр». Expected: a click on a department row opens
     that department with the same period; the faculty-level row shows no pointer and does nothing. (AC-8.3)
 
 Preconditions for 9.2.9: Compose stack from the branch, `employee.fmi` and `secretary.fmi` (local seed).
@@ -641,6 +642,21 @@ The first boot stopped at `systemctl reload ssh`: Ubuntu 24.04 starts `ssh` thro
 service is inactive until the first sign-in and `reload` fails. The `sshd` settings were already in force (the
 drop-in is read per connection); `server-init.sh` now uses `try-reload-or-restart`, and the rest of the script ran
 over SSH.
+
+### Run 2026-11-28
+
+Demo server 63.178.55.13 (main-f077687) for 12, 14-16; local Compose stack at develop aeb26b8 for 22; Lighthouse 12.8.2 from the development machine, 5.6 GB free. Result: 7 pass, 1 fail.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 12 | PASS | No migration between tags; dispatch image_tag=main-70824cb run 46142774724 green, award-backend/frontend main-70824cb healthy; dispatch main-f077687 run 46143039182 green, both back on main-f077687 healthy |
+| 14 | PASS | Bucket lists db/documents/manifest-20261128T043000 (449 500 / 327 432 / 502 B) and the 11-27 set; award-backup Up 18 h (healthy) |
+| 15 | PASS | Server: stop app backup, restore.sh 20261128T043000 with the key copied in and deleted after (exit 0); users 9/9, awards 1/1, objects 1/1 vs manifest; no due erasures; app+backup healthy; employee.fmi@demo.example signs in to /dashboard |
+| 16 | FAIL | Budget award-demo-monthly 10 USD, ACTUAL > 100 % mail: OK. uptime.yml 3 runs in 24 h (11-27 12:56, 21:50, 11-28 03:43 UTC), green but not every 30 min: SCRUM-199. Lighthouse 12.8.2 mobile median of 3, 5.6 GB free: /awards 78 (80, 78, 71), /awards/new 59 (66, 59, 54), /login 86; a11y 100, below the 90 target (accepted below 90 on 2026-11-15) |
+| 21 | PASS | step text corrected (the card opens as its own page, not beside the list); /admin/users at 1280 as admin: cursor pointer, row tint on hover in light and dark (build/mr-21-*.png); click on the roles cell opens /admin/users/2116 (the row's link); Ctrl+click and middle click open /admin/users/2117 in a new tab, list stays; Tab reaches the name link (14 presses) and Enter opens /admin/users/1098; drag-select in a cell selects the text and stays on the list |
+| 22 | PASS | dean.iptcs, /analytics/units/3, Увесь період, «Порівняння кафедр» table: 11 dept rows app-row-link + pointer, «Рівень факультету» cursor auto, click stays on /units/3; dept row opens /analytics/units/26?from=2022&to=2026 (same years; preset shown as custom range); precondition corrected: admin -> dean (admin has no analytics:read:department) |
+| 23 | PASS | award 2575 submitted by employee.fmi, returned by secretary.fmi with «Додайте скан наказу» (request 2026, v1); chip «На доопрацюванні 19»; ?tab=rework lists it last (longest waiting first), 0 дн.; pane: Аліна Секретаренко, 27.11.2026, the comment, read-only note, no decision buttons; no console errors |
+| 24 | PASS | employee.fmi resubmitted 2575 (v3 PENDING): gone from /reviews/returned (19 to 18), back in the secretary queue as SUBMITTED; 360 px, en, dark: chip 'In rework 18', scrollWidth 360 = clientWidth; secretary.fe (0 returned) shows 'No award is waiting for rework'; no console errors |
 
 ## 11. Risks
 
