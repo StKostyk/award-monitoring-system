@@ -97,6 +97,7 @@ not the application.
 | 9.2.5 | Award form in steps on phones | 5 | no | 9.2.1 | SCRUM-136 | #381 |
 | 9.2.8 | Open a user from anywhere on the table row | 2 | no | - | SCRUM-197 | #538 |
 | 9.2.9 | In-rework tab for awards sent back by the reviewer | 5 | no | - | SCRUM-198 | #539 |
+| 9.2.10 | Reliable uptime check for the demo server | 2 | no | 9.2.4 | SCRUM-199 | #548 |
 
 Order: 9.2.2 → 9.2.3 → 9.2.4 (server in mid-November, before the code freeze around 2026-11-22) → 9.2.5. 9.2.5 is
 frontend only and can move ahead of 9.2.4 if provisioning waits; the deploy job ships it either way.
@@ -219,8 +220,9 @@ Carried from AC-3.7 of Feature 8.1, restricted to the two pages of F-2.
   bucket, the `backup` service is healthy the next morning, and one restore of it on the server (AC-2.5) succeeds
   with matching counts.
 - **AC-4.5** (Cost and uptime) Given the account, then an AWS budget alarm mails at 10 USD of monthly actual cost,
-  and a scheduled workflow `uptime` (every 30 minutes, `if: vars.DEMO_HOST != ''`) fails, and so mails me, when the
-  discovery document of the public address does not answer 200 within 20 seconds.
+  and a Route 53 health check of the discovery document of the public address (HTTPS every 30 seconds,
+  `infra/demo/uptime-monitor.sh`) raises the CloudWatch alarm `award-demo-uptime`, which mails me through SNS, when
+  the document does not come back (9.2.10). The workflow `uptime` stays as a daily and manual fallback.
 
 ### 9.2.5 Award form in steps on phones (SCRUM-136)
 
@@ -270,6 +272,19 @@ Carried from AC-3.7 of Feature 8.1, restricted to the two pages of F-2.
   The scope, delegation and self-review rules are those of the queue; an organisation outside the caller's scopes
   answers 400.
 - **AC-9.4** (Screens) Empty state, paging, light and dark, uk and en, 360 px without a horizontal scroll.
+
+### 9.2.10 Reliable uptime check for the demo server (SCRUM-199)
+
+- **AC-10.1** (Check) The discovery document of the demo address is requested from outside the server at least every
+  15 minutes by a service with a reliable schedule: a Route 53 HTTPS health check every 30 seconds from several
+  regions that expects `issuer` in the body, unhealthy after 3 failed requests. It does not validate the
+  certificate; the daily workflow does (AC-10.3).
+- **AC-10.2** (Mail) A failed check mails within 15 minutes of the outage (CloudWatch alarm `award-demo-uptime` in
+  `us-east-1`, 2 of 2 one-minute periods, SNS mail to the budget alarm address; the recovery mails too). Checked
+  once by stopping `frontend` on the server for 20 minutes.
+- **AC-10.3** (Fallback) `uptime.yml` runs daily and on `workflow_dispatch` and also fails when the certificate
+  expires within 14 days; GitHub drops most scheduled runs of a quiet repository, so it is not the alert.
+- **AC-10.4** (Docs) DEMO_DEPLOYMENT §3 "Uptime", AC-4.5 and manual step 16 describe the health check.
 
 ## 5. Edge cases
 
@@ -497,7 +512,11 @@ the bucket and its IAM user, a mailbox I can read for the mail test.
 14. The next morning: the bucket lists the night's three files; `docker compose ps backup` is `healthy`. (AC-4.4)
 15. On the server: `docker compose stop app`, `restore.sh` of that night with the key copied in for the run and
     deleted afterwards, `docker compose start app`. Expected: counts match the manifest; sign-in works. (AC-4.4)
-16. AWS Budgets shows the 10 USD alarm; GitHub Actions shows `uptime` runs every 30 minutes, green. (AC-4.5)
+16. AWS Budgets shows the 10 USD alarm; Route 53 shows the health check `award-demo-uptime` healthy and CloudWatch
+    (`us-east-1`) the alarm `award-demo-uptime` in OK. On the server `sudo docker stop award-frontend` for 20
+    minutes, then `sudo docker start award-frontend` (`docker compose start frontend` refuses with "missing
+    dependency mailpit", since `mailpit` sits in the inactive `local-mail` profile). Expected: an ALARM mail within 15 minutes of the stop and an OK mail after
+    the start. (AC-4.5, AC-10.1, AC-10.2)
     Then, from my machine, `npm run flow:median` in `tools/lighthouse` with `LH_BASE_URL=https://<ip>.sslip.io` and
     the demo employee's credentials in `LH_EMAIL`/`LH_PASSWORD`. Expected: median mobile performance of `/awards`
     and `/awards/new` recorded with the Lighthouse version; target 90 (9.3 AC-1.6, accepted below 90 on the

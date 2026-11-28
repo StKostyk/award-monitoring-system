@@ -107,6 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User domain entities (`User`, `Organization`, `UserRole`) and repositories over the existing schema; V014 adds the authorization-server tables, `one_time_tokens` and `user_devices`; demo accounts seeded in the `local` and `docker` profiles
 
 ### Changed
+- Route 53 health check with a mail alarm for the demo server; the uptime workflow runs daily and checks the certificate expiry.
 - A click anywhere on a row of the users table or of the unit comparison tables opens the person or the unit.
 - Shared award page shows the main document on a stage beside the facts, and the review path to the owner and reviewers (9.2.7)
 - Demo mail through Gmail SMTP with an app password instead of Brevo (Feature 9.2)

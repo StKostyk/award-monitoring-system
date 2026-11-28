@@ -180,12 +180,23 @@ aws budgets create-budget --account-id <account> --budget '{"BudgetName":"award-
 `aws ec2 get-console-output --instance-id <id> --latest`. `.env.prod` goes to `/opt/award` with mode 600, and the GHCR
 token goes in on standard input: `docker login ghcr.io -u <github-user> --password-stdin` as `deploy`.
 
-**Uptime.** `.github/workflows/uptime.yml` requests `https://<DEMO_HOST>.sslip.io/.well-known/openid-configuration`
-every 30 minutes and fails when it does not answer 200 within 20 seconds; GitHub mails a failed scheduled run. It
-reads the repository variable `DEMO_HOST`, not the `demo` environment, so it needs no approval, and is skipped
-while `DEMO_HOST` is empty. Scheduled runs use the workflow file on the default branch (`main`), so it starts with
-the release that also runs the first deploy; until that deploy is approved and green the runs fail. It assumes
-`SITE_ADDRESS=<DEMO_HOST>.sslip.io`; with a real domain, change the address in the workflow too.
+**Uptime.** A Route 53 health check requests `https://<DEMO_HOST>.sslip.io/.well-known/openid-configuration` over
+HTTPS every 30 seconds from several AWS regions and turns unhealthy after 3 failed requests (no answer, a status
+other than 2xx or 3xx, or no `issuer` in the first 5 120 bytes of the body). It does not validate the certificate. The CloudWatch alarm `award-demo-uptime` in `us-east-1` (where Route 53 publishes its
+metrics) goes to ALARM after 2 unhealthy minutes and mails through the SNS topic `award-demo-uptime`; the recovery
+mails too. `infra/demo/uptime-monitor.sh <DEMO_HOST> <alert-email>` creates or updates all three; it is safe to run
+again, and a new address needs the confirmation link that AWS mails to it. The health check costs about 1.50 USD a
+month (HTTPS and string matching on an AWS endpoint), within the 10 USD budget. The script replaces a health check
+of the same address whose type or interval differs, since Route 53 cannot update those. With a new Elastic IP, run the script with the new
+address and delete the old health check (`aws route53 delete-health-check --health-check-id <id>`).
+
+`.github/workflows/uptime.yml` makes the same request daily and on demand (`workflow_dispatch`) and also fails when
+the certificate expires within 14 days (Caddy renews 30 days ahead); GitHub mails a failed run. It is only a
+fallback: GitHub drops most scheduled runs of a repository with little activity (3 of 48 half-hourly runs on
+2026-11-27) and disables the schedule after 60 days without activity, after which it has to be enabled again in the
+Actions tab. It reads the repository variable `DEMO_HOST`, is skipped while it is empty and
+uses the workflow file on `main`. Both assume `SITE_ADDRESS=<DEMO_HOST>.sslip.io`; with a real domain, change the
+address in the script and the workflow.
 
 **Deploy job.** `deploy-demo` in `.github/workflows/ci-cd.yml` runs after every push to `main` whose images were
 built and scanned. It needs:
