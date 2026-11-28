@@ -2,7 +2,7 @@ name: uptime
 
 on:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '17 6 * * *'
   workflow_dispatch:
 
 permissions:
@@ -28,3 +28,10 @@ jobs:
           code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "$url") || true
           echo "$url answered $code"
           [ "$code" = 200 ] || { echo "::error::$url answered $code instead of 200 within 20 s"; exit 1; }
+      - name: Check that the certificate is valid for 14 more days
+        run: |
+          set -eu
+          addr="${DEMO_HOST}.sslip.io"
+          cert=$(openssl s_client -connect "${addr}:443" -servername "$addr" </dev/null 2>/dev/null)
+          echo "$cert" | openssl x509 -noout -enddate
+          echo "$cert" | openssl x509 -noout -checkend 1209600             || { echo "::error::the certificate of $addr expires within 14 days"; exit 1; }
